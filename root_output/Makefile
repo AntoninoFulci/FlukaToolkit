@@ -31,6 +31,8 @@ GLIBS         = $(ROOTGLIBS) $(SYSLIBS)
 OBJS            = usrini.o usrout.o
 OBJS           += mgdraw.o
 
+NAME 		   ?= rootfluka
+
 #------------------------------------------------------------------------------
 all:            FluLib.o rootfluka
 
@@ -44,9 +46,11 @@ FluLib.o:
 
 rootfluka:     $(OBJS) FluLib.$(ObjSuf)
 		gfortran -o $@ -fuse-ld=bfd $(XCODEBUG) $? $(LIBS)
+		@rm -f *.o core *.so ResultsDict.cpp *.pcm $(OBJS)
+		@mv rootfluka $(NAME)
 
 clean:
-		@rm -f rootfluka *.o core *.so ResultsDict.cpp *.pcm $(OBJS)
+		@rm -f rootfluka* *.o core *.so ResultsDict.cpp *.pcm $(OBJS)
 
 .$(SrcSuf).$(ObjSuf):
 	$(CXX) $(CXXFLAGS) -c $<
