@@ -23,7 +23,9 @@ CXXFLAGS     += $(ROOTCFLAGS)
 LIBS          = -lstdc++
 LIBS         += -L.
 LIBS         += $(ROOTLIBS) $(SYSLIBS)
-LIBS         += $(shell fluka-config --libpath) -lfluka
+
+FLUKA_OPT_LIBS 		:= $(wildcard $(FLUKA)/lib/interface/*.o)
+
 GLIBS         = $(ROOTGLIBS) $(SYSLIBS)
 
 #------------------------------------------------------------------------------
@@ -32,9 +34,18 @@ OBJS            = usrini.o usrout.o
 OBJS           += mgdraw.o
 
 NAME 		   ?= rootfluka
+OPT_FLUKA_LIBS ?= 0
+
+ifeq ($(OPT_FLUKA_LIBS),1)
+	LIBS += $(shell fluka-config --libpath) $(FLUKA_OPT_LIBS) -lrqmd -lDPMJET -lfluka
+else
+	LIBS += $(shell fluka-config --libpath) -lfluka
+endif
 
 #------------------------------------------------------------------------------
 all:            FluLib.o rootfluka
+		@rm -f *.o core *.so ResultsDict.cpp *.pcm $(OBJS)
+		@mv rootfluka $(NAME)
 
 FluLib.o:
 	    @echo "Generating Library $@..."
@@ -46,8 +57,7 @@ FluLib.o:
 
 rootfluka:     $(OBJS) FluLib.$(ObjSuf)
 		gfortran -o $@ -fuse-ld=bfd $(XCODEBUG) $? $(LIBS)
-		@rm -f *.o core *.so ResultsDict.cpp *.pcm $(OBJS)
-		@mv rootfluka $(NAME)
+
 
 clean:
 		@rm -f rootfluka* *.o core *.so ResultsDict.cpp *.pcm $(OBJS)
