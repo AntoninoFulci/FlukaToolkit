@@ -1,4 +1,5 @@
-ARCH          = linux
+OS := $(shell uname)
+ARCH := $(shell uname -m)
 ObjSuf        = o
 SrcSuf        = cpp
 
@@ -27,14 +28,10 @@ GLIBS         = $(ROOTGLIBS) $(SYSLIBS)
 
 #------------------------------------------------------------------------------
 
-OBJS            = usrini.o usrout.o magfld.o 
-# OBJS           += stuprf.o
-# OBJS           += source.o
-# OBJS           += source_newgen_scattering.o	
-OBJS           += mgdraw_BOX.o
+OBJS            = usrini.o usrout.o
+OBJS           += mgdraw.o
 
 #------------------------------------------------------------------------------
-
 all:            FluLib.o rootfluka
 
 FluLib.o:

@@ -20,10 +20,7 @@
 *                                                                      *
 *----------------------------------------------------------------------*
 *
-      DIMENSION WHAT (6)
-      CHARACTER SDUM*8
-*
-      REAL *8 PIPPO
+
 *
 *  Don't change the following line:
       LUSRIN = .TRUE.
