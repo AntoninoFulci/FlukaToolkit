@@ -15,7 +15,7 @@ ifeq ($(OS),Darwin)
 		SYS_LDFLAGS = -ld_classic -lz -lc++
 	endif
 else
-	SYS_LDFLAGS = -lz pippo
+	SYS_LDFLAGS = -lz
 endif
 
 #For MacOs
@@ -51,7 +51,10 @@ endif
 #------------------------------------------------------------------------------
 all:            FluLib.o rootfluka
 		@rm -f *.o core *.so ResultsDict.cpp *.pcm $(OBJS)
-		@mv rootfluka $(NAME)
+		@if [ $(NAME) != "rootfluka" ]; then\
+			mv rootfluka $(NAME);\
+		fi
+		
 
 FluLib.o:
 	    @echo "Generating Library $@..."
