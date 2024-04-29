@@ -10,13 +10,19 @@ ROOTGLIBS    := $(shell root-config --glibs)
 FLUKA        := $(shell fluka-config --path)
 
 # Used to solve a bug in XCode15
-XCODEBUG      = -ld_classic -lz -lc++
+ifeq ($(OS),Darwin)
+	ifeq ($(ARCH),arm64)
+		SYS_LDFLAGS = -ld_classic -lz -lc++
+	endif
+else
+	SYS_LDFLAGS = -lz pippo
+endif
 
 #For MacOs
 CXX           = g++
 CXXFLAGS      = -O -Wall -fPIC 
 LD            = g++
-LDFLAGS       = -O $(XCODEBUG)
+LDFLAGS       = -O $(SYS_LDFLAGS)
 SOFLAGS       = -shared
 
 CXXFLAGS     += $(ROOTCFLAGS)
@@ -56,7 +62,7 @@ FluLib.o:
 	       $(FLUKA)/bin/fff $?
 
 rootfluka:     $(OBJS) FluLib.$(ObjSuf)
-		gfortran -o $@ -fuse-ld=bfd $(XCODEBUG) $? $(LIBS)
+		gfortran -o $@ -fuse-ld=bfd $(SYS_LDFLAGS) $? $(LIBS)
 
 
 clean:
