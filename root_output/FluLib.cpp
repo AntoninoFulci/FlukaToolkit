@@ -12,14 +12,18 @@
 #endif
 
 static TFile *RootFile  = 0;
+
 static TTree *Source    = 0;
 static TTree *Events    = 0;
 static TTree *DepEvents = 0;
+static TTree *USDEvents = 0;
+
 static TTree *SimulationSummary = 0;
 
 bool first1 = true;
 bool first2 = true;
 bool first3 = true;
+bool first4 = true;
 
 int    NCase_src;
 int    ParticleID_src;
@@ -76,6 +80,22 @@ double MotherVy_dep;
 double MotherVz_dep;
 double UniqueID_dep;
 
+int    NCase_usd;
+int    RegionID_usd;
+int    ICode_usd;
+int    ParticleID_usd;
+double EKin_usd;
+double P_usd;
+double Vx_usd;
+double Vy_usd;
+double Vz_usd;
+double Cx_usd;
+double Cy_usd;
+double Cz_usd;
+double Weight_usd;
+int    MotherID_usd;
+double MotherETot_usd;
+
 
 extern "C" {
   void myusrini (){
@@ -84,11 +104,13 @@ extern "C" {
     Source    = new TTree("Source", "Particles");
     Events    = new TTree("Events", "Particles");
     DepEvents = new TTree("DepEvents", "Particles");
+    USDEvents = new TTree("USDEvents", "Particles");
     SimulationSummary = new TTree("RunSummary", "RunSummary");
 
     Source->SetAutoSave(0);
     Events->SetAutoSave(0);
     DepEvents->SetAutoSave(0);
+    USDEvents->SetAutoSave(0);
     SimulationSummary->SetAutoSave(0);
 
   }
@@ -274,6 +296,62 @@ extern "C" {
   }
 }
 
+#ifndef WIN32
+#define usdfill usdfill_
+#else
+#define usdfill USDFILL
+#endif
+
+extern "C" {
+  void usdfill(Int_t &NCase, Int_t &RegionID, Int_t &ICode, Int_t &ParticleID,
+                Double_t &EKin, Double_t &P, Double_t &Vx, Double_t &Vy, Double_t &Vz,
+                Double_t &Cx, Double_t &Cy, Double_t &Cz,
+                Double_t &Weight,
+                Int_t &MotherID,
+                Double_t &MotherETot
+                ){
+
+    NCase_usd       = NCase;
+    RegionID_usd    = RegionID;
+    ICode_usd       = ICode;
+    ParticleID_usd  = ParticleID;
+    EKin_usd        = EKin;
+    P_usd           = P;
+    Vx_usd          = Vx;
+    Vy_usd          = Vy;
+    Vz_usd          = Vz;
+    Cx_usd          = Cx;
+    Cy_usd          = Cy;
+    Cz_usd          = Cz;
+    Weight_usd      = Weight;
+    MotherID_usd    = MotherID;
+    MotherETot_usd  = MotherETot;            
+
+    if(first4){
+      USDEvents->Branch("NCase",      &NCase_usd);
+      USDEvents->Branch("RegionID",   &RegionID_usd);
+      USDEvents->Branch("ICode",      &ICode_usd);
+      USDEvents->Branch("ParticleID", &ParticleID_usd);
+      USDEvents->Branch("EKin",       &EKin_usd);
+      USDEvents->Branch("P",          &P_usd);
+      USDEvents->Branch("Vx",         &Vx_usd);
+      USDEvents->Branch("Vy",         &Vy_usd);
+      USDEvents->Branch("Vz",         &Vz_usd);
+      USDEvents->Branch("Cx",         &Cx_usd);
+      USDEvents->Branch("Cy",         &Cy_usd);
+      USDEvents->Branch("Cz",         &Cz_usd);
+      USDEvents->Branch("Weight",     &Weight_usd);
+      USDEvents->Branch("MotherID",   &MotherID_usd);
+      USDEvents->Branch("MotherETot", &MotherETot_usd);
+
+      first4 = false;
+    }
+
+
+   USDEvents->Fill();
+  }
+}
+
 
 
 
@@ -296,6 +374,7 @@ extern "C" {
     Source->Write();
     Events->Write();
     DepEvents->Write();
+    USDEvents->Write();
 
     RootFile->Close();
   }

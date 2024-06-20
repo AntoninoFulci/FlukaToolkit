@@ -38,9 +38,10 @@ GLIBS         = $(ROOTGLIBS) $(SYSLIBS)
 
 OBJS            = usrini.o usrout.o
 OBJS           += mgdraw.o
+# OBJS		   += source_newgen.o
 
 NAME 		   ?= rootfluka
-OPT_FLUKA_LIBS ?= 0
+OPT_FLUKA_LIBS ?= 1
 
 ifeq ($(OPT_FLUKA_LIBS),1)
 	LIBS += $(shell fluka-config --libpath) $(FLUKA_OPT_LIBS) -lrqmd -lDPMJET -lfluka
