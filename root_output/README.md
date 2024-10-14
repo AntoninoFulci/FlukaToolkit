@@ -1,6 +1,6 @@
 # FlukaROOTOutput
 
-With this code is possibile to compile and executable that produces a FLUKA output in ROOT format.
+With this code is possibile to compile and executable that produces a FLUKA output in ROOT format. The code is adapted and simplified from here https://fluka-forum.web.cern.ch/t/saving-the-output-as-root-file/2361 and here http://www.fluka.org/fluka.php?id=examples&sub=example3.
 
 ![alt text](ExampleROOTFiles.png)
 
