@@ -4,9 +4,9 @@ With this code is possibile to compile and executable that produces a FLUKA outp
 
 ![alt text](ExampleROOTFiles.png)
 
-The Makefile compile a C++ file called `Flulib.cpp` that contains all the variables needed to save almost everything inside `mgdraw.f`. The Makefile compile the routines using FLUKA `fff` tool and link. By default it will compile using all the optional FLUKA libraries, consider deactivating them if not needed. It also contains various fixes for MacOs Sonoma 14.7.
+The Makefile compile a C++ file called `Flulib.cpp` that contains all the variables needed to save almost everything inside `mgdraw.f`. The Makefile compile the routines using FLUKA `fff` tool. By default it will compile using all the optional FLUKA libraries, consider deactivating them if not needed. It also contains various fixes for MacOs, considering removing them when unecessary.
 
-Tested and working with ROOT 6.32.02 and FLUKA 4-4.1 compiled with MacPorts gcc12.4.0_1 on Darwin 23.6.0 arm64 (M1).
+Tested and working with `ROOT 6.32.02` and `FLUKA 4-4.1` compiled with `MacPorts gcc12.4.0_1` on`Darwin 23.6.0 arm64 (M1)`.
 
 ### Prerequisites
 Install [FLUKA](https://fluka.cern/).
