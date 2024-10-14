@@ -4,7 +4,6 @@
 #include <TTree.h>
 #include <TFile.h>
 
-
 #ifndef WIN32
 #define myusrini myusrini_
 #else

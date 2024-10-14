@@ -1,79 +1,112 @@
-OS := $(shell uname)
+# OS and Architecture detection
+OS   := $(shell uname)
 ARCH := $(shell uname -m)
-ObjSuf        = o
-SrcSuf        = cpp
 
-ROOTCFLAGS   := $(shell root-config --cflags)
-ROOTLIBS     := $(shell root-config --libs)
-ROOTGLIBS    := $(shell root-config --glibs)
+# File suffixes
+ObjSuf  = o
+SrcSuf  = cpp
 
-FLUKA        := $(shell fluka-config --path)
+# macOS deployment target (fixes Xcode15 issues)
+export MACOSX_DEPLOYMENT_TARGET = 14.7
 
-# Used to solve a bug in XCode15
+# ROOT configuration
+ROOTCFLAGS := $(shell root-config --cflags)
+ROOTLIBS   := $(shell root-config --libs)
+ROOTGLIBS  := $(shell root-config --glibs)
+
+# FLUKA configuration
+FLUKA := $(shell fluka-config --path)
+
+# OS-specific linker flags
+SYS_LDFLAGS := -lz -lc++
 ifeq ($(OS),Darwin)
 	ifeq ($(ARCH),arm64)
-		SYS_LDFLAGS = -ld_classic -lz -lc++
+		SYS_LDFLAGS += -ld_classic
 	endif
-else
-	SYS_LDFLAGS = -lz
 endif
 
-#For MacOs
-CXX           = g++
-CXXFLAGS      = -O -Wall -fPIC 
-LD            = g++
-LDFLAGS       = -O $(SYS_LDFLAGS)
-SOFLAGS       = -shared
+# Compiler and linker settings
+CXX      = g++
+CXXFLAGS = -O -Wall -fPIC
+LDFLAGS  = -O $(SYS_LDFLAGS)
+SOFLAGS  = -shared
 
-CXXFLAGS     += $(ROOTCFLAGS)
-LIBS          = -lstdc++
-LIBS         += -L.
-LIBS         += $(ROOTLIBS) $(SYSLIBS)
+# Add ROOT flags to compiler
+CXXFLAGS += $(ROOTCFLAGS)
 
-FLUKA_OPT_LIBS 		:= $(wildcard $(FLUKA)/lib/interface/*.o)
+# Libraries
+LIBS  = -lstdc++
+LIBS += -L.
+LIBS += $(ROOTLIBS) $(SYSLIBS)
 
-GLIBS         = $(ROOTGLIBS) $(SYSLIBS)
+# FLUKA optional libraries
+FLUKA_OPT_LIBS := $(wildcard $(FLUKA)/lib/interface/*.o)
 
-#------------------------------------------------------------------------------
+# Linker libraries
+GLIBS = $(ROOTGLIBS) $(SYSLIBS)
 
-OBJS            = usrini.o usrout.o
-OBJS           += mgdraw.o
-# OBJS		   += source_newgen.o
+# Objects
+OBJS = 
+# Uncomment to add source file:
+# OBJS += usrini.o usrout.o mgdraw.o
+# OBJS += source_newgen.o
 
-NAME 		   ?= rootfluka
+# Output directory and binary name
+NAME ?= rootfluka
+OUTPUT_DIR = RootFlukaExecutables
+FULL_OUTPUT_PATH = $(shell pwd)/$(OUTPUT_DIR)
+
+# FLUKA library linking option
 OPT_FLUKA_LIBS ?= 1
-
-ifeq ($(OPT_FLUKA_LIBS),1)
+ifeq ($(OPT_FLUKA_LIBS), 1)
 	LIBS += $(shell fluka-config --libpath) $(FLUKA_OPT_LIBS) -lrqmd -lDPMJET -lfluka
 else
 	LIBS += $(shell fluka-config --libpath) -lfluka
 endif
 
-#------------------------------------------------------------------------------
-all:            FluLib.o rootfluka
-		@rm -f *.o core *.so ResultsDict.cpp *.pcm $(OBJS)
-		@if [ $(NAME) != "rootfluka" ]; then\
-			mv rootfluka $(NAME);\
-		fi
-		
+# Colors
+COLOR_PURPLE = \033[0;35m
+COLOR_RED    = \033[0;31m
+COLOR_CYAN   = \033[0;36m
+COLOR_RESET  = \033[0m
 
-FluLib.o:
-	    @echo "Generating Library $@..."
-	    g++ -c FluLib.cpp $(ROOTCFLAGS)
+# Main build target
+all: $(OUTPUT_DIR) $(OUTPUT_DIR)/$(NAME)
+	@rm -f *.o *.mod $(OBJS)
+	
 
+# Ensure the output directory exists
+$(OUTPUT_DIR):
+	@mkdir -p $(OUTPUT_DIR)
+
+# Build FluLib.o
+FluLib.o: FluLib.cpp
+	@echo "$(COLOR_PURPLE)Generating Library $(COLOR_RED)$@$(COLOR_PURPLE)...$(COLOR_RESET)"
+	$(CXX) -c $< $(ROOTCFLAGS)
+
+# FLUKA Fortran source compilation
 .f.$(ObjSuf):
-	@echo "flutil/fff"
-	       $(FLUKA)/bin/fff $?
+	@echo "$(COLOR_PURPLE)Running FLUKA fff compiler for $(COLOR_RED)$<$(COLOR_PURPLE)...$(COLOR_RESET)"
+	$(FLUKA)/bin/fff $<
 
-rootfluka:     $(OBJS) FluLib.$(ObjSuf)
-		gfortran -o $@ -fuse-ld=bfd $(SYS_LDFLAGS) $? $(LIBS)
+# Main executable placed in RootFlukaExecutables/
+$(OUTPUT_DIR)/$(NAME): $(OBJS) FluLib.$(ObjSuf)
+	@echo "$(COLOR_PURPLE)Compiling executable $(COLOR_RED)$(NAME)$(COLOR_PURPLE) in $(COLOR_CYAN)$(FULL_OUTPUT_PATH)$(COLOR_PURPLE)...$(COLOR_RESET)"
+	gfortran -o $@ -fuse-ld=bfd $(SYS_LDFLAGS) $^ $(LIBS)
 
-
+# Clean target
 clean:
-		@rm -f rootfluka* *.o core *.so ResultsDict.cpp *.pcm $(OBJS)
+	@echo "$(COLOR_PURPLE)Cleaning $(COLOR_CYAN)$(FULL_OUTPUT_PATH)/$(COLOR_RED)$(NAME)$(COLOR_PURPLE)...$(COLOR_RESET)"
+	@rm -f $(OUTPUT_DIR)/$(NAME)* *.o *.so $(OBJS) rootfluka*
 
+cleanall:
+	@echo "$(COLOR_PURPLE)Cleaning $(COLOR_CYAN)$(FULL_OUTPUT_PATH)/$(COLOR_RED)*$(COLOR_PURPLE)...$(COLOR_RESET)"
+	@rm -rf $(OUTPUT_DIR)/*
+
+# Compile C++ source files into object files
 .$(SrcSuf).$(ObjSuf):
 	$(CXX) $(CXXFLAGS) -c $<
 
+# Print variables (for debugging)
 print-%:
 	@echo $* = $($*)
