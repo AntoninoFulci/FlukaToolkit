@@ -9,8 +9,8 @@ The Makefile compile a C++ file called `Flulib.cpp` that contains all the variab
 Tested and working with `ROOT 6.32.02` and `FLUKA 4-4.1` compiled with `MacPorts gcc12.4.0_1` on`Darwin 23.6.0 arm64 (M1)`.
 
 ### Prerequisites
-Install [FLUKA](https://fluka.cern/).
-Install [ROOT](https://root.cern/).
+- Install [FLUKA](https://fluka.cern/).
+- Install [ROOT](https://root.cern/).
 
 Add the following cards to the input file (refer to the [FLUKA manual](https://flukafiles.web.cern.ch/manual/index.html)):
 1. `USRICALL`: empty
@@ -21,6 +21,7 @@ Add the following cards to the input file (refer to the [FLUKA manual](https://f
     3. W(3): what part of mgdraw to activate, usually `2` is enough
     4. W(4): rembember to set it to `1` if you want to activate entry USDRAWS
 
+- Then use the function defined in `Flulib.cpp` inside the correct routines. Refer to the files inside `ExampleRoutines` on how to use them.
 
 ### Usage
 
