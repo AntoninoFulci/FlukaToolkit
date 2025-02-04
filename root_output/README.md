@@ -2,8 +2,6 @@
 
 With this code is possibile to compile and executable that produces a FLUKA output in ROOT format. The code is adapted and simplified from here https://fluka-forum.web.cern.ch/t/saving-the-output-as-root-file/2361 and here http://www.fluka.org/fluka.php?id=examples&sub=example3.
 
-Modifica per sebba
-
 ![alt text](ExampleROOTFiles.png)
 
 The Makefile compile a C++ file called `Flulib.cpp` that contains all the variables needed to save almost everything inside `mgdraw.f`. The Makefile compile the routines using FLUKA `fff` tool. By default it will compile using all the optional FLUKA libraries, consider deactivating them if not needed. It also contains various fixes for MacOs, considering removing them when unecessary.

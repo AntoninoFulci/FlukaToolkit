@@ -1,6 +1,6 @@
 #!/bin/bash
 
-makefile_dir="path_to_FLUKAROOTOUTPUT/FlukaROOTOutput"
+makefile_dir="/Users/tonyf/Work/FLUKA-CERN/FlukaROOTOutput"
 # Define the function to call the Makefile from another directory
 compilerf() {
     local name=$1  # First argument is the executable name (rootfluka)

@@ -18,10 +18,10 @@ ROOTGLIBS  := $(shell root-config --glibs)
 FLUKA := $(shell fluka-config --path)
 
 # OS-specific linker flags
-SYS_LDFLAGS := -lz -lc++
+SYS_LDFLAGS := -lz
 ifeq ($(OS),Darwin)
 	ifeq ($(ARCH),arm64)
-		SYS_LDFLAGS += -ld_classic
+		SYS_LDFLAGS += -ld_classic -lc++
 	endif
 endif
 
