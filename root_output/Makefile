@@ -81,26 +81,26 @@ $(OUTPUT_DIR):
 
 # Build FluLib.o
 FluLib.o: FluLib.cpp
-	@echo "$(COLOR_PURPLE)Generating Library $(COLOR_RED)$@$(COLOR_PURPLE)...$(COLOR_RESET)"
+	@printf "$(COLOR_PURPLE)Generating Library $(COLOR_RED)$@$(COLOR_PURPLE)...$(COLOR_RESET)\n"
 	$(CXX) -c $< $(ROOTCFLAGS)
 
 # FLUKA Fortran source compilation
 .f.$(ObjSuf):
-	@echo "$(COLOR_PURPLE)Running FLUKA fff compiler for $(COLOR_RED)$<$(COLOR_PURPLE)...$(COLOR_RESET)"
+	@printf "$(COLOR_PURPLE)Running FLUKA fff compiler for $(COLOR_RED)$<$(COLOR_PURPLE)...$(COLOR_RESET)\n"
 	$(FLUKA)/bin/fff $<
 
 # Main executable placed in RootFlukaExecutables/
 $(OUTPUT_DIR)/$(NAME): $(OBJS) FluLib.$(ObjSuf)
-	@echo "$(COLOR_PURPLE)Compiling executable $(COLOR_RED)$(NAME)$(COLOR_PURPLE) in $(COLOR_CYAN)$(FULL_OUTPUT_PATH)$(COLOR_PURPLE)...$(COLOR_RESET)"
+	@printf "$(COLOR_PURPLE)Compiling executable $(COLOR_RED)$(NAME)$(COLOR_PURPLE) in $(COLOR_CYAN)$(FULL_OUTPUT_PATH)$(COLOR_PURPLE)...$(COLOR_RESET)\n"
 	gfortran -o $@ -fuse-ld=bfd $(SYS_LDFLAGS) $^ $(LIBS)
 
 # Clean target
 clean:
-	@echo "$(COLOR_PURPLE)Cleaning $(COLOR_CYAN)$(FULL_OUTPUT_PATH)/$(COLOR_RED)$(NAME)$(COLOR_PURPLE)...$(COLOR_RESET)"
+	@printf "$(COLOR_PURPLE)Cleaning $(COLOR_CYAN)$(FULL_OUTPUT_PATH)/$(COLOR_RED)$(NAME)$(COLOR_PURPLE)...$(COLOR_RESET)\n"
 	@rm -f $(OUTPUT_DIR)/$(NAME)* *.o *.so $(OBJS) rootfluka*
 
 cleanall:
-	@echo "$(COLOR_PURPLE)Cleaning $(COLOR_CYAN)$(FULL_OUTPUT_PATH)/$(COLOR_RED)*$(COLOR_PURPLE)...$(COLOR_RESET)"
+	@printf "$(COLOR_PURPLE)Cleaning $(COLOR_CYAN)$(FULL_OUTPUT_PATH)/$(COLOR_RED)*$(COLOR_PURPLE)...$(COLOR_RESET)\n"
 	@rm -rf $(OUTPUT_DIR)/*
 
 # Compile C++ source files into object files
@@ -109,4 +109,4 @@ cleanall:
 
 # Print variables (for debugging)
 print-%:
-	@echo $* = $($*)
+	@printf $* = $($*)
