@@ -3,6 +3,7 @@
 #include <iostream>
 #include <TTree.h>
 #include <TFile.h>
+#include <ctime>
 
 #ifndef WIN32
 #define myusrini myusrini_
@@ -95,10 +96,12 @@ double Weight_usd;
 int    MotherID_usd;
 double MotherETot_usd;
 
+std::time_t start_time;
 
 extern "C" {
   void myusrini (){
     printf("Executing MYUSRINI\n");
+
     RootFile  = new TFile("dump.root","recreate");
     Source    = new TTree("Source", "Particles");
     Events    = new TTree("Events", "Particles");
@@ -111,6 +114,10 @@ extern "C" {
     DepEvents->SetAutoSave(0);
     USDEvents->SetAutoSave(0);
     SimulationSummary->SetAutoSave(0);
+
+    // Save the start time of the simulation
+    start_time = std::time(nullptr);
+    SimulationSummary->Branch("StartTime", &start_time);
 
   }
 }
