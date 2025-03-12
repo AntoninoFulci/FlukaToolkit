@@ -2,12 +2,20 @@
 OS   := $(shell uname)
 ARCH := $(shell uname -m)
 
+# FLUKA-VERSION detection
+FLUKA_VERSION := $(shell basename $(shell fluka-config --path) | sed 's/^fluka//')
+$(info FLUKA_VERSION = $(FLUKA_VERSION))
+
 # File suffixes
 ObjSuf  = o
 SrcSuf  = cpp
 
-# macOS deployment target (fixes Xcode15 issues)
-export MACOSX_DEPLOYMENT_TARGET = 14.7
+# Check if the system is macOS, the version is not 14.7, and FLUKA version is 4-4.1
+ifeq ($(OS),Darwin)
+	ifeq ($(FLUKA_VERSION),4-4.1)
+		export MACOSX_DEPLOYMENT_TARGET = 14.7
+	endif
+endif
 
 # ROOT configuration
 ROOTCFLAGS := $(shell root-config --cflags)
