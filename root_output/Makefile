@@ -48,7 +48,7 @@ CXXFLAGS += $(ROOTCFLAGS)
 # Libraries
 LIBS = -L.
 LIBS += $(ROOTLIBS) $(SYSLIBS)
-LIBS += $(FLUKA_LIBS)
+# LIBS += $(FLUKA_LIBS)
 
 # FLUKA optional libraries
 FLUKA_OPT_INTOBJS := $(shell fluka-config --intobjs)
@@ -70,9 +70,9 @@ FULL_OUTPUT_PATH = $(shell pwd)/$(OUTPUT_DIR)
 # FLUKA library linking option
 OPT_FLUKA_LIBS ?= 1
 ifeq ($(OPT_FLUKA_LIBS), 1)
-	LIBS += $(FLUKA_LIB_PATH) $(FLUKA_OPT_INTOBJS) $(FLUKA_RQMDLIB) $(FLUKA_DPMLIB)
+	LIBS += $(FLUKA_LIB_PATH) $(FLUKA_OPT_INTOBJS) $(FLUKA_RQMDLIB) $(FLUKA_DPMLIB) $(FLUKA_LIBS)
 else
-	LIBS += $(FLUKA_LIB_PATH)
+	LIBS += $(FLUKA_LIB_PATH) $(FLUKA_LIBS)
 endif
 
 # Colors
