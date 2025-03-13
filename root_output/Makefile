@@ -12,9 +12,7 @@ SrcSuf  = cpp
 
 # Check if the system is macOS, the version is not 14.7, and FLUKA version is 4-4.1
 ifeq ($(OS),Darwin)
-	ifeq ($(FLUKA_VERSION),4-4.1)
-export MACOSX_DEPLOYMENT_TARGET = 15.0
-	endif
+		export MACOSX_DEPLOYMENT_TARGET = 15.0
 endif
 
 # ROOT configuration
