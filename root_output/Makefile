@@ -13,7 +13,7 @@ SrcSuf  = cpp
 # Check if the system is macOS, the version is not 14.7, and FLUKA version is 4-4.1
 ifeq ($(OS),Darwin)
 	ifeq ($(FLUKA_VERSION),4-4.1)
-		export MACOSX_DEPLOYMENT_TARGET = 14.7
+export MACOSX_DEPLOYMENT_TARGET = 15.0
 	endif
 endif
 
@@ -23,7 +23,12 @@ ROOTLIBS   := $(shell root-config --libs)
 ROOTGLIBS  := $(shell root-config --glibs)
 
 # FLUKA configuration
-FLUKA := $(shell fluka-config --path)
+FLUKA 			:= $(shell fluka-config --path)
+FLUKA_COMPILER 	:= $(shell fluka-config --compiler)
+FLUKA_LIB_PATH 	:= $(shell fluka-config --libpath)
+FLUKA_LIBS 		:= $(shell fluka-config --lib)
+FLUKA_DPMLIB 	:= $(shell fluka-config --dpmlib)
+FLUKA_RQMDLIB 	:= $(shell fluka-config --rqmdlib)
 
 # OS-specific linker flags
 SYS_LDFLAGS := -lz
@@ -43,12 +48,12 @@ SOFLAGS  = -shared
 CXXFLAGS += $(ROOTCFLAGS)
 
 # Libraries
-LIBS  = -lstdc++
-LIBS += -L.
+LIBS = -L.
 LIBS += $(ROOTLIBS) $(SYSLIBS)
+LIBS += $(FLUKA_LIBS)
 
 # FLUKA optional libraries
-FLUKA_OPT_LIBS := $(wildcard $(FLUKA)/lib/interface/*.o)
+FLUKA_OPT_INTOBJS := $(shell fluka-config --intobjs)
 
 # Linker libraries
 GLIBS = $(ROOTGLIBS) $(SYSLIBS)
@@ -67,9 +72,9 @@ FULL_OUTPUT_PATH = $(shell pwd)/$(OUTPUT_DIR)
 # FLUKA library linking option
 OPT_FLUKA_LIBS ?= 1
 ifeq ($(OPT_FLUKA_LIBS), 1)
-	LIBS += $(shell fluka-config --libpath) $(FLUKA_OPT_LIBS) -lrqmd -lDPMJET -lfluka
+	LIBS += $(FLUKA_LIB_PATH) $(FLUKA_OPT_INTOBJS) $(FLUKA_RQMDLIB) $(FLUKA_DPMLIB)
 else
-	LIBS += $(shell fluka-config --libpath) -lfluka
+	LIBS += $(FLUKA_LIB_PATH)
 endif
 
 # Colors

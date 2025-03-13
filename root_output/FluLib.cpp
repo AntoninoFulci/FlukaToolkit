@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <iostream>
 #include <TTree.h>
@@ -11,20 +10,21 @@
 #define myusrini MYUSRINI
 #endif
 
+// Pointers to ROOT file and trees
 static TFile *RootFile  = 0;
-
 static TTree *Source    = 0;
 static TTree *Events    = 0;
 static TTree *DepEvents = 0;
 static TTree *USDEvents = 0;
-
 static TTree *SimulationSummary = 0;
 
-bool first1 = true;
-bool first2 = true;
-bool first3 = true;
-bool first4 = true;
+// Flags to check if branches are created
+bool source_flag    = true;
+bool events_flag    = true;
+bool depevents_flag = true;
+bool usdevents_flag = true;
 
+// Variables for Source tree
 int    NCase_src;
 int    ParticleID_src;
 double EKin_src;
@@ -37,6 +37,7 @@ double Cy_src;
 double Cz_src;
 double Weight_src;
 
+// Variables for Events tree
 int    NCase_vnt;
 int    SurfaceID_vnt;
 int    ParticleID_vnt;
@@ -58,6 +59,7 @@ double MotherVy_vnt;
 double MotherVz_vnt;
 double UniqueID_vnt;
 
+// Variables for DepEvents tree
 int    NCase_dep;
 int    RegionID_dep;
 int    ICode_dep;
@@ -80,6 +82,7 @@ double MotherVy_dep;
 double MotherVz_dep;
 double UniqueID_dep;
 
+// Variables for USDEvents tree
 int    NCase_usd;
 int    RegionID_usd;
 int    ICode_usd;
@@ -96,12 +99,14 @@ double Weight_usd;
 int    MotherID_usd;
 double MotherETot_usd;
 
+// Variable to store the start time of the simulation
 std::time_t start_time;
 
 extern "C" {
   void myusrini (){
     printf("Executing MYUSRINI\n");
 
+    // Create ROOT file and trees
     RootFile  = new TFile("dump.root","recreate");
     Source    = new TTree("Source", "Particles");
     Events    = new TTree("Events", "Particles");
@@ -109,6 +114,7 @@ extern "C" {
     USDEvents = new TTree("USDEvents", "Particles");
     SimulationSummary = new TTree("RunSummary", "RunSummary");
 
+    // Disable auto-save for trees
     Source->SetAutoSave(0);
     Events->SetAutoSave(0);
     DepEvents->SetAutoSave(0);
@@ -118,7 +124,6 @@ extern "C" {
     // Save the start time of the simulation
     start_time = std::time(nullptr);
     SimulationSummary->Branch("StartTime", &start_time);
-
   }
 }
 
@@ -136,6 +141,7 @@ extern "C" {
                 Double_t &Weight
                 ){
     
+    // Assign values to Source tree variables
     NCase_src       = NCase;
     ParticleID_src  = ParticleID;
     EKin_src        = EKin;  
@@ -148,7 +154,8 @@ extern "C" {
     Cz_src          = Cz;
     Weight_src      = Weight;
 
-    if(first1){
+    // Create branches for Source tree if not already created
+    if(source_flag){
       Source->Branch("NCase",       &NCase_src);
       Source->Branch("ParticleID",  &ParticleID_src);
       Source->Branch("EKin",        &EKin_src);
@@ -160,11 +167,11 @@ extern "C" {
       Source->Branch("Cy",          &Cy_src);
       Source->Branch("Cz",          &Cz_src);
 
-      first1 = false;
+      source_flag = false;
     }
 
-
-   Source->Fill();
+    // Fill the Source tree
+    Source->Fill();
   }
 }
 
@@ -184,6 +191,7 @@ extern "C" {
                 Double_t &UniqueID
                 ){
 
+    // Assign values to Events tree variables
     NCase_vnt       = NCase;
     SurfaceID_vnt   = SurfaceID;
     ParticleID_vnt  = ParticleID;
@@ -205,8 +213,8 @@ extern "C" {
     MotherVz_vnt    = MotherVz;
     UniqueID_vnt    = UniqueID;
 
-
-    if(first2){
+    // Create branches for Events tree if not already created
+    if(events_flag){
       Events->Branch("NCase",       &NCase_vnt);
       Events->Branch("SurfaceID",   &SurfaceID_vnt);
       Events->Branch("ParticleID",  &ParticleID_vnt);
@@ -228,11 +236,11 @@ extern "C" {
       Events->Branch("MotherVz",    &MotherVz_vnt);
       Events->Branch("UniqueID",    &UniqueID_vnt);
 
-
-      first2 = false;
+      events_flag = false;
     }
 
-   Events->Fill();
+    // Fill the Events tree
+    Events->Fill();
   }
 }
 
@@ -251,6 +259,7 @@ extern "C" {
                 Double_t &MotherETot, Double_t &MotherVx, Double_t &MotherVy, Double_t &MotherVz
                 ){
 
+    // Assign values to DepEvents tree variables
     NCase_dep       = NCase;
     RegionID_dep    = RegionID;
     ICode_dep       = ICode;
@@ -272,7 +281,8 @@ extern "C" {
     MotherVy_dep    = MotherVy;
     MotherVz_dep    = MotherVz;              
 
-    if(first3){
+    // Create branches for DepEvents tree if not already created
+    if(depevents_flag){
       DepEvents->Branch("NCase",      &NCase_dep);
       DepEvents->Branch("RegionID",   &RegionID_dep);
       DepEvents->Branch("ICode",      &ICode_dep);
@@ -280,21 +290,11 @@ extern "C" {
       DepEvents->Branch("ETot",       &ETot_dep);
       DepEvents->Branch("P",          &P_dep);
       DepEvents->Branch("Vx",         &Vx_dep);
-      DepEvents->Branch("Vy",         &Vy_dep);
-      DepEvents->Branch("Vz",         &Vz_dep);
-      DepEvents->Branch("Cx",         &Cx_dep);
-      DepEvents->Branch("Cy",         &Cy_dep);
-      DepEvents->Branch("Cz",         &Cz_dep);
-      DepEvents->Branch("Weight1",    &Weight1_dep);
-      DepEvents->Branch("Weight2",    &Weight2_dep);
-      DepEvents->Branch("MotherID",   &MotherID_dep);
-      DepEvents->Branch("ProcessID",  &ProcessID_dep);
-      DepEvents->Branch("MotherETot", &MotherETot_dep);
       DepEvents->Branch("MotherVx",   &MotherVx_dep);
       DepEvents->Branch("MotherVy",   &MotherVy_dep);
       DepEvents->Branch("MotherVz",   &MotherVz_dep);
 
-      first3 = false;
+      depevents_flag = false;
     }
 
 
@@ -333,7 +333,7 @@ extern "C" {
     MotherID_usd    = MotherID;
     MotherETot_usd  = MotherETot;            
 
-    if(first4){
+    if(usdevents_flag){
       USDEvents->Branch("NCase",      &NCase_usd);
       USDEvents->Branch("RegionID",   &RegionID_usd);
       USDEvents->Branch("ICode",      &ICode_usd);
@@ -350,7 +350,7 @@ extern "C" {
       USDEvents->Branch("MotherID",   &MotherID_usd);
       USDEvents->Branch("MotherETot", &MotherETot_usd);
 
-      first4 = false;
+      usdevents_flag = false;
     }
 
 
