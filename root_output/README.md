@@ -36,12 +36,14 @@ Add the following cards to the input file (refer to the [FLUKA manual](https://f
     `rfluka -M 1 -e RootFlukaExecutables/rootfluka example.inp`
 
 ### Utilities
-1. Modify the variable `makefile_dir` inside the file `compilerf.sh` to point to the directory where FlukaROOTOutput was cloned.
+1. Export the directory containing the Makefile on your shell (or at your `.*rc`) to 'FLUKA_ROOT'.
+    Example:
+    `export FLUKA_ROOT="this/dir"`
 2. Source `compilerf.sh` on your shell (or at your `.*rc`).
     For `zsh`:
     `source path_to_repo/compilerf.sh`
 
-This add several functions:
+This will add several functions to your shell:
 
 - `compilerf`: this permits to compile routines while in another directory and save the executable in the default directory (`path_to_repo/RootFlukaExecutables`).
     Usage:
