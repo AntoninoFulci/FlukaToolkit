@@ -108,6 +108,8 @@ extern "C" {
 
     // Create ROOT file and trees
     RootFile  = new TFile("dump.root","recreate");
+    RootFile->SetCompressionSettings(207);
+
     Source    = new TTree("Source", "Particles");
     Events    = new TTree("Events", "Particles");
     DepEvents = new TTree("DepEvents", "Particles");
