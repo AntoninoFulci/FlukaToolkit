@@ -42,7 +42,8 @@ ifeq ($(OS),Darwin)
 endif
 
 # Compiler and linker settings
-CXX      = g++
+# CXX      = g++
+CXX      = clang
 CXXFLAGS = -O -Wall -fPIC
 LDFLAGS  = -O $(SYS_LDFLAGS)
 SOFLAGS  = -shared
