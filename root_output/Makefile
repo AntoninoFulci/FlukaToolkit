@@ -72,7 +72,8 @@ $(OUTPUT_DIR):
 	@mkdir -p $(OUTPUT_DIR)
 
 # Build FluLib.o
-FluLib.o: FluLib.cpp
+# FluLib.o: FluLib.cpp
+FluLibRNTuple.o: FluLibRNTuple.cpp
 	@printf "Generating Library $@...\n"
 	$(CXX) -c $< $(ROOTCFLAGS)
 
@@ -82,7 +83,7 @@ FluLib.o: FluLib.cpp
 	$(FLUKA)/bin/fff $<
 
 # Main executable placed in RootFlukaExecutables/
-$(OUTPUT_DIR)/$(NAME): $(OBJS) FluLib.$(ObjSuf)
+$(OUTPUT_DIR)/$(NAME): $(OBJS) FluLibRNTuple.$(ObjSuf)
 	@printf "Compiling executable $(FULL_OUTPUT_PATH)/$(NAME)...\n"
 	gfortran -o $@ -fuse-ld=bfd $(SYS_LDFLAGS) $^ $(LIBS)
 
