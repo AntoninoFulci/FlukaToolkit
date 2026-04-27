@@ -6,6 +6,14 @@ FULL_OUTPUT_PATH = $(shell pwd)/$(OUTPUT_DIR)
 # Objects
 OBJS ?= usrini.o usrout.o mgdraw.o
 
+# Feature toggle for FluLib (0 = FluLib.cpp [default], 1 = FluLibRNTuple.cpp)
+USE_RNTUPLE ?= 0
+ifeq ($(USE_RNTUPLE), 1)
+	FLULIB_BASE = FluLibRNTuple
+else
+	FLULIB_BASE = FluLib
+endif
+
 # OS and Architecture detection
 OS   := $(shell uname)
 ARCH := $(shell uname -m)
@@ -71,9 +79,8 @@ all: $(OUTPUT_DIR) $(OUTPUT_DIR)/$(NAME)
 $(OUTPUT_DIR):
 	@mkdir -p $(OUTPUT_DIR)
 
-# Build FluLib.o
-# FluLib.o: FluLib.cpp
-FluLibRNTuple.o: FluLibRNTuple.cpp
+# Build the selected FluLib object
+$(FLULIB_BASE).$(ObjSuf): $(FLULIB_BASE).$(SrcSuf)
 	@printf "Generating Library $@...\n"
 	$(CXX) -c $< $(ROOTCFLAGS)
 
@@ -83,7 +90,7 @@ FluLibRNTuple.o: FluLibRNTuple.cpp
 	$(FLUKA)/bin/fff $<
 
 # Main executable placed in RootFlukaExecutables/
-$(OUTPUT_DIR)/$(NAME): $(OBJS) FluLibRNTuple.$(ObjSuf)
+$(OUTPUT_DIR)/$(NAME): $(OBJS) $(FLULIB_BASE).$(ObjSuf)
 	@printf "Compiling executable $(FULL_OUTPUT_PATH)/$(NAME)...\n"
 	gfortran -o $@ -fuse-ld=bfd $(SYS_LDFLAGS) $^ $(LIBS)
 

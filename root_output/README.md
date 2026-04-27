@@ -1,120 +1,159 @@
 # FlukaROOTOutput
 
-With this code is possibile to compile and executable that produces a FLUKA output in ROOT format. The code is adapted and simplified from here https://fluka-forum.web.cern.ch/t/saving-the-output-as-root-file/2361 and here http://www.fluka.org/fluka.php?id=examples&sub=example3.
+This project allows you to compile an executable that produces FLUKA output directly in ROOT format. The code is adapted and simplified from discussions on the[FLUKA Forum](https://fluka-forum.web.cern.ch/t/saving-the-output-as-root-file/2361) and the [official FLUKA examples](http://www.fluka.org/fluka.php?id=examples&sub=example3).
 
-![alt text](ExampleROOTFiles.png)
+![Example ROOT Files](ExampleROOTFiles.png)
 
-The Makefile compile a C++ file called `Flulib.cpp` that contains all the variables needed to save almost everything inside `mgdraw.f`. The Makefile compile the routines using FLUKA `fff` tool. By default it will compile using all the optional FLUKA libraries, consider deactivating them if not needed. It also contains various fixes for MacOs, considering removing them when unecessary.
+The `Makefile` compiles a C++ library containing all the variables and functions needed to save data inside `mgdraw.f`. **It now supports two ROOT data formats:**
+- `FluLib.cpp` (Default): Saves data using the standard ROOT `TTree` structure.
+- `FluLibRNTuple.cpp`: Saves data using the modern, high-performance ROOT `RNTuple` structure.
 
-Tested and working with `ROOT 6.32.02` and `FLUKA 4-4.1` compiled with `MacPorts gcc12.4.0_1` on `Darwin 23.6.0 arm64 (M1)`.
+The routines are compiled using the FLUKA `fff` tool. By default, it compiles using all optional FLUKA libraries (consider deactivating them in the Makefile if not needed). It also contains various linker fixes for macOS.
 
-### Structure of the produced ROOT file
+*Tested and working with `ROOT 6.38.04` and `FLUKA 4-5.1` compiled with `MacPorts gcc14.3.0_0` on `Darwin 25.4.0 arm64 (M4 Pro)`.*
 
-The library writes a file called `dump.root` containing several `TTree` objects:
+---
 
-- **`RunSummary` (`SimulationSummary`)**
+### Structure of the Produced ROOT File
 
-  - Stores run‑level information.
-  - Branches and types:
-    - `StartTime` (`std::time_t`, saved as integer) – timestamp when the simulation started.
-    - `TotEvents` (`Int_t`) – total number of events processed.
-    - `AvgTime` (`Double_t`) – average time per event.
-    - `TotTime` (`Double_t`) – total simulation time.
-- **`Source`** – primary particle source information (one entry per primary).
+Depending on your compilation choice, the library writes a file called `dump.root` containing either `TTree` or `RNTuple` objects. The data structure is organized as follows:
 
-  - Branches and types (all created the first time `sourcefill` is called):
-    - `NCase` (`Int_t`) – event / primary index.
-    - `ParticleID` (`Int_t`) – FLUKA particle code.
-    - `EKin`, `P` (`Double_t`) – kinetic energy and momentum.
-    - `Vx`, `Vy`, `Vz` (`Double_t`) – position of the source.
-    - `Cx`, `Cy`, `Cz` (`Double_t`) – direction cosines.
-    - `Weight` (`Double_t`) – statistical weight.
-- **`Events`** – surface crossings / transport events.
+* **`RunSummary` (`SimulationSummary`)**
+  * Stores run‑level information.
+  * **Branches:**
+    * `StartTime` (`std::time_t`, saved as integer) – Timestamp when the simulation started.
+    * `TotEvents` (`Int_t`) – Total number of events processed.
+    * `AvgTime` (`Double_t`) – Average time per event.
+    * `TotTime` (`Double_t`) – Total simulation time.
 
-  - Branches and types (created on first `treefill`):
-    - `NCase`, `SurfaceID`, `ParticleID` (`Int_t`) – event index, surface identifier, FLUKA particle code.
-    - `ETot`, `P` (`Double_t`) – total energy and momentum.
-    - `Vx`, `Vy`, `Vz` (`Double_t`) – interaction / tracking position.
-    - `Cx`, `Cy`, `Cz` (`Double_t`) – direction cosines.
-    - `Weight1`, `Weight2` (`Double_t`) – transport / scoring weights.
-    - `MotherID`, `ProcessID` (`Int_t`) – parent track ID and process code.
-    - `MotherETot` (`Double_t`) – total energy of the parent.
-    - `MotherVx`, `MotherVy`, `MotherVz` (`Double_t`) – position of the parent interaction.
-    - `UniqueID` (`Double_t`) – unique identifier for the step or track.
-- **`DepEvents`** – energy‑deposition events (subset of FLUKA `mgdraw` information).
+* **`Source`** – Primary particle source information (one entry per primary, created on the first `sourcefill` call).
+  * **Branches:**
+    * `NCase` (`Int_t`) – Event / primary index.
+    * `ParticleID` (`Int_t`) – FLUKA particle code.
+    * `EKin`, `P` (`Double_t`) – Kinetic energy and momentum.
+    * `Vx`, `Vy`, `Vz` (`Double_t`) – Position of the source.
+    * `Cx`, `Cy`, `Cz` (`Double_t`) – Direction cosines.
+    * `Weight` (`Double_t`) – Statistical weight.
 
-  - Branches and types (created on first `depfill`):
-    - `NCase` (`Int_t`) – event index.
-    - `RegionID` (`Int_t`) – region identifier.
-    - `ICode` (`Int_t`) – deposition / interaction code.
-    - `ParticleID` (`Int_t`) – FLUKA particle code.
-    - `ETot`, `P` (`Double_t`) – total energy and momentum at deposition.
-    - `Vx`, `Vy`, `Vz` (`Double_t`) – position of the deposition.
-    - `Cx`, `Cy`, `Cz` (`Double_t`) – direction cosines.
-    - `Weight1`, `Weight2` (`Double_t`) – statistical weights.
-    - `MotherID`, `ProcessID` (`Int_t`) – parent track and process codes.
-    - `MotherETot` (`Double_t`) – total energy of the parent.
-    - `MotherVx`, `MotherVy`, `MotherVz` (`Double_t`) – position of the parent interaction.
-- **`USDEvents`** – events from the `USERDUMP` / USDRAW‑related routines.
+* **`Events`** – Surface crossings / transport events (created on the first `treefill` call).
+  * **Branches:**
+    * `NCase`, `SurfaceID`, `ParticleID` (`Int_t`) – Event index, surface identifier, FLUKA particle code.
+    * `ETot`, `P` (`Double_t`) – Total energy and momentum.
+    * `Vx`, `Vy`, `Vz` (`Double_t`) – Interaction / tracking position.
+    * `Cx`, `Cy`, `Cz` (`Double_t`) – Direction cosines.
+    * `Weight1`, `Weight2` (`Double_t`) – Transport / scoring weights.
+    * `MotherID`, `ProcessID` (`Int_t`) – Parent track ID and process code.
+    * `MotherETot` (`Double_t`) – Total energy of the parent.
+    * `MotherVx`, `MotherVy`, `MotherVz` (`Double_t`) – Position of the parent interaction.
+    * `UniqueID` (`Double_t`) – Unique identifier for the step or track.
 
-  - Branches and types (created on first `usdfill`):
-    - `NCase` (`Int_t`) – event index.
-    - `RegionID` (`Int_t`) – region identifier.
-    - `ICode` (`Int_t`) – interaction / scoring code.
-    - `ParticleID` (`Int_t`) – FLUKA particle code.
-    - `EKin`, `P` (`Double_t`) – kinetic energy and momentum.
-    - `Vx`, `Vy`, `Vz` (`Double_t`) – position.
-    - `Cx`, `Cy`, `Cz` (`Double_t`) – direction cosines.
-    - `Weight` (`Double_t`) – statistical weight.
-    - `MotherID` (`Int_t`) – parent track ID.
-    - `MotherETot` (`Double_t`) – total energy of the parent.
+* **`DepEvents`** – Energy‑deposition events (subset of FLUKA `mgdraw` information, created on the first `depfill` call).
+  * **Branches:**
+    * `NCase`, `RegionID`, `ICode`, `ParticleID` (`Int_t`) – Event index, region, interaction/deposition code, and FLUKA particle code.
+    * `ETot`, `P` (`Double_t`) – Total energy and momentum at deposition.
+    * `Vx`, `Vy`, `Vz` (`Double_t`) – Position of the deposition.
+    * `Cx`, `Cy`, `Cz` (`Double_t`) – Direction cosines.
+    * `Weight1`, `Weight2` (`Double_t`) – Statistical weights.
+    * `MotherID`, `ProcessID` (`Int_t`) – Parent track and process codes.
+    * `MotherETot` (`Double_t`) – Total energy of the parent.
+    * `MotherVx`, `MotherVy`, `MotherVz` (`Double_t`) – Position of the parent interaction.
 
-All trees are written and the file is closed when `fileclose` is called at the end of the FLUKA run.
+* **`USDEvents`** – Events from the `USERDUMP` / USDRAW‑related routines (created on the first `usdfill` call).
+  * **Branches:**
+    * `NCase`, `RegionID`, `ICode`, `ParticleID` (`Int_t`).
+    * `EKin`, `P` (`Double_t`) – Kinetic energy and momentum.
+    * `Vx`, `Vy`, `Vz` (`Double_t`) – Position.
+    * `Cx`, `Cy`, `Cz` (`Double_t`) – Direction cosines.
+    * `Weight` (`Double_t`) – Statistical weight.
+    * `MotherID` (`Int_t`) – Parent track ID.
+    * `MotherETot` (`Double_t`) – Total energy of the parent.
+
+*All trees/ntuples are written and the file is closed automatically when `fileclose` is called at the end of the FLUKA run.*
+
+---
 
 ### Prerequisites
 
-- Install [FLUKA](https://fluka.cern/).
-- Install [ROOT](https://root.cern/).
+- [FLUKA](https://fluka.cern/) must be installed.
+- [ROOT](https://root.cern/) must be installed.
 
-Add the following cards to the input file (refer to the [FLUKA manual](https://flukafiles.web.cern.ch/manual/index.html)):
+You will need to add the following cards to your FLUKA input file (refer to the [FLUKA manual](https://flukafiles.web.cern.ch/manual/index.html)):
 
-1. `USRICALL`: empty
-2. `USROCALL`: empty
+1. `USRICALL`: (Leave empty)
+2. `USROCALL`: (Leave empty)
 3. `USERDUMP`:
-   1. W(1):100
-   2. W(2): unit number to use (i.e. 99)
-   3. W(3): what part of mgdraw to activate, usually `2` is enough
-   4. W(4): rembember to set it to `1` if you want to activate entry USDRAWS
+   * **WHAT(1):** `100`
+   * **WHAT(2):** Unit number to use (e.g., `99`)
+   * **WHAT(3):** What part of `mgdraw` to activate (usually `2` is enough)
+   * **WHAT(4):** Set to `1` if you want to activate `USDRAW` entries.
 
-- Then use the function defined in `Flulib.cpp` inside the correct routines. Refer to the files inside `ExampleRoutines` on how to use them.
+*Note: Use the functions defined in `FluLib.cpp` (or `FluLibRNTuple.cpp`) inside the correct FLUKA user routines. Refer to the files inside the `ExampleRoutines` folder for guidance.*
+
+---
 
 ### Usage
 
-1. Download the repo:
-   `gh repo clone AntoninoFulci/FlukaROOTOutput`
-2. Specifying the files to compile.
-   Either by command line:
-   `make NAME=executablename OBJS="mgdraw.o usrini.o usrout.o"`
-   or inside the Makefile, in that case:
-   `make`
-3. Run fluka with the executable:
-   `rfluka -M 1 -e RootFlukaExecutables/rootfluka example.inp`
+1. **Clone the repository:**
+   ```bash
+   gh repo clone AntoninoFulci/FlukaROOTOutput
+   cd FlukaROOTOutput
+   ```
+
+2. **Compile the executable:**
+   
+   To compile using the standard **`TTree`** output (`FluLib.cpp`):
+   ```bash
+   make
+   ```
+   
+   To compile using the modern **`RNTuple`** output (`FluLibRNTuple.cpp`):
+   ```bash
+   make USE_RNTUPLE=1
+   ```
+
+   *Optional:* You can specify a custom executable name and define which Fortran objects to compile directly from the command line:
+   ```bash
+   make NAME=myexecutable OBJS="mgdraw.o usrini.o usrout.o"
+   ```
+
+3. **Run FLUKA with the executable:**
+   ```bash
+   rfluka -M 1 -e RootFlukaExecutables/rootfluka example.inp
+   ```
+
+---
 
 ### Utilities
 
-1. Export the directory containing the Makefile on your shell (or at your `.*rc`) to 'FLUKA_ROOT'.
-   Example:
-   `export FLUKA_ROOT="this/dir"`
-2. Source `compilerf.sh` on your shell (or at your `.*rc`).
-   For `zsh`:
-   `source path_to_repo/compilerf.sh`
+To make compiling easier from any working directory, a bash script (`compilerf.sh`) is provided.
 
-This will add several functions to your shell:
+1. **Setup environment variables:** Add the directory containing the project Makefile to your shell configuration file (`~/.bashrc` or `~/.zshrc`):
+   ```bash
+   export FLUKA_ROOT="/path/to/FlukaROOTOutput"
+   ```
+2. **Source the script:** Load the helper functions into your shell:
+   ```bash
+   source /path/to/FlukaROOTOutput/compilerf.sh
+   ```
 
-- `compilerf`: this permits to compile routines while in another directory and save the executable in the default directory (`path_to_repo/RootFlukaExecutables`).
-  Usage:
-  `compilerf rootflukaname routine1.f routine2.f ecc.f`
-- `compilerf_clean`: attempt to clean the executable with the name passed from the default directory where it was compiled.
-  Usage:
-  `compilerf rootflukaname`
-- `compilerf_cleanall`:  clean the default directory of FlukaROOTOutput executables (`path_to_repo/RootFlukaExecutables`).
+**Available Commands:**
+
+* **`compilerf`**: Compiles routines from your current directory and saves the executable to the default `RootFlukaExecutables` folder.
+  * **Standard (TTree) Usage:** 
+    ```bash
+    compilerf myexecname routine1.f routine2.f
+    ```
+  * **RNTuple Usage (New):** Add the `--rntuple` flag to automatically compile against `FluLibRNTuple.cpp`.
+    ```bash
+    compilerf --rntuple myexecname routine1.f routine2.f
+    ```
+
+* **`compilerf_clean`**: Cleans the specific executable and its related objects.
+  ```bash
+  compilerf_clean myexecname
+  ```
+
+* **`compilerf_cleanall`**: Cleans the entire `RootFlukaExecutables` directory.
+  ```bash
+  compilerf_cleanall
+  ```

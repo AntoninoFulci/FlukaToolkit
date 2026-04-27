@@ -1,10 +1,28 @@
 #!/bin/bash
 
 makefile_dir=$FLUKA_ROOT
+
 # Define the function to call the Makefile from another directory
 compilerf() {
-    local name=$1  # First argument is the executable name (rootfluka)
-    shift          # Remove the first argument (name), leaving the .f files
+    local make_flags=""
+    
+    # Parse optional flags (like --rntuple)
+    while [[ "$1" == -* ]]; do
+        case "$1" in
+            --rntuple)
+                make_flags="USE_RNTUPLE=1"
+                shift # Shift past the flag
+                ;;
+            *)
+                echo "Error: Unknown option '$1'"
+                return 1
+                ;;
+        esac
+    done
+
+    # After shifting options, the next argument is the executable name
+    local name=$1  
+    shift          # Remove the executable name, leaving only the .f files
 
     # Collect the full paths of the .f files from the current directory
     local objs=""
@@ -14,8 +32,8 @@ compilerf() {
         objs="$objs $(pwd)/$obj_file"
     done
 
-    # Call the Makefile in the specified directory, passing the name and object files
-    make -C "$makefile_dir" NAME="$name" OBJS="$objs"
+    # Call the Makefile in the specified directory, passing the variables
+    make -C "$makefile_dir" NAME="$name" OBJS="$objs" $make_flags
 }
 
 compilerf_clean() {
@@ -24,6 +42,5 @@ compilerf_clean() {
 }
 
 compilerf_cleanall() {
-    local name=$1
     make -C "$makefile_dir" cleanall
 }
