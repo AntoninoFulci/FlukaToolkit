@@ -41,11 +41,11 @@ FLUKA_RQMDLIB 		:= $(shell fluka-config --rqmdlib)
 FLUKA_OPT_INTOBJS 	:= $(shell fluka-config --intobjs)
 
 # OS-specific linker flags
-SYS_LDFLAGS := -lz
+# SYS_LDFLAGS := -lz
 ifeq ($(OS),Darwin)
 	ifeq ($(ARCH),arm64)
-		export MACOSX_DEPLOYMENT_TARGET = 15.0
-		SYS_LDFLAGS += -ld_classic -lc++
+		export MACOSX_DEPLOYMENT_TARGET = 26.0
+		SYS_LDFLAGS += -lc++
 	endif
 endif
 
