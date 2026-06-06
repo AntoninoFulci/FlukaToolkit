@@ -123,11 +123,8 @@ extern "C" {
     ptrTotEvents = summaryModel->MakeField<int>("TotEvents");
     ptrAvgTime = summaryModel->MakeField<double>("AvgTime");
     ptrTotTime = summaryModel->MakeField<double>("TotTime");
-    printf("Created summary model with fields\n");
-
     // Create RNTuple writer for simulation summary
     SimulationSummaryWriter = ROOT::RNTupleWriter::Append(std::move(summaryModel), "SimulationSummary", *RootFile);
-    printf("Created SimulationSummaryWriter: %p\n", SimulationSummaryWriter.get());
 
     // Initialize the start time
     *ptrStartTime = std::time(nullptr);
@@ -148,8 +145,6 @@ extern "C" {
 
     // Create RNTuple writer for Source (use Append for subsequent RNTuples)
     SourceWriter = ROOT::RNTupleWriter::Append(std::move(sourceModel), "Source", *RootFile);
-    printf("Created SourceWriter: %p\n", SourceWriter.get());
-    // printf("Skipping SourceWriter creation for debugging\n");
 
     // Create RNTuple model for Events
     auto eventsModel = ROOT::RNTupleModel::Create();
@@ -176,7 +171,6 @@ extern "C" {
 
     // Create RNTuple writer for Events
     EventsWriter = ROOT::RNTupleWriter::Append(std::move(eventsModel), "Events", *RootFile);
-    printf("Created EventsWriter: %p\n", EventsWriter.get());
 
     // Create RNTuple model for DepEvents
     auto depEventsModel = ROOT::RNTupleModel::Create();
@@ -204,7 +198,6 @@ extern "C" {
 
     // Create RNTuple writer for DepEvents
     DepEventsWriter = ROOT::RNTupleWriter::Append(std::move(depEventsModel), "DepEvents", *RootFile);
-    // printf("Skipping DepEventsWriter creation for debugging\n");
 
     // Create RNTuple model for USDEvents
     auto usdEventsModel = ROOT::RNTupleModel::Create();
@@ -226,7 +219,6 @@ extern "C" {
 
     // Create RNTuple writer for USDEvents
     USDEventsWriter = ROOT::RNTupleWriter::Append(std::move(usdEventsModel), "USDEvents", *RootFile);
-    // printf("Skipping USDEventsWriter creation for debugging\n");
   }
 }
 
@@ -266,7 +258,6 @@ extern "C" {
     // Fill the Source RNTuple
     if (SourceWriter) {
       SourceWriter->Fill();
-      printf("Filled Source RNTuple entry: NCase=%d, ParticleID=%d\n", NCase, ParticleID);
     } else {
       printf("ERROR: SourceWriter is null!\n");
     }
@@ -288,8 +279,6 @@ extern "C" {
                 Double_t &MotherETot, Double_t &MotherVx, Double_t &MotherVy, Double_t &MotherVz,
                 Double_t &UniqueID
                 ){
-
-    printf(" inside\n");
 
     // Check if field pointers are valid
     if (!ptrNCase_vnt) {
@@ -322,7 +311,6 @@ extern "C" {
     // Fill the Events RNTuple
     if (EventsWriter) {
       EventsWriter->Fill();
-      printf("Filled Events RNTuple entry: NCase=%d, SurfaceID=%d, ParticleID=%d\n", NCase, SurfaceID, ParticleID);
     } else {
       printf("ERROR: EventsWriter is null!\n");
     }
@@ -433,17 +421,16 @@ extern "C" {
     // Fill the simulation summary entry
     if (SimulationSummaryWriter) {
       SimulationSummaryWriter->Fill();
-      printf("Filled SimulationSummary entry\n");
     } else {
       printf("ERROR: SimulationSummaryWriter is null!\n");
     }
 
     // Commit all datasets by resetting the writers
     SimulationSummaryWriter.reset();
-    SourceWriter.reset();  // Commented out for debugging
+    SourceWriter.reset();
     EventsWriter.reset();
-    DepEventsWriter.reset();  // Commented out for debugging
-    USDEventsWriter.reset();  // Commented out for debugging
+    DepEventsWriter.reset();
+    USDEventsWriter.reset();
 
     // Close and clean up the file
     if (RootFile) {

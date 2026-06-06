@@ -80,7 +80,6 @@ double MotherETot_dep;
 double MotherVx_dep;
 double MotherVy_dep;
 double MotherVz_dep;
-double UniqueID_dep;
 
 // Variables for USDEvents tree
 int    NCase_usd;
@@ -292,6 +291,16 @@ extern "C" {
       DepEvents->Branch("ETot",       &ETot_dep);
       DepEvents->Branch("P",          &P_dep);
       DepEvents->Branch("Vx",         &Vx_dep);
+      DepEvents->Branch("Vy",         &Vy_dep);
+      DepEvents->Branch("Vz",         &Vz_dep);
+      DepEvents->Branch("Cx",         &Cx_dep);
+      DepEvents->Branch("Cy",         &Cy_dep);
+      DepEvents->Branch("Cz",         &Cz_dep);
+      DepEvents->Branch("Weight1",    &Weight1_dep);
+      DepEvents->Branch("Weight2",    &Weight2_dep);
+      DepEvents->Branch("MotherID",   &MotherID_dep);
+      DepEvents->Branch("ProcessID",  &ProcessID_dep);
+      DepEvents->Branch("MotherETot", &MotherETot_dep);
       DepEvents->Branch("MotherVx",   &MotherVx_dep);
       DepEvents->Branch("MotherVy",   &MotherVy_dep);
       DepEvents->Branch("MotherVz",   &MotherVz_dep);

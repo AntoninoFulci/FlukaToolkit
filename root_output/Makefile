@@ -80,7 +80,7 @@ $(OUTPUT_DIR):
 	@mkdir -p $(OUTPUT_DIR)
 
 # Build the selected FluLib object
-$(FLULIB_BASE).$(ObjSuf): $(FLULIB_BASE).$(SrcSuf)
+$(FLULIB_BASE).$(ObjSuf): src/$(FLULIB_BASE).$(SrcSuf)
 	@printf "Generating Library $@...\n"
 	$(CXX) -c $< $(ROOTCFLAGS)
 

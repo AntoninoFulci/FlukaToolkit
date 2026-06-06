@@ -2,7 +2,7 @@
 
 This project allows you to compile an executable that produces FLUKA output directly in ROOT format. The code is adapted and simplified from discussions on the[FLUKA Forum](https://fluka-forum.web.cern.ch/t/saving-the-output-as-root-file/2361) and the [official FLUKA examples](http://www.fluka.org/fluka.php?id=examples&sub=example3).
 
-![Example ROOT Files](ExampleROOTFiles.png)
+![Example ROOT Files](assets/ExampleROOTFiles.png)
 
 The `Makefile` compiles a C++ library containing all the variables and functions needed to save data inside `mgdraw.f`. **It now supports two ROOT data formats:**
 - `FluLib.cpp` (Default): Saves data using the standard ROOT `TTree` structure.
@@ -10,7 +10,7 @@ The `Makefile` compiles a C++ library containing all the variables and functions
 
 The routines are compiled using the FLUKA `fff` tool. By default, it compiles using all optional FLUKA libraries (consider deactivating them in the Makefile if not needed). It also contains various linker fixes for macOS.
 
-*Tested and working with `ROOT 6.38.04` and `FLUKA 4-5.1` compiled with `MacPorts gcc14.3.0_0` on `Darwin 25.4.0 arm64 (M4 Pro)`.*
+*Tested and working with `ROOT 6.38.04` and `FLUKA 4-5.2` compiled with `MacPorts gcc14.3.0_0` on `Darwin 25.4.0 arm64 (M4 Pro)`.*
 
 ---
 
@@ -87,7 +87,7 @@ You will need to add the following cards to your FLUKA input file (refer to the 
    * **WHAT(3):** What part of `mgdraw` to activate (usually `2` is enough)
    * **WHAT(4):** Set to `1` if you want to activate `USDRAW` entries.
 
-*Note: Use the functions defined in `FluLib.cpp` (or `FluLibRNTuple.cpp`) inside the correct FLUKA user routines. Refer to the files inside the `ExampleRoutines` folder for guidance.*
+*Note: Use the functions defined in `src/FluLib.cpp` (or `src/FluLibRNTuple.cpp`) inside the correct FLUKA user routines. Refer to the files inside the `examples/` folder for guidance.*
 
 ---
 
@@ -133,7 +133,7 @@ To make compiling easier from any working directory, a bash script (`compilerf.s
    ```
 2. **Source the script:** Load the helper functions into your shell:
    ```bash
-   source /path/to/FlukaROOTOutput/compilerf.sh
+   source /path/to/FlukaROOTOutput/scripts/compilerf.sh
    ```
 
 **Available Commands:**
