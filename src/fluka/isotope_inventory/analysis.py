@@ -1,4 +1,5 @@
 from __future__ import annotations
+import re
 import subprocess
 from pathlib import Path
 from typing import Optional
@@ -10,7 +11,9 @@ from .excel import write_activity_workbook
 
 def resolve_rnc(directory: Path, unit: int, executable: str) -> Optional[Path]:
     """Return the .rnc file for `unit`, post-processing raw files if needed."""
-    existing = sorted(directory.glob(f"*{unit}*.rnc"))
+    candidates = sorted(directory.glob("*.rnc"))
+    pat = re.compile(rf"(?<!\d){unit}(?!\d)")
+    existing = [p for p in candidates if pat.search(p.name)]
     if existing:
         if len(existing) > 1:
             names = ", ".join(p.name for p in existing)

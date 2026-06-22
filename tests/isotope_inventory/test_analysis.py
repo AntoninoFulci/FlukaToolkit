@@ -61,3 +61,22 @@ def test_run_analysis_no_data_writes_nothing(tmp_path, capsys):
     A.run_analysis(cfg)
     assert not (tmp_path / "isotopes.xlsx").exists()
     assert "no data" in capsys.readouterr().out.lower()
+
+
+def test_resolve_rnc_ignores_substring_unit_collision(tmp_path):
+    # unit 2 must NOT match merged_21.rnc / merged_22.rnc (substring "2")
+    (tmp_path / "merged_21.rnc").write_bytes(b"")
+    (tmp_path / "merged_22.rnc").write_bytes(b"")
+    with patch.object(A.subprocess, "run") as mock_run:
+        result = A.resolve_rnc(tmp_path, 2, "usrsuw")
+    assert result is None          # no raw files for unit 2 either
+    mock_run.assert_not_called()
+
+
+def test_resolve_rnc_matches_exact_unit_among_collisions(tmp_path):
+    (tmp_path / "merged_2.rnc").write_bytes(b"")
+    (tmp_path / "merged_21.rnc").write_bytes(b"")
+    with patch.object(A.subprocess, "run") as mock_run:
+        result = A.resolve_rnc(tmp_path, 2, "usrsuw")
+    assert result == tmp_path / "merged_2.rnc"
+    mock_run.assert_not_called()
