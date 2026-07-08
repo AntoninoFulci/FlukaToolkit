@@ -2,7 +2,7 @@ from argparse import ArgumentParser, Namespace
 
 import yaml
 
-from backends.base import QueueBackend
+from fluka.queue.backends.base import QueueBackend
 
 
 def load_yaml_config(path: str, backends: dict[str, QueueBackend]) -> Namespace:

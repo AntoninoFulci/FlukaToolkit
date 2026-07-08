@@ -8,7 +8,7 @@ from rich import box
 from rich.console import Console
 from rich.table import Table
 
-from core.fluka import parse_randomiz
+from fluka.queue.core.fluka import parse_randomiz
 
 
 def scan_seeds(root: Path) -> dict[int, list[Path]]:

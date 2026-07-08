@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from collect_results import scan_all, execute_plan, display_plan, MovePlan, FileMove, EmptyJob
+from fluka.queue.collect_results import scan_all, execute_plan, display_plan, MovePlan, FileMove, EmptyJob
 
 SCRIPT = Path(__file__).resolve().parent.parent / "collect_results.py"
 

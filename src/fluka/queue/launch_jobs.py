@@ -7,12 +7,12 @@ from argparse import ArgumentParser, Namespace, RawTextHelpFormatter
 from pathlib import Path
 from typing import TypedDict
 
-from backends.base import JobInfo, QueueBackend
-from backends.htcondor import HTCondorBackend
-from backends.lsf import LSFBackend
-from backends.slurm import SlurmBackend
-from backends.ts import TSBackend
-from core import config, display, filesystem, fluka
+from fluka.queue.backends.base import JobInfo, QueueBackend
+from fluka.queue.backends.htcondor import HTCondorBackend
+from fluka.queue.backends.lsf import LSFBackend
+from fluka.queue.backends.slurm import SlurmBackend
+from fluka.queue.backends.ts import TSBackend
+from fluka.queue.core import config, display, filesystem, fluka
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 

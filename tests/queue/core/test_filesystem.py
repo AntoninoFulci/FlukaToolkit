@@ -1,6 +1,6 @@
 import os
 import pytest
-from core.filesystem import setup_output_dir, setup_job_dir
+from fluka.queue.core.filesystem import setup_output_dir, setup_job_dir
 
 
 def test_setup_output_dir_creates_directory(tmp_path, monkeypatch):

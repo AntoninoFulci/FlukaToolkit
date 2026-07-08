@@ -4,9 +4,9 @@ import yaml as _yaml
 from argparse import Namespace
 from unittest.mock import patch
 
-from backends.slurm import SlurmBackend
-from backends.ts import TSBackend
-from launch_jobs import _apply_benchmark_overrides
+from fluka.queue.backends.slurm import SlurmBackend
+from fluka.queue.backends.ts import TSBackend
+from fluka.queue.launch_jobs import _apply_benchmark_overrides
 
 
 def test_apply_quick_overrides_njobs_nprim_queue():
@@ -67,7 +67,7 @@ def test_benchmark_quick_single_yaml_creates_2_job_dirs(tmp_path, monkeypatch):
     with patch("core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local")), \
          patch("core.display.confirm", return_value=True):
         import importlib
-        import launch_jobs
+        from fluka.queue import launch_jobs
         importlib.reload(launch_jobs)
         launch_jobs.main()
 
@@ -90,7 +90,7 @@ def test_benchmark_extensive_single_yaml_creates_5_job_dirs(tmp_path, monkeypatc
     with patch("core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local")), \
          patch("core.display.confirm", return_value=True):
         import importlib
-        import launch_jobs
+        from fluka.queue import launch_jobs
         importlib.reload(launch_jobs)
         launch_jobs.main()
 
@@ -112,7 +112,7 @@ def test_benchmark_quick_missing_priority_queue_exits(tmp_path, monkeypatch):
 
     with patch("core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local")):
         import importlib
-        import launch_jobs
+        from fluka.queue import launch_jobs
         importlib.reload(launch_jobs)
         with pytest.raises(SystemExit):
             launch_jobs.main()
@@ -122,7 +122,7 @@ def test_benchmark_wrong_arg_count_exits():
     sys.argv = ["launch_jobs.py", "benchmark", "quick"]  # missing target
 
     import importlib
-    import launch_jobs
+    from fluka.queue import launch_jobs
     importlib.reload(launch_jobs)
     with pytest.raises(SystemExit):
         launch_jobs.main()
@@ -142,7 +142,7 @@ def test_benchmark_unknown_mode_exits(tmp_path, monkeypatch):
     with patch("core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local")), \
          patch("core.display.confirm", return_value=True):
         import importlib
-        import launch_jobs
+        from fluka.queue import launch_jobs
         importlib.reload(launch_jobs)
         with pytest.raises(SystemExit):
             launch_jobs.main()
@@ -164,7 +164,7 @@ def test_benchmark_folder_mode_extensive(tmp_path, monkeypatch):
     with patch("core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local")), \
          patch("core.display.confirm", return_value=True):
         import importlib
-        import launch_jobs
+        from fluka.queue import launch_jobs
         importlib.reload(launch_jobs)
         launch_jobs.main()
 
@@ -191,7 +191,7 @@ def test_benchmark_folder_mode_cancelled(tmp_path, monkeypatch, caplog):
          patch("core.display.confirm", return_value=False), \
          caplog.at_level(logging.INFO):
         import importlib
-        import launch_jobs
+        from fluka.queue import launch_jobs
         importlib.reload(launch_jobs)
         launch_jobs.main()
 

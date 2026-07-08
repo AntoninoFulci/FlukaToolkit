@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 def test_no_subcommand_exits(capsys):
     sys.argv = ["launch_jobs.py"]
-    import launch_jobs
+    from fluka.queue import launch_jobs
     import importlib
     importlib.reload(launch_jobs)
     with pytest.raises(SystemExit):
@@ -15,7 +15,7 @@ def test_no_subcommand_exits(capsys):
 
 def test_invalid_extension_exits():
     sys.argv = ["launch_jobs.py", "ts", "-f", "input.txt", "-n", "1"]
-    import launch_jobs
+    from fluka.queue import launch_jobs
     import importlib
     importlib.reload(launch_jobs)
     with pytest.raises(SystemExit):
@@ -31,7 +31,7 @@ def test_ts_dry_run_creates_job_dirs(tmp_path, monkeypatch):
 
     with patch("core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local/fluka")), \
          patch("core.display.confirm", return_value=True):
-        import launch_jobs
+        from fluka.queue import launch_jobs
         import importlib
         importlib.reload(launch_jobs)
         launch_jobs.main()
@@ -50,7 +50,7 @@ def test_lsf_dry_run_creates_sh_files(tmp_path, monkeypatch):
 
     with patch("core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local/fluka")), \
          patch("core.display.confirm", return_value=True):
-        import launch_jobs
+        from fluka.queue import launch_jobs
         import importlib
         importlib.reload(launch_jobs)
         launch_jobs.main()
@@ -74,7 +74,7 @@ def test_yaml_mode_ts_dry_run(tmp_path, monkeypatch):
 
     with patch("core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local/fluka")), \
          patch("core.display.confirm", return_value=True):
-        import launch_jobs
+        from fluka.queue import launch_jobs
         import importlib
         importlib.reload(launch_jobs)
         launch_jobs.main()
@@ -98,7 +98,7 @@ def test_yaml_mode_lsf_dry_run(tmp_path, monkeypatch):
 
     with patch("core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local/fluka")), \
          patch("core.display.confirm", return_value=True):
-        import launch_jobs
+        from fluka.queue import launch_jobs
         import importlib
         importlib.reload(launch_jobs)
         launch_jobs.main()
@@ -114,7 +114,7 @@ def test_yaml_mode_invalid_input_extension_exits(tmp_path):
     sys.argv = ["launch_jobs.py", str(cfg)]
 
     with patch("core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local/fluka")):
-        import launch_jobs
+        from fluka.queue import launch_jobs
         import importlib
         importlib.reload(launch_jobs)
         with pytest.raises(SystemExit):
@@ -127,7 +127,7 @@ def test_yaml_mode_missing_backend_exits(tmp_path):
 
     sys.argv = ["launch_jobs.py", str(cfg)]
 
-    import launch_jobs
+    from fluka.queue import launch_jobs
     import importlib
     importlib.reload(launch_jobs)
     with pytest.raises(SystemExit):
@@ -149,7 +149,7 @@ def test_folder_mode_runs_all_yamls(tmp_path, monkeypatch):
 
     with patch("core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local/fluka")), \
          patch("core.display.confirm", return_value=True):
-        import launch_jobs
+        from fluka.queue import launch_jobs
         import importlib
         importlib.reload(launch_jobs)
         launch_jobs.main()
@@ -165,7 +165,7 @@ def test_folder_mode_empty_dir_warns(tmp_path, caplog):
 
     sys.argv = ["launch_jobs.py", str(configs_dir)]
 
-    import launch_jobs
+    from fluka.queue import launch_jobs
     import importlib
     importlib.reload(launch_jobs)
 
@@ -194,7 +194,7 @@ def test_folder_mode_skips_invalid_continues_valid(tmp_path, monkeypatch, caplog
 
     with patch("core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local/fluka")), \
          patch("core.display.confirm", return_value=True):
-        import launch_jobs
+        from fluka.queue import launch_jobs
         import importlib
         importlib.reload(launch_jobs)
         import logging
@@ -223,7 +223,7 @@ def test_folder_mode_cancelled_by_user(tmp_path, monkeypatch, caplog):
     with patch("core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local/fluka")), \
          patch("core.display.confirm", return_value=False), \
          caplog.at_level(logging.INFO):
-        import launch_jobs
+        from fluka.queue import launch_jobs
         import importlib
         importlib.reload(launch_jobs)
         launch_jobs.main()
@@ -234,8 +234,8 @@ def test_folder_mode_cancelled_by_user(tmp_path, monkeypatch, caplog):
 
 
 def test_execute_jobs_aborts_on_duplicate_seeds(tmp_path, monkeypatch):
-    import launch_jobs
-    from core import fluka
+    from fluka.queue import launch_jobs
+    from fluka.queue.core import fluka
     from argparse import Namespace
 
     submitted = []

@@ -4,11 +4,11 @@ from argparse import Namespace
 from pathlib import Path
 
 # FlukaQueueSub (installed via submodule, editable)
-from backends.base import JobInfo
-from backends.slurm import SlurmBackend
-from backends.lsf import LSFBackend
-from backends.htcondor import HTCondorBackend
-from backends.ts import TSBackend
+from fluka.queue.backends.base import JobInfo
+from fluka.queue.backends.slurm import SlurmBackend
+from fluka.queue.backends.lsf import LSFBackend
+from fluka.queue.backends.htcondor import HTCondorBackend
+from fluka.queue.backends.ts import TSBackend
 
 BACKENDS = {
     "ts": TSBackend,

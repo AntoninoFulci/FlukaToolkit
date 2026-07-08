@@ -1,5 +1,5 @@
-import launch_jobs
-from core import fluka
+from fluka.queue import launch_jobs
+from fluka.queue.core import fluka
 
 
 def test_execute_jobs_allocates_unique_seeds(tmp_path, monkeypatch):

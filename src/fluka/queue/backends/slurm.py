@@ -3,9 +3,9 @@ import subprocess
 from argparse import ArgumentParser, Namespace
 from string import Template
 
-from backends.base import JobInfo, QueueBackend
-from core.display import COLORS
-from core.utils import parse_time_to_seconds
+from fluka.queue.backends.base import JobInfo, QueueBackend
+from fluka.queue.core.display import COLORS
+from fluka.queue.core.utils import parse_time_to_seconds
 
 _DEFAULT_QUEUE = "production"
 _MAX_TIME = "4-00:00:00"

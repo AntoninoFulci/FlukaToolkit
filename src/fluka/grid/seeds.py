@@ -1,7 +1,7 @@
 from __future__ import annotations
 from pathlib import Path
 
-from core.fluka import allocate_seed, parse_randomiz
+from fluka.queue.core.fluka import allocate_seed, parse_randomiz
 
 
 def scan_used_seeds(output_dir: Path) -> set[int]:

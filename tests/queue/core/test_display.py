@@ -1,5 +1,5 @@
 from unittest.mock import patch
-from core.display import confirm, COLORS, print_table
+from fluka.queue.core.display import confirm, COLORS, print_table
 
 
 def test_confirm_returns_true_on_yes():

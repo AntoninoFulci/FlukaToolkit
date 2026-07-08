@@ -2,8 +2,8 @@ import os
 import pytest
 from argparse import Namespace
 from unittest.mock import patch, MagicMock
-from backends.htcondor import HTCondorBackend
-from backends.base import JobInfo
+from fluka.queue.backends.htcondor import HTCondorBackend
+from fluka.queue.backends.base import JobInfo
 
 BACKEND = HTCondorBackend()
 

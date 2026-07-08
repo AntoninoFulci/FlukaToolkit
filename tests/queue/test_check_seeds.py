@@ -1,5 +1,5 @@
 from pathlib import Path
-from check_seeds import scan_seeds, has_duplicates, main
+from fluka.queue.check_seeds import scan_seeds, has_duplicates, main
 
 
 def _make_job(root: Path, parent: str, job: str, seed_line: str):

@@ -2,8 +2,8 @@ import os
 import pytest
 from argparse import Namespace
 from unittest.mock import patch
-from backends.slurm import SlurmBackend
-from backends.base import JobInfo
+from fluka.queue.backends.slurm import SlurmBackend
+from fluka.queue.backends.base import JobInfo
 
 BACKEND = SlurmBackend()
 

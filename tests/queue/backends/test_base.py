@@ -1,6 +1,6 @@
 import pytest
 from argparse import Namespace
-from backends.base import QueueBackend, JobInfo
+from fluka.queue.backends.base import QueueBackend, JobInfo
 
 
 class ConcreteBackend(QueueBackend):

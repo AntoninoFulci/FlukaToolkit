@@ -3,8 +3,8 @@ import os
 import pytest
 from argparse import Namespace
 from unittest.mock import patch, mock_open
-from backends.lsf import LSFBackend
-from backends.base import JobInfo
+from fluka.queue.backends.lsf import LSFBackend
+from fluka.queue.backends.base import JobInfo
 
 BACKEND = LSFBackend()
 

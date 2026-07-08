@@ -2,7 +2,7 @@ import os
 import pytest
 from pathlib import Path
 from unittest.mock import patch
-from core.fluka import generate_input, detect_fluka_path, parse_randomiz, allocate_seed, scan_existing_seeds
+from fluka.queue.core.fluka import generate_input, detect_fluka_path, parse_randomiz, allocate_seed, scan_existing_seeds
 
 
 def test_generate_input_renames_file(tmp_path):
@@ -162,7 +162,7 @@ def test_generate_input_uses_supplied_seed(tmp_path):
     assert "12345678" not in content
 
 
-from core.fluka import find_duplicate_seeds
+from fluka.queue.core.fluka import find_duplicate_seeds
 
 
 def test_find_duplicate_seeds_returns_only_shared(tmp_path):

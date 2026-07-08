@@ -1,8 +1,8 @@
 import pytest
 from argparse import Namespace
 from unittest.mock import patch
-from backends.ts import TSBackend
-from backends.base import JobInfo
+from fluka.queue.backends.ts import TSBackend
+from fluka.queue.backends.base import JobInfo
 
 BACKEND = TSBackend()
 

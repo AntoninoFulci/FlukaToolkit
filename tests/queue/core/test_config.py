@@ -10,8 +10,8 @@ def make_yaml(tmp_path, content: dict) -> str:
 
 
 def test_load_ts_minimal(tmp_path):
-    from core.config import load_yaml_config
-    from backends.ts import TSBackend
+    from fluka.queue.core.config import load_yaml_config
+    from fluka.queue.backends.ts import TSBackend
     backends = {"ts": TSBackend()}
     path = make_yaml(tmp_path, {"backend": "ts", "input": "sim.inp", "njobs": 5})
     args = load_yaml_config(path, backends)
@@ -24,8 +24,8 @@ def test_load_ts_minimal(tmp_path):
 
 
 def test_load_lsf_uses_backend_defaults(tmp_path):
-    from core.config import load_yaml_config
-    from backends.lsf import LSFBackend
+    from fluka.queue.core.config import load_yaml_config
+    from fluka.queue.backends.lsf import LSFBackend
     backends = {"lsf": LSFBackend()}
     path = make_yaml(tmp_path, {"backend": "lsf", "input": "sim.inp", "njobs": 1})
     args = load_yaml_config(path, backends)
@@ -36,8 +36,8 @@ def test_load_lsf_uses_backend_defaults(tmp_path):
 
 
 def test_load_lsf_overrides_defaults(tmp_path):
-    from core.config import load_yaml_config
-    from backends.lsf import LSFBackend
+    from fluka.queue.core.config import load_yaml_config
+    from fluka.queue.backends.lsf import LSFBackend
     backends = {"lsf": LSFBackend()}
     path = make_yaml(tmp_path, {
         "backend": "lsf", "input": "sim.inp", "njobs": 10,
@@ -51,8 +51,8 @@ def test_load_lsf_overrides_defaults(tmp_path):
 
 
 def test_load_slurm_defaults(tmp_path):
-    from core.config import load_yaml_config
-    from backends.slurm import SlurmBackend
+    from fluka.queue.core.config import load_yaml_config
+    from fluka.queue.backends.slurm import SlurmBackend
     backends = {"slurm": SlurmBackend()}
     path = make_yaml(tmp_path, {"backend": "slurm", "input": "sim.inp", "njobs": 1})
     args = load_yaml_config(path, backends)
@@ -62,8 +62,8 @@ def test_load_slurm_defaults(tmp_path):
 
 
 def test_dry_run_parsed(tmp_path):
-    from core.config import load_yaml_config
-    from backends.ts import TSBackend
+    from fluka.queue.core.config import load_yaml_config
+    from fluka.queue.backends.ts import TSBackend
     backends = {"ts": TSBackend()}
     path = make_yaml(tmp_path, {"backend": "ts", "input": "sim.inp", "njobs": 1, "dry_run": True})
     args = load_yaml_config(path, backends)
@@ -71,8 +71,8 @@ def test_dry_run_parsed(tmp_path):
 
 
 def test_custom_exe_parsed(tmp_path):
-    from core.config import load_yaml_config
-    from backends.ts import TSBackend
+    from fluka.queue.core.config import load_yaml_config
+    from fluka.queue.backends.ts import TSBackend
     backends = {"ts": TSBackend()}
     path = make_yaml(tmp_path, {
         "backend": "ts", "input": "sim.inp", "njobs": 1, "custom_exe": "/path/to/exe"
@@ -82,8 +82,8 @@ def test_custom_exe_parsed(tmp_path):
 
 
 def test_missing_backend_raises(tmp_path):
-    from core.config import load_yaml_config
-    from backends.ts import TSBackend
+    from fluka.queue.core.config import load_yaml_config
+    from fluka.queue.backends.ts import TSBackend
     backends = {"ts": TSBackend()}
     path = make_yaml(tmp_path, {"input": "sim.inp", "njobs": 1})
     with pytest.raises(ValueError, match="backend"):
@@ -91,8 +91,8 @@ def test_missing_backend_raises(tmp_path):
 
 
 def test_unknown_backend_raises(tmp_path):
-    from core.config import load_yaml_config
-    from backends.ts import TSBackend
+    from fluka.queue.core.config import load_yaml_config
+    from fluka.queue.backends.ts import TSBackend
     backends = {"ts": TSBackend()}
     path = make_yaml(tmp_path, {"backend": "unknown", "input": "sim.inp", "njobs": 1})
     with pytest.raises(ValueError, match="unknown"):
@@ -100,8 +100,8 @@ def test_unknown_backend_raises(tmp_path):
 
 
 def test_missing_input_raises(tmp_path):
-    from core.config import load_yaml_config
-    from backends.ts import TSBackend
+    from fluka.queue.core.config import load_yaml_config
+    from fluka.queue.backends.ts import TSBackend
     backends = {"ts": TSBackend()}
     path = make_yaml(tmp_path, {"backend": "ts", "njobs": 1})
     with pytest.raises(ValueError, match="input"):
@@ -109,8 +109,8 @@ def test_missing_input_raises(tmp_path):
 
 
 def test_missing_njobs_raises(tmp_path):
-    from core.config import load_yaml_config
-    from backends.ts import TSBackend
+    from fluka.queue.core.config import load_yaml_config
+    from fluka.queue.backends.ts import TSBackend
     backends = {"ts": TSBackend()}
     path = make_yaml(tmp_path, {"backend": "ts", "input": "sim.inp"})
     with pytest.raises(ValueError, match="njobs"):
@@ -118,8 +118,8 @@ def test_missing_njobs_raises(tmp_path):
 
 
 def test_load_htcondor_defaults(tmp_path):
-    from core.config import load_yaml_config
-    from backends.htcondor import HTCondorBackend
+    from fluka.queue.core.config import load_yaml_config
+    from fluka.queue.backends.htcondor import HTCondorBackend
     backends = {"condor": HTCondorBackend()}
     path = make_yaml(tmp_path, {"backend": "condor", "input": "sim.inp", "njobs": 1})
     args = load_yaml_config(path, backends)
@@ -134,8 +134,8 @@ def test_load_htcondor_defaults(tmp_path):
 
 
 def test_njobs_zero_raises(tmp_path):
-    from core.config import load_yaml_config
-    from backends.ts import TSBackend
+    from fluka.queue.core.config import load_yaml_config
+    from fluka.queue.backends.ts import TSBackend
     backends = {"ts": TSBackend()}
     path = make_yaml(tmp_path, {"backend": "ts", "input": "sim.inp", "njobs": 0})
     with pytest.raises(ValueError, match="njobs"):
@@ -143,8 +143,8 @@ def test_njobs_zero_raises(tmp_path):
 
 
 def test_input_wrong_extension_raises(tmp_path):
-    from core.config import load_yaml_config
-    from backends.ts import TSBackend
+    from fluka.queue.core.config import load_yaml_config
+    from fluka.queue.backends.ts import TSBackend
     backends = {"ts": TSBackend()}
     path = make_yaml(tmp_path, {"backend": "ts", "input": "sim.txt", "njobs": 1})
     with pytest.raises(ValueError, match=r"\.inp"):
