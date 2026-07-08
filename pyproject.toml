@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flukatoolkit"
+version = "0.1.0"
+description = "Unified FLUKA toolkit: grid generation, batch submission, isotope inventory, ROOT output"
+requires-python = ">=3.10"
+dependencies = [
+    "pyyaml>=6.0",
+    "pandas",
+    "openpyxl",
+    "periodictable",
+    "radioactivedecay",
+    "colorama",
+    "tabulate",
+    "rich",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+htcondor = ["htcondor"]
+
+[project.scripts]
+fluka-grid     = "fluka.cli.grid:main"
+fluka-submit   = "fluka.cli.submit:main"
+fluka-analysis = "fluka.cli.analysis:main"
+fluka-root     = "fluka.cli.root:main"
+fluka-run      = "fluka.run.orchestrator:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["fluka*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
