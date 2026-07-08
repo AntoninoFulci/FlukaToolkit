@@ -53,7 +53,7 @@ def test_submit_calls_schedd(tmp_path):
     mock_schedd = MagicMock()
     mock_schedd.submit.return_value = mock_submit_result
 
-    with patch("backends.htcondor.htcondor") as mock_htcondor:
+    with patch("fluka.queue.backends.htcondor.htcondor") as mock_htcondor:
         mock_htcondor.Schedd.return_value = mock_schedd
         mock_htcondor.Submit = dict
         result = BACKEND.submit(script, job_info, make_args(dry_run=False))
@@ -63,7 +63,7 @@ def test_submit_calls_schedd(tmp_path):
 
 def test_submit_raises_if_htcondor_not_installed():
     job_info = JobInfo("sim_0001.inp", 1, "/usr/local/fluka/bin", None)
-    with patch("backends.htcondor.htcondor", None):
+    with patch("fluka.queue.backends.htcondor.htcondor", None):
         with pytest.raises(RuntimeError, match="htcondor"):
             BACKEND.submit("/tmp/job.sh", job_info, make_args(dry_run=False))
 
