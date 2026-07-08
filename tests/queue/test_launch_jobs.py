@@ -29,8 +29,8 @@ def test_ts_dry_run_creates_job_dirs(tmp_path, monkeypatch):
     sys.argv = ["launch_jobs.py", "ts", "-f", str(inp), "-n", "3", "-w"]
     monkeypatch.chdir(tmp_path)
 
-    with patch("core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local/fluka")), \
-         patch("core.display.confirm", return_value=True):
+    with patch("fluka.queue.core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local/fluka")), \
+         patch("fluka.queue.core.display.confirm", return_value=True):
         from fluka.queue import launch_jobs
         import importlib
         importlib.reload(launch_jobs)
@@ -48,8 +48,8 @@ def test_lsf_dry_run_creates_sh_files(tmp_path, monkeypatch):
     sys.argv = ["launch_jobs.py", "lsf", "-f", str(inp), "-n", "2", "-w"]
     monkeypatch.chdir(tmp_path)
 
-    with patch("core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local/fluka")), \
-         patch("core.display.confirm", return_value=True):
+    with patch("fluka.queue.core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local/fluka")), \
+         patch("fluka.queue.core.display.confirm", return_value=True):
         from fluka.queue import launch_jobs
         import importlib
         importlib.reload(launch_jobs)
@@ -72,8 +72,8 @@ def test_yaml_mode_ts_dry_run(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     sys.argv = ["launch_jobs.py", str(cfg)]
 
-    with patch("core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local/fluka")), \
-         patch("core.display.confirm", return_value=True):
+    with patch("fluka.queue.core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local/fluka")), \
+         patch("fluka.queue.core.display.confirm", return_value=True):
         from fluka.queue import launch_jobs
         import importlib
         importlib.reload(launch_jobs)
@@ -96,8 +96,8 @@ def test_yaml_mode_lsf_dry_run(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     sys.argv = ["launch_jobs.py", str(cfg)]
 
-    with patch("core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local/fluka")), \
-         patch("core.display.confirm", return_value=True):
+    with patch("fluka.queue.core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local/fluka")), \
+         patch("fluka.queue.core.display.confirm", return_value=True):
         from fluka.queue import launch_jobs
         import importlib
         importlib.reload(launch_jobs)
@@ -113,7 +113,7 @@ def test_yaml_mode_invalid_input_extension_exits(tmp_path):
 
     sys.argv = ["launch_jobs.py", str(cfg)]
 
-    with patch("core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local/fluka")):
+    with patch("fluka.queue.core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local/fluka")):
         from fluka.queue import launch_jobs
         import importlib
         importlib.reload(launch_jobs)
@@ -147,8 +147,8 @@ def test_folder_mode_runs_all_yamls(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     sys.argv = ["launch_jobs.py", str(configs_dir)]
 
-    with patch("core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local/fluka")), \
-         patch("core.display.confirm", return_value=True):
+    with patch("fluka.queue.core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local/fluka")), \
+         patch("fluka.queue.core.display.confirm", return_value=True):
         from fluka.queue import launch_jobs
         import importlib
         importlib.reload(launch_jobs)
@@ -192,8 +192,8 @@ def test_folder_mode_skips_invalid_continues_valid(tmp_path, monkeypatch, caplog
     monkeypatch.chdir(tmp_path)
     sys.argv = ["launch_jobs.py", str(configs_dir)]
 
-    with patch("core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local/fluka")), \
-         patch("core.display.confirm", return_value=True):
+    with patch("fluka.queue.core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local/fluka")), \
+         patch("fluka.queue.core.display.confirm", return_value=True):
         from fluka.queue import launch_jobs
         import importlib
         importlib.reload(launch_jobs)
@@ -220,8 +220,8 @@ def test_folder_mode_cancelled_by_user(tmp_path, monkeypatch, caplog):
     sys.argv = ["launch_jobs.py", str(configs_dir)]
 
     import logging
-    with patch("core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local/fluka")), \
-         patch("core.display.confirm", return_value=False), \
+    with patch("fluka.queue.core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local/fluka")), \
+         patch("fluka.queue.core.display.confirm", return_value=False), \
          caplog.at_level(logging.INFO):
         from fluka.queue import launch_jobs
         import importlib

@@ -129,7 +129,7 @@ def test_allocate_seed_returns_unused_and_records_it():
 
 def test_allocate_seed_redraws_on_collision():
     used = {111}
-    with patch("core.fluka.random.randint", side_effect=[111, 222]):
+    with patch("fluka.queue.core.fluka.random.randint", side_effect=[111, 222]):
         s = allocate_seed(used)
     assert s == 222
     assert used == {111, 222}

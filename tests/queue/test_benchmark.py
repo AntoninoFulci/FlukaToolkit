@@ -64,8 +64,8 @@ def test_benchmark_quick_single_yaml_creates_2_job_dirs(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     sys.argv = ["launch_jobs.py", "benchmark", "quick", str(cfg)]
 
-    with patch("core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local")), \
-         patch("core.display.confirm", return_value=True):
+    with patch("fluka.queue.core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local")), \
+         patch("fluka.queue.core.display.confirm", return_value=True):
         import importlib
         from fluka.queue import launch_jobs
         importlib.reload(launch_jobs)
@@ -87,8 +87,8 @@ def test_benchmark_extensive_single_yaml_creates_5_job_dirs(tmp_path, monkeypatc
     monkeypatch.chdir(tmp_path)
     sys.argv = ["launch_jobs.py", "benchmark", "extensive", str(cfg)]
 
-    with patch("core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local")), \
-         patch("core.display.confirm", return_value=True):
+    with patch("fluka.queue.core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local")), \
+         patch("fluka.queue.core.display.confirm", return_value=True):
         import importlib
         from fluka.queue import launch_jobs
         importlib.reload(launch_jobs)
@@ -110,7 +110,7 @@ def test_benchmark_quick_missing_priority_queue_exits(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     sys.argv = ["launch_jobs.py", "benchmark", "quick", str(cfg)]
 
-    with patch("core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local")):
+    with patch("fluka.queue.core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local")):
         import importlib
         from fluka.queue import launch_jobs
         importlib.reload(launch_jobs)
@@ -139,8 +139,8 @@ def test_benchmark_unknown_mode_exits(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     sys.argv = ["launch_jobs.py", "benchmark", "ultra", str(cfg)]
 
-    with patch("core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local")), \
-         patch("core.display.confirm", return_value=True):
+    with patch("fluka.queue.core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local")), \
+         patch("fluka.queue.core.display.confirm", return_value=True):
         import importlib
         from fluka.queue import launch_jobs
         importlib.reload(launch_jobs)
@@ -161,8 +161,8 @@ def test_benchmark_folder_mode_extensive(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     sys.argv = ["launch_jobs.py", "benchmark", "extensive", str(configs_dir)]
 
-    with patch("core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local")), \
-         patch("core.display.confirm", return_value=True):
+    with patch("fluka.queue.core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local")), \
+         patch("fluka.queue.core.display.confirm", return_value=True):
         import importlib
         from fluka.queue import launch_jobs
         importlib.reload(launch_jobs)
@@ -187,8 +187,8 @@ def test_benchmark_folder_mode_cancelled(tmp_path, monkeypatch, caplog):
     sys.argv = ["launch_jobs.py", "benchmark", "extensive", str(configs_dir)]
 
     import logging
-    with patch("core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local")), \
-         patch("core.display.confirm", return_value=False), \
+    with patch("fluka.queue.core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local")), \
+         patch("fluka.queue.core.display.confirm", return_value=False), \
          caplog.at_level(logging.INFO):
         import importlib
         from fluka.queue import launch_jobs
