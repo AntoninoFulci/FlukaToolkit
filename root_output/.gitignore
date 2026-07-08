@@ -1,0 +1,6 @@
+*.DS_Store*
+*.o*
+*rootfluka*
+*RootFlukaExecutables*
+*.vscode*
+*Routines*
