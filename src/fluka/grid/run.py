@@ -137,6 +137,37 @@ def _submit_combo(params, config, rfluka_bin, args) -> None:
     )
 
 
+def run_config(config, *, dry_run: bool = False, reset: bool = False) -> None:
+    """Run the grid submission for an already-loaded, validated `Config`.
+
+    This is the reusable seam for other entrypoints (e.g. `fluka.cli.grid`)
+    that already have a `Config` object and don't want to go through argv.
+    """
+    from types import SimpleNamespace
+    args = SimpleNamespace(dry_run=dry_run, reset=reset, config=config.fluka.input)
+
+    if reset:
+        import shutil
+        if config.output_dir.exists():
+            confirm = input(f"Delete {config.output_dir} and all contents? [yes/N] ")
+            if confirm.strip().lower() not in ("yes", "y"):
+                print("Aborted.")
+                sys.exit(0)
+            shutil.rmtree(config.output_dir)
+            print(f"Deleted {config.output_dir}")
+
+    config.output_dir.mkdir(parents=True, exist_ok=True)
+
+    rfluka_bin = _resolve_rfluka(config)
+    _print_summary(config, args, rfluka_bin)
+
+    if config.execution.backend == "ts" and not dry_run:
+        _set_ts_slots(config.execution.max_parallel)
+
+    for params in generate_combinations(config.grid.parameters):
+        _submit_combo(params, config, rfluka_bin, args)
+
+
 def main() -> None:
     args = _parse_args()
 
@@ -155,26 +186,7 @@ def main() -> None:
         print(f"No duplicate seeds in {config.output_dir}")
         return
 
-    if args.reset:
-        import shutil
-        if config.output_dir.exists():
-            confirm = input(f"Delete {config.output_dir} and all contents? [yes/N] ")
-            if confirm.strip().lower() not in ("yes", "y"):
-                print("Aborted.")
-                sys.exit(0)
-            shutil.rmtree(config.output_dir)
-            print(f"Deleted {config.output_dir}")
-
-    config.output_dir.mkdir(parents=True, exist_ok=True)
-
-    rfluka_bin = _resolve_rfluka(config)
-    _print_summary(config, args, rfluka_bin)
-
-    if config.execution.backend == "ts" and not args.dry_run:
-        _set_ts_slots(config.execution.max_parallel)
-
-    for params in generate_combinations(config.grid.parameters):
-        _submit_combo(params, config, rfluka_bin, args)
+    run_config(config, dry_run=args.dry_run, reset=args.reset)
 
 
 if __name__ == "__main__":
