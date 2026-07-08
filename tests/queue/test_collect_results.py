@@ -234,7 +234,7 @@ def test_display_plan_shows_skipped_parent_warning(tmp_path):
 def test_main_executes_on_y(tmp_path):
     make_tree(tmp_path, {"SimLead": {"job_0001": ["a.root"]}})
     result = subprocess.run(
-        [sys.executable, str(SCRIPT)],
+        [sys.executable, "-m", "fluka.queue.collect_results"],
         cwd=tmp_path,
         capture_output=True,
         text=True,
@@ -247,7 +247,7 @@ def test_main_executes_on_y(tmp_path):
 def test_main_aborts_on_n(tmp_path):
     make_tree(tmp_path, {"SimLead": {"job_0001": ["a.root"]}})
     result = subprocess.run(
-        [sys.executable, str(SCRIPT)],
+        [sys.executable, "-m", "fluka.queue.collect_results"],
         cwd=tmp_path,
         capture_output=True,
         text=True,
@@ -261,7 +261,7 @@ def test_main_aborts_on_n(tmp_path):
 def test_main_aborts_on_empty_input(tmp_path):
     make_tree(tmp_path, {"SimLead": {"job_0001": ["a.root"]}})
     result = subprocess.run(
-        [sys.executable, str(SCRIPT)],
+        [sys.executable, "-m", "fluka.queue.collect_results"],
         cwd=tmp_path,
         capture_output=True,
         text=True,
@@ -273,7 +273,7 @@ def test_main_aborts_on_empty_input(tmp_path):
 
 def test_main_exits_1_when_no_job_dirs_found(tmp_path):
     result = subprocess.run(
-        [sys.executable, str(SCRIPT)],
+        [sys.executable, "-m", "fluka.queue.collect_results"],
         cwd=tmp_path,
         capture_output=True,
         text=True,
@@ -289,7 +289,7 @@ def test_main_processes_multiple_parents(tmp_path):
         "SimMercury": {"job_0001": ["mercury.root"]},
     })
     result = subprocess.run(
-        [sys.executable, str(SCRIPT)],
+        [sys.executable, "-m", "fluka.queue.collect_results"],
         cwd=tmp_path,
         capture_output=True,
         text=True,

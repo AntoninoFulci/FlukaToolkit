@@ -35,3 +35,4 @@ include = ["fluka*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "--import-mode=importlib"
