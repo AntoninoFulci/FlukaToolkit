@@ -22,7 +22,7 @@ library (`from fluka.isotope_inventory import analysis`, etc.).
 | `fluka-grid <cfg>` | Expand a parameter grid over a `.inp` template, patch unique seeds, submit each run | `fluka.grid` |
 | `fluka-submit <cfg>` | Submit FLUKA inputs to a batch backend (SLURM / LSF / HTCondor / Task-Spooler). `--grid` first generates the grid | `fluka.queue` |
 | `fluka-analysis <cfg>` | Post-process `RESNUCLEi` output → per-isotope activity (Bq) / mass (µg) → Excel | `fluka.isotope_inventory` |
-| `fluka-root <cfg>` | Compile FLUKA ROOT-output routines via `root_output/Makefile` | `root_output/` |
+| `fluka-root <cfg>` | Compile FLUKA ROOT-output routines via `src/root_output/Makefile` | `src/root_output/` |
 | `fluka-run <phase> <cfg>` | Orchestrate a whole simulation from one file: `submit` (grid+submit) / `analyze` (collect+analysis) | `fluka.run` |
 
 ## One config, many tools
@@ -60,16 +60,28 @@ fluka-run analyze sim.yaml          # or: fluka-analysis sim.yaml
 > completion across backends. You wait for the farm, then run the analyze
 > phase yourself.
 
+## Documentation
+
+Full per-utility docs live in the [project wiki](https://github.com/AntoninoFulci/FlukaToolkit/wiki):
+
+- [fluka-grid](https://github.com/AntoninoFulci/FlukaToolkit/wiki/fluka-grid) — parameter-grid generation + seeding
+- [fluka-submit](https://github.com/AntoninoFulci/FlukaToolkit/wiki/fluka-submit) — batch submission backends
+- [fluka-analysis](https://github.com/AntoninoFulci/FlukaToolkit/wiki/fluka-analysis) — RESNUCLEi → isotope activity/mass → Excel
+- [fluka-root](https://github.com/AntoninoFulci/FlukaToolkit/wiki/fluka-root) — compile FLUKA ROOT-output routines
+- [fluka-run](https://github.com/AntoninoFulci/FlukaToolkit/wiki/fluka-run) — one-file orchestrator
+- [sim.yaml reference](https://github.com/AntoninoFulci/FlukaToolkit/wiki/sim-yaml) — full config reference
+
 ## Layout
 
 ```
-src/fluka/
-  grid/                # parameter-grid generation + seeding
-  queue/               # batch submission backends + result collection
-  isotope_inventory/   # RESNUCLEi → isotope activity/mass → Excel
-  cli/                 # console-script entrypoints
-  run/                 # sim.yaml loader + fluka-run orchestrator
-root_output/           # C++/ROOT FLUKA routines (compiled, not pip-packaged)
+src/
+  fluka/
+    grid/                # parameter-grid generation + seeding
+    queue/               # batch submission backends + result collection
+    isotope_inventory/   # RESNUCLEi → isotope activity/mass → Excel
+    cli/                 # console-script entrypoints
+    run/                 # sim.yaml loader + fluka-run orchestrator
+  root_output/           # C++/ROOT FLUKA routines (compiled, not pip-packaged)
 ```
 
 The original per-project READMEs are preserved under
