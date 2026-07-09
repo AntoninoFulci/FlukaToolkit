@@ -100,7 +100,10 @@ results/
 ```
 
 Seeds are unique across the whole output directory; if a duplicate is
-detected, submission aborts before any job is sent.
+detected, `fluka-grid` reseeds the duplicate `.inp` files in place with
+fresh unique seeds and continues submitting — it does not abort. (This
+differs from the `fluka-submit` / `launch_jobs.py` path, which aborts on
+duplicate seeds.)
 
 ## DPM
 

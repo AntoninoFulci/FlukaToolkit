@@ -47,7 +47,7 @@ parsers):
 
 - **SLURM**: `queue=production`, `mem=1500`, `ntasks=1`, `nodes=1`,
   `time=1-00:00:00` (max `4-00:00:00`), `gres=disk:1G`.
-- **LSF**: `queue=production`, `mem=1500`, `ntasks=1`,
+- **LSF**: `queue=normal`, `mem=1500`, `ntasks=1`,
   `time=1-00:00:00` (max `4-00:00:00`).
 - **HTCondor**: `queue=vanilla` (universe), `mem=1500`, `ncpu=1`,
   `disk=100000` (kB), `time=86400` s (`+MaxRuntime`, max `345600` = 4 days),
