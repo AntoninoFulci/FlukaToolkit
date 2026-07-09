@@ -12,3 +12,6 @@ dist/
 docs/
 .superpowers/
 tests/
+
+# Local-only tooling, never pushed to GitHub
+scripts/
