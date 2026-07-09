@@ -29,7 +29,7 @@ analysis:
     assert c.units == [21, 22]
     assert c.executable == "usrsuw"
     assert c.volume == 1000.0
-    assert c.isotopes == [(30, 69), (31, 70)]
+    assert c.isotopes == {30: 69, 31: 70}
     assert c.output == "out.xlsx"
 
 
