@@ -5,7 +5,7 @@ from pathlib import Path
 
 from fluka.cli._common import resolve_config
 
-_ROOT_DIR = Path(__file__).resolve().parents[3] / "root_output"
+_ROOT_DIR = Path(__file__).resolve().parents[2] / "root_output"
 
 def build_commands(section: dict, root_dir: str | Path = _ROOT_DIR) -> list[list[str]]:
     """Map the `root:` section to `make` invocations for root_output/Makefile.

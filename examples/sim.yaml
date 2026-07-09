@@ -37,7 +37,7 @@ analysis:
     30: 69
   output: isotopes.xlsx
 
-# ── fluka-root : compile FLUKA ROOT-output routines (root_output/Makefile) ──
+# ── fluka-root : compile FLUKA ROOT-output routines (src/root_output/Makefile) ──
 root:
   files: [FluLibRNTuple.cpp]   # FluLib.cpp → TTree, FluLibRNTuple.cpp → RNTuple
   format: rntuple
