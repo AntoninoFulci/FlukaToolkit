@@ -52,7 +52,7 @@ def read_resnuclei_file(
         "CoolingTime": format_decay_time(tdecay_s),
         "Parameters": " ".join(f"{k}={v}" for k, v in params.items()),
     }
-    for z, a in sorted(requested_isotopes.items()):
+    for z, a in requested_isotopes:
         sym = isotope_symbol(z, a)
         bq, bq_err = lookup.get((z, a), (0.0, 0.0))
         pct_err = (bq_err / bq * 100) if bq != 0 else 0.0

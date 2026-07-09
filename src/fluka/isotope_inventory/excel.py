@@ -13,7 +13,7 @@ def write_activity_workbook(
     output_path: Path,
 ) -> None:
     rows_sorted = sorted(rows, key=lambda r: r["_tdecay_s"])
-    syms = [isotope_symbol(z, a) for z, a in sorted(isotopes.items())]
+    syms = [isotope_symbol(z, a) for z, a in isotopes]
 
     records: list[dict] = []
     for r in rows_sorted:

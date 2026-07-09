@@ -12,7 +12,7 @@ def make_float_bytes(*values):
 def test_missing_rnc_file_is_skipped(tmp_path):
     row = read_resnuclei_file(
         path=tmp_path / "nonexistent",
-        requested_isotopes={27: 60},
+        requested_isotopes=[(27, 60)],
         params={},
     )
     assert row is None
@@ -35,7 +35,7 @@ def test_read_resnuclei_file_returns_known_isotope(tmp_path):
     with patch("fluka.isotope_inventory.reader.Resnuclei", return_value=mock_resn):
         row = read_resnuclei_file(
             path=rnc_path,
-            requested_isotopes={1: 3},
+            requested_isotopes=[(1, 3)],
             params={"beame": 0.05},
         )
 
@@ -63,7 +63,7 @@ def test_read_resnuclei_file_isotope_not_present_gives_zero(tmp_path):
     with patch("fluka.isotope_inventory.reader.Resnuclei", return_value=mock_resn):
         row = read_resnuclei_file(
             path=rnc_path,
-            requested_isotopes={27: 60},
+            requested_isotopes=[(27, 60)],
             params={},
         )
 

@@ -15,7 +15,7 @@ def test_write_activity_workbook(tmp_path):
         },
     ]
     out = tmp_path / "out.xlsx"
-    write_activity_workbook(rows, isotopes={27: 60}, volume=1000.0, output_path=out)
+    write_activity_workbook(rows, isotopes=[(27, 60)], volume=1000.0, output_path=out)
 
     assert out.exists()
     df = pd.read_excel(out, sheet_name="Activity")

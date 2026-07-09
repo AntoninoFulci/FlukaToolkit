@@ -9,7 +9,7 @@ import yaml
 class AnalysisConfig:
     directory: Path
     units: list[int]
-    isotopes: dict[int, int]
+    isotopes: list[tuple[int, int]]
     volume: float
     executable: str = "usrsuw"
     output: str = "isotopes.xlsx"
@@ -33,7 +33,16 @@ def load_analysis_config(path: Path) -> AnalysisConfig:
     if not units:
         raise ValueError("analysis.units must list at least one unit number")
 
-    isotopes = {int(k): int(v) for k, v in a["isotopes"].items()}
+    raw = a["isotopes"]
+    isotopes: list[tuple[int, int]] = []
+    for k, v in raw.items():
+        z = int(k)
+        if isinstance(v, list):
+            for mass in v:
+                isotopes.append((z, int(mass)))
+        else:
+            isotopes.append((z, int(v)))
+    isotopes.sort()
     if not isotopes:
         raise ValueError("analysis.isotopes must list at least one Z: A pair")
 

@@ -9,7 +9,7 @@ def _cfg(directory, **kw):
     return AnalysisConfig(
         directory=directory,
         units=kw.get("units", [21]),
-        isotopes=kw.get("isotopes", {27: 60}),
+        isotopes=kw.get("isotopes", [(27, 60)]),
         volume=kw.get("volume", 1000.0),
         executable=kw.get("executable", "usrsuw"),
         output=kw.get("output", "isotopes.xlsx"),
