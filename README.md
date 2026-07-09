@@ -1,11 +1,8 @@
 # FlukaToolkit
 
-A unified toolkit for FLUKA Monte Carlo workflows — grid generation, batch
+A toolkit for FLUKA Monte Carlo workflows — grid generation, batch
 submission, isotope/activation inventory, and ROOT-format output — in one
-installable package. It merges four previously separate projects
-(`fluka-grid-search`, `FlukaQueueSub`, `FlukaIsotopeAnalysis`,
-`FlukaROOTOutput`) under a single `fluka` namespace with one install and one
-config file.
+installable package.
 
 ## Install
 
