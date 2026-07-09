@@ -1,4 +1,5 @@
 from __future__ import annotations
+import getpass
 import os
 from argparse import Namespace
 from pathlib import Path
@@ -30,7 +31,7 @@ def _build_namespace(backend_name: str, config, dry_run: bool) -> Namespace:
     if backend_name == "slurm":
         return Namespace(
             dry_run=dry_run, queue=queue, mem=ex.mem, ntasks=ex.ntasks,
-            nodes=ex.nodes, time=ex.time, gres=ex.gres,
+            nodes=ex.nodes, time=ex.time, gres=ex.gres, farm_out=ex.farm_out,
         )
     if backend_name == "lsf":
         return Namespace(
@@ -45,6 +46,21 @@ def _build_namespace(backend_name: str, config, dry_run: bool) -> Namespace:
             error="job_$(Cluster)_$(Process).err",
             log="job_$(Cluster)_$(Process).log",
         )
+
+
+def manifest_extra(backend_name: str, config, run_dir, input_file) -> dict:
+    """Build the per-backend `extra` payload stored in the run manifest."""
+    if backend_name == "slurm":
+        return {"farm_out": config.execution.farm_out,
+                "user": getpass.getuser(),
+                "job_name": input_file}
+    if backend_name == "lsf":
+        return {"job_dir": str(run_dir)}
+    if backend_name == "condor":
+        return {"output": "job_$(Cluster)_$(Process).out",
+                "error": "job_$(Cluster)_$(Process).err",
+                "log": "job_$(Cluster)_$(Process).log"}
+    return {}
 
 
 def submit_run(

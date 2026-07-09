@@ -35,6 +35,7 @@ class ExecutionConfig:
     ncpu: int = 1                # condor only
     disk: int = 100000           # condor request_disk (kB)
     condor_max_runtime: int = 86400  # condor +MaxRuntime (seconds)
+    farm_out: str = "/farm_out"        # slurm: accessible out/err/sentinel dir
 
 
 @dataclass
@@ -83,6 +84,7 @@ def load_config(source: dict | Path) -> Config:
             ncpu=int(raw["execution"].get("ncpu", 1)),
             disk=int(raw["execution"].get("disk", 100000)),
             condor_max_runtime=int(raw["execution"].get("condor_max_runtime", 86400)),
+            farm_out=raw["execution"].get("farm_out", "/farm_out"),
         ),
     )
 
