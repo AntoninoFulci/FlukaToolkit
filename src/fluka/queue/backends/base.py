@@ -1,6 +1,21 @@
 from abc import ABC, abstractmethod
 from argparse import ArgumentParser, Namespace
 from dataclasses import dataclass
+import re as _re
+from pathlib import Path as _Path
+
+_SENTINEL_RE = _re.compile(r"FLUKA_STATUS rc=(-?\d+)")
+
+
+def read_sentinel(path) -> tuple[bool, int] | None:
+    """Parse a 'FLUKA_STATUS rc=N' sentinel file. Return (True, rc) or None."""
+    if path is None:
+        return None
+    p = _Path(path)
+    if not p.exists():
+        return None
+    m = _SENTINEL_RE.search(p.read_text())
+    return (True, int(m.group(1))) if m else None
 
 
 @dataclass
@@ -13,6 +28,23 @@ class JobInfo:
 
 
 class QueueBackend(ABC):
+
+    def job_state(self, job, args=None) -> tuple[str, str]:
+        from fluka.run.status import PENDING, RUNNING, DONE, FAIL, UNKNOWN  # noqa: F401
+        qs = self._queue_state(job)
+        if qs is not None:
+            return qs, "in queue"
+        sent = read_sentinel(self._sentinel_path(job))
+        if sent is None:
+            return UNKNOWN, "not in queue, no sentinel"
+        _, rc = sent
+        return (DONE, f"rc={rc}") if rc == 0 else (FAIL, f"rc={rc}")
+
+    def _queue_state(self, job):
+        return None
+
+    def _sentinel_path(self, job):
+        return None
 
     @abstractmethod
     def add_args(self, parser: ArgumentParser) -> None:
