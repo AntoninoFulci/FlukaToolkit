@@ -49,3 +49,11 @@ def test_queue_state_absent(monkeypatch):
     j = Job(combo="c", run_idx=1, run_name="r", run_dir="/x", backend="slurm",
             job_id="1", input_file="s", submitted_at="t", extra={})
     assert SlurmBackend()._queue_state(j) is None
+
+def test_queue_state_missing_binary(monkeypatch):
+    def fake_run(cmd, **kw):
+        raise FileNotFoundError("squeue not found")
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    j = Job(combo="c", run_idx=1, run_name="r", run_dir="/x", backend="slurm",
+            job_id="1", input_file="s", submitted_at="t", extra={})
+    assert SlurmBackend()._queue_state(j) is None

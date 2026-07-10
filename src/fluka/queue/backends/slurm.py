@@ -132,8 +132,12 @@ class SlurmBackend(QueueBackend):
 
     def _queue_state(self, job):
         from fluka.run.status import RUNNING, PENDING
-        r = subprocess.run(["squeue", "-j", job.job_id, "-h", "-o", "%t"],
-                           capture_output=True, text=True)
+        try:
+            r = subprocess.run(["squeue", "-j", job.job_id, "-h", "-o", "%t"],
+                               capture_output=True, text=True)
+        except (FileNotFoundError, OSError):
+            # squeue not installed on this host; fall back to sentinel-based state.
+            return None
         if r.returncode != 0:
             return None
         code = r.stdout.strip()

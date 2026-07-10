@@ -103,8 +103,12 @@ class LSFBackend(QueueBackend):
 
     def _queue_state(self, job):
         from fluka.run.status import RUNNING, PENDING
-        r = subprocess.run(["bjobs", "-noheader", "-o", "stat", job.job_id],
-                           capture_output=True, text=True)
+        try:
+            r = subprocess.run(["bjobs", "-noheader", "-o", "stat", job.job_id],
+                               capture_output=True, text=True)
+        except (FileNotFoundError, OSError):
+            # bjobs not installed on this host; fall back to sentinel-based state.
+            return None
         if r.returncode != 0:
             return None
         stat = r.stdout.strip().upper()

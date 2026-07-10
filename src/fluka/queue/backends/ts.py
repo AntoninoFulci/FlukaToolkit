@@ -42,7 +42,7 @@ class TSBackend(QueueBackend):
         from fluka.run.status import RUNNING
         try:
             r = subprocess.run(["tsp", "-s", job.job_id], capture_output=True, text=True)
-        except FileNotFoundError:
+        except (FileNotFoundError, OSError):
             # task-spooler not installed on this host; fall back to sentinel-based state.
             return None
         if r.returncode != 0:

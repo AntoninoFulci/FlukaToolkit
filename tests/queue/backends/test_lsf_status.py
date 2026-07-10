@@ -39,3 +39,9 @@ def test_queue_state_absent(monkeypatch):
         return subprocess.CompletedProcess(cmd, 255, stdout="", stderr="Job <55> is not found")
     monkeypatch.setattr(subprocess, "run", fake_run)
     assert LSFBackend()._queue_state(_job()) is None
+
+def test_queue_state_missing_binary(monkeypatch):
+    def fake_run(cmd, **kw):
+        raise FileNotFoundError("bjobs not found")
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    assert LSFBackend()._queue_state(_job()) is None

@@ -44,3 +44,9 @@ def test_queue_state_absent(monkeypatch):
         return subprocess.CompletedProcess(cmd, 0, stdout="\n", stderr="")
     monkeypatch.setattr(subprocess, "run", fake_run)
     assert HTCondorBackend()._queue_state(_job()) is None
+
+def test_queue_state_missing_binary(monkeypatch):
+    def fake_run(cmd, **kw):
+        raise FileNotFoundError("condor_q not found")
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    assert HTCondorBackend()._queue_state(_job()) is None

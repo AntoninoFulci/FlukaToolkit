@@ -132,20 +132,21 @@ def _submit_combo(params, config, rfluka_bin, args) -> None:
             dry_run=args.dry_run,
         )
         print(f"[{config.execution.backend}] {name}/{run_name}: {job_id}")
-        record_job(
-            manifest_path_for(config.output_dir),
-            Job(
-                combo=name,
-                run_idx=i,
-                run_name=run_name,
-                run_dir=str(run_dir),
-                backend=config.execution.backend,
-                job_id=parse_job_id(config.execution.backend, job_id),
-                input_file=inp_path.name,
-                submitted_at=datetime.now(timezone.utc).isoformat(),
-                extra=manifest_extra(config.execution.backend, config, run_dir, inp_path.name),
-            ),
-        )
+        if not args.dry_run:
+            record_job(
+                manifest_path_for(config.output_dir),
+                Job(
+                    combo=name,
+                    run_idx=i,
+                    run_name=run_name,
+                    run_dir=str(run_dir),
+                    backend=config.execution.backend,
+                    job_id=parse_job_id(config.execution.backend, job_id),
+                    input_file=inp_path.name,
+                    submitted_at=datetime.now(timezone.utc).isoformat(),
+                    extra=manifest_extra(config.execution.backend, config, run_dir, inp_path.name),
+                ),
+            )
 
     print(
         f"Submitted {name}: {n_runs} runs via {config.execution.backend}. "
