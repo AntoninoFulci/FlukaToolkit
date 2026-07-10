@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 from fluka.grid.backends import queue_adapter
+from fluka.grid.backends.queue_adapter import manifest_extra
 from fluka.grid.config import load_config, validate_config
 from fluka.grid.grid import combo_name, generate_combinations
 from fluka.grid.workspace import create_run_workspace, patch_inp, reseed_inp
 from fluka.grid.seeds import scan_used_seeds, next_seed, find_duplicate_seeds
+from fluka.run.manifest import Job, record_job, manifest_path_for, parse_job_id
 
 
 def _parse_args():
@@ -129,6 +132,20 @@ def _submit_combo(params, config, rfluka_bin, args) -> None:
             dry_run=args.dry_run,
         )
         print(f"[{config.execution.backend}] {name}/{run_name}: {job_id}")
+        record_job(
+            manifest_path_for(config.output_dir),
+            Job(
+                combo=name,
+                run_idx=i,
+                run_name=run_name,
+                run_dir=str(run_dir),
+                backend=config.execution.backend,
+                job_id=parse_job_id(config.execution.backend, job_id),
+                input_file=inp_path.name,
+                submitted_at=datetime.now(timezone.utc).isoformat(),
+                extra=manifest_extra(config.execution.backend, config, run_dir, inp_path.name),
+            ),
+        )
 
     print(
         f"Submitted {name}: {n_runs} runs via {config.execution.backend}. "
