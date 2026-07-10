@@ -1,5 +1,7 @@
 import os
+import subprocess
 from argparse import ArgumentParser, Namespace
+from pathlib import Path
 from string import Template
 
 from fluka.queue.backends.base import JobInfo, QueueBackend
@@ -18,6 +20,7 @@ _SCRIPT_TEMPLATE = Template("""\
 . /cvmfs/sft.cern.ch/lcg/views/setupViews.sh LCG_97python3 x86_64-centos7-gcc9-opt
 
 $fluka_command $input
+echo "FLUKA_STATUS rc=$$?"
 """)
 
 
@@ -115,3 +118,25 @@ class HTCondorBackend(QueueBackend):
         # HTCondor usa 'universe', non una partizione/coda nominata; l'override viene ignorato.
         import logging as _logging
         _logging.warning("HTCondorBackend: benchmark_priority_queue ignorato (universe != coda nominata).")
+
+    def _sentinel_path(self, job):
+        out = job.extra.get("output", "")
+        # output pattern may contain $(Cluster)/$(Process); best-effort: use as-is
+        # relative to the run dir if not absolute.
+        p = Path(out)
+        return p if p.is_absolute() else Path(job.run_dir) / p
+
+    def _queue_state(self, job):
+        from fluka.run.status import RUNNING, PENDING
+        r = subprocess.run(["condor_q", job.job_id, "-af", "JobStatus"],
+                           capture_output=True, text=True)
+        if r.returncode != 0:
+            return None
+        code = r.stdout.strip().split("\n")[0].strip()
+        # condor_q -af JobStatus: 1=Idle,2=Running,5=Held; our -af path may also
+        # print R/I via -run; accept both numeric and letter forms.
+        if code in ("2", "R"):
+            return RUNNING
+        if code in ("1", "I"):
+            return PENDING
+        return None
