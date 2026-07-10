@@ -24,6 +24,7 @@ library (`from fluka.isotope_inventory import analysis`, etc.).
 | `fluka-analysis <cfg>` | Post-process `RESNUCLEi` output → per-isotope activity (Bq) / mass (µg) → Excel | `fluka.isotope_inventory` |
 | `fluka-root <cfg>` | Compile FLUKA ROOT-output routines via `src/root_output/Makefile` | `src/root_output/` |
 | `fluka-run <phase> <cfg>` | Orchestrate a whole simulation from one file: `submit` (grid+submit) / `analyze` (collect+analysis) | `fluka.run` |
+| `fluka-status <cfg>` | Report per-job state (PENDING/RUNNING/DONE/FAIL), `--watch`, `--collect` | `fluka.cli.status` |
 
 ## One config, many tools
 
@@ -69,6 +70,7 @@ Full per-utility docs live in the [project wiki](https://github.com/AntoninoFulc
 - [fluka-analysis](https://github.com/AntoninoFulci/FlukaToolkit/wiki/fluka-analysis) — RESNUCLEi → isotope activity/mass → Excel
 - [fluka-root](https://github.com/AntoninoFulci/FlukaToolkit/wiki/fluka-root) — compile FLUKA ROOT-output routines
 - [fluka-run](https://github.com/AntoninoFulci/FlukaToolkit/wiki/fluka-run) — one-file orchestrator
+- [fluka-status](https://github.com/AntoninoFulci/FlukaToolkit/wiki/fluka-status) — job monitoring + auto-collect
 - [sim.yaml reference](https://github.com/AntoninoFulci/FlukaToolkit/wiki/sim-yaml) — full config reference
 
 ## Layout

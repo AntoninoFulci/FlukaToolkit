@@ -51,18 +51,24 @@ then runs the isotope inventory over the `analysis:` section of `sim.yaml`
 
 `fluka-run` does **not** poll job completion across batch backends. After
 `fluka-run submit`, the jobs are handed off to SLURM/LSF/HTCondor/`ts` and
-run independently on the farm; `fluka-run` returns immediately. You are
-expected to wait for the farm jobs to finish yourself before running
-`fluka-run analyze` — there is no built-in wait loop or status check.
+run independently on the farm; `fluka-run` returns immediately. `fluka-run`
+itself has no built-in wait loop or status check — for that, use
+[`fluka-status`](fluka-status): it reports each job's state
+(PENDING/RUNNING/DONE/FAIL) and, with `--watch`, polls until every job is
+terminal. `fluka-status --collect` combines the two: wait for all jobs to
+finish, then run the same collect+analyze step as `fluka-run analyze`.
 
 ```bash
 # 1. generate the grid and submit it
 fluka-run submit sim.yaml
 
-# 2. ...wait for the farm jobs to finish (fluka-run does not poll)...
+# 2. wait for the farm jobs to finish
+fluka-status sim.yaml --watch
 
 # 3. collect results and run the isotope inventory
 fluka-run analyze sim.yaml
+# ...or do steps 2+3 together:
+fluka-status sim.yaml --collect
 ```
 
 ## Equivalence to standalone commands
