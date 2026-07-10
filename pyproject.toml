@@ -28,6 +28,7 @@ fluka-submit   = "fluka.cli.submit:main"
 fluka-analysis = "fluka.cli.analysis:main"
 fluka-root     = "fluka.cli.root:main"
 fluka-run      = "fluka.run.orchestrator:main"
+fluka-status   = "fluka.cli.status:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
