@@ -1,19 +1,44 @@
-from fluka.cli.root import build_commands
+from pathlib import Path
+from fluka.cli.root import resolve_routines, build_command
 
-def test_rntuple_file_sets_use_rntuple_1():
-    cmds = build_commands({"files": ["FluLibRNTuple.cpp"]}, root_dir="/x/root_output")
-    assert len(cmds) == 1
-    c = cmds[0]
-    assert c[0] == "make" and "-C" in c and "/x/root_output" in c
-    assert "USE_RNTUPLE=1" in c
+def _defaults(tmp_path):
+    d = tmp_path / "routines"; d.mkdir()
+    for n in ("usrini.f", "usrout.f", "mgdraw.f"):
+        (d / n).write_text(f"* default {n}\n")
+    return d
 
-def test_default_file_sets_use_rntuple_0():
-    cmds = build_commands({"files": ["FluLib.cpp"]}, root_dir="/x")
-    assert "USE_RNTUPLE=0" in cmds[0]
+def test_resolve_routines_defaults_only(tmp_path):
+    d = _defaults(tmp_path)
+    got = {p.name for p in resolve_routines([], d)}
+    assert got == {"usrini.f", "usrout.f", "mgdraw.f"}
 
-def test_format_used_when_no_files():
-    cmds = build_commands({"format": "rntuple"}, root_dir="/x")
-    assert len(cmds) == 1 and "USE_RNTUPLE=1" in cmds[0]
+def test_resolve_routines_override_mgdraw(tmp_path):
+    d = _defaults(tmp_path)
+    mine = tmp_path / "mgdraw.f"; mine.write_text("* mine\n")
+    resolved = resolve_routines([str(mine)], d)
+    names = {p.name for p in resolved}
+    assert names == {"usrini.f", "usrout.f", "mgdraw.f"}
+    mg = next(p for p in resolved if p.name == "mgdraw.f")
+    assert mg.read_text() == "* mine\n"           # override wins
 
-def test_empty_section_builds_nothing():
-    assert build_commands({}, root_dir="/x") == []
+def test_resolve_routines_extra(tmp_path):
+    d = _defaults(tmp_path)
+    extra = tmp_path / "source.f"; extra.write_text("* extra\n")
+    names = {p.name for p in resolve_routines([str(extra)], d)}
+    assert names == {"usrini.f", "usrout.f", "mgdraw.f", "source.f"}
+
+def test_build_command_ttree(tmp_path):
+    cmd = build_command({"rntuple": False, "routines": []},
+                        root_dir="/x/root_output", build_dir="/tmp/b")
+    joined = " ".join(cmd)
+    assert cmd[0] == "make" and "-C" in cmd and "/tmp/b" in joined
+    assert "USE_RNTUPLE=0" in joined
+    assert 'OBJS=' in joined and "usrini.o" in joined and "mgdraw.o" in joined
+
+def test_build_command_rntuple_and_name_and_extra(tmp_path):
+    cmd = build_command({"rntuple": True, "name": "myexe",
+                         "routines": [str(tmp_path / "source.f")]},
+                        root_dir="/x/root_output", build_dir="/tmp/b")
+    joined = " ".join(cmd)
+    assert "USE_RNTUPLE=1" in joined and "NAME=myexe" in joined
+    assert "source.o" in joined
