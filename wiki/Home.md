@@ -15,24 +15,51 @@ Requires Python ≥ 3.10 and FLUKA (`fluka-config` / `rfluka` on `PATH`).
 pip install -e .
 ```
 
-This registers five console commands and makes every component importable as
+This registers six console commands and makes every component importable as
 a library (`from fluka.isotope_inventory import analysis`, etc.).
 
 ## One config, many tools
 
-A single `sim.yaml` describes an entire simulation. Each tool reads **only
-its own section** and ignores the rest, so the whole run lives in one file:
+A single `sim.yaml` describes an entire simulation: a shared **`general`**
+section plus one section per tool. Every tool merges `general` with its own
+section — `general` provides the defaults, the tool section overrides — and
+ignores everything else, so the whole run lives in one file:
 
 ```yaml
-grid:      { ... }   # fluka-grid   reads this
-submit:    { ... }   # fluka-submit reads this
-analysis:  { ... }   # fluka-analysis reads this
-root:      { ... }   # fluka-root   reads this
+general:
+  input: example.inp        # FLUKA .inp (one #define per grid key + RANDOMIZ/START)
+  backend: ts                # ts | slurm | lsf | condor  (used by grid + submit)
+  output: results/           # per-combo run dirs are created under here
+  primaries: 1000
+
+submit:                      # batch resources — used by submit AND grid
+  njobs: 2
+  max_parallel: 10
+  mem: "1500"
+  time: "1-00:00:00"
+
+grid:                        # fluka-grid reads this (+ submit, for resources)
+  parameters:
+    irrtime: [86400, 172800]
+    mat: [COPPER, TUNGSTEN]
+  runs_per_combo: 2
+
+root:                        # fluka-root reads this
+  rntuple: false
+  routines: [mgdraw.f]
+
+analysis:                    # fluka-analysis reads this
+  run: c1/run_0001            # relative to general.output
+  units: [21, 22]
+  volume: 1000
+  isotopes:
+    31: 70
+  output: isotopes.xlsx
 ```
 
-Every tool also still accepts its own **standalone** config file
-(back-compat), so existing single-tool configs keep working. See
-[sim.yaml reference](sim-yaml) for the full annotated example.
+A top-level `general:` section is always required — there is no standalone,
+`general`-less config in schema v2. See [sim.yaml reference](sim-yaml) for
+the full annotated example.
 
 ## Commands
 
@@ -43,6 +70,7 @@ Every tool also still accepts its own **standalone** config file
 | `fluka-analysis <cfg>` | Post-process `RESNUCLEi` output → per-isotope activity (Bq) / mass (µg) → Excel | [fluka-analysis](fluka-analysis) |
 | `fluka-root <cfg>` | Compile FLUKA ROOT-output routines via `src/root_output/Makefile` | [fluka-root](fluka-root) |
 | `fluka-run <phase> <cfg>` | Orchestrate a whole simulation from one file: `submit` (grid+submit) / `analyze` (collect+analysis) | [fluka-run](fluka-run) |
+| `fluka-status <cfg>` | Report per-job state (PENDING/RUNNING/DONE/FAIL), `--watch`, `--collect` | [fluka-status](fluka-status) |
 
 ## Typical flow
 
@@ -86,4 +114,5 @@ documentation going forward.
 - [fluka-analysis](fluka-analysis)
 - [fluka-root](fluka-root)
 - [fluka-run](fluka-run)
+- [fluka-status](fluka-status)
 - [sim.yaml reference](sim-yaml)

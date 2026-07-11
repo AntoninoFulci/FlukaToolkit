@@ -13,10 +13,11 @@ It is backed by `fluka.run.status` and `fluka.run.manifest`
 
 Every job submitted through the grid path (`fluka-grid`, and
 `fluka-run submit` / `fluka-submit --grid`, which run the grid phase) is
-recorded in a manifest file written next to the run outputs:
+recorded in a manifest file written next to the run outputs, under
+`general.output`:
 
 ```
-<output.directory>/.fluka_manifest.json
+<general.output>/.fluka_manifest.json
 ```
 
 Each entry captures the combo, run index/name, run directory, backend,
@@ -68,9 +69,10 @@ whatever location is guaranteed accessible for it:
   ```
   <farm_out>/<user>/<job_name>-<job_id>.fluka_status
   ```
-  `farm_out` defaults to `/farm_out` and is set via the `execution.farm_out`
-  config field (`fluka.grid.config.ExecutionConfig.farm_out`) or the
-  SLURM backend's `--farm-out` CLI override — see
+  `farm_out` defaults to `/farm_out` and is set via the `submit.farm_out`
+  config field (`fluka.grid.config.ExecutionConfig.farm_out` internally,
+  inherited by `fluka-grid` from `submit:`) or the SLURM backend's
+  `--farm-out` CLI override — see
   [fluka-grid](fluka-grid) / [fluka-submit](fluka-submit).
 
 ## Usage
@@ -84,8 +86,9 @@ fluka-status sim.yaml --json        # emit JSON instead of a table
 
 `--watch` with no value (`--watch` alone, no `SEC`) polls every 15 seconds.
 
-`<cfg>` may be a standalone grid config or a multi-section `sim.yaml`
-containing a `grid:` section, same as [fluka-grid](fluka-grid).
+`<cfg>` is a `sim.yaml` with a top-level `general:` section (it reads
+`general.output` to locate the manifest — no `grid:`/`submit:` fields of
+its own are needed), same as [fluka-grid](fluka-grid).
 
 `--watch` (bare, or `--watch SEC`) re-queries and re-prints the table every
 `SEC` seconds (default 15) until every job has reached a terminal state

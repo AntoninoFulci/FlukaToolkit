@@ -131,8 +131,8 @@ the [FLUKA manual](https://flukafiles.web.cern.ch/manual/index.html)):
 
 Use the functions defined in `src/root_output/src/FluLib.cpp` (or
 `src/root_output/src/FluLibRNTuple.cpp`) inside the correct FLUKA user
-routines. See `src/root_output/examples/usrini.f` and
-`src/root_output/examples/usrout.f` for guidance.
+routines. See `src/root_output/routines/usrini.f` and
+`src/root_output/routines/usrout.f` for guidance.
 
 ## Building via `make`
 
@@ -211,32 +211,42 @@ Available commands:
 
 `fluka-root <cfg>` is a thin wrapper (`src/fluka/cli/root.py`) that drives
 `src/root_output/Makefile` on your behalf, so you don't have to `cd` into
-`src/root_output` or remember the `USE_RNTUPLE`/`NAME` variables. `<cfg>`
-may be a standalone `root.yaml` or a multi-section `sim.yaml` containing a
-`root:` section — see [sim.yaml reference](sim-yaml).
+`src/root_output` or remember the `USE_RNTUPLE`/`NAME`/`OBJS` variables.
+`<cfg>` is a `sim.yaml` with a top-level `general:` section plus a `root:`
+section — a standalone `root.yaml` works too, as long as it still carries
+its own `general:` section (the top-level `general` section is always
+required — see [sim.yaml reference](sim-yaml)).
 
-From `examples/sim.yaml` (lines 41-43):
+From `examples/simple/example.yaml`:
 
 ```yaml
 root:
-  files: [FluLibRNTuple.cpp]   # FluLib.cpp → TTree, FluLibRNTuple.cpp → RNTuple
-  format: rntuple
+  rntuple: false            # false → FluLib (TTree); true → FluLibRNTuple (RNTuple)
+  routines: [mgdraw.f]      # overrides default usrini/usrout/mgdraw; extras compiled too
 ```
 
 Field reference:
 
 | Field | Meaning |
 |-------|---------|
-| `files` | List of source filenames to build, e.g. `[FluLib.cpp]` or `[FluLibRNTuple.cpp]`. One `make` invocation is issued per entry. |
-| `format` | Shorthand used only when `files` is omitted: `rntuple` → builds `FluLibRNTuple.cpp`, anything else → builds `FluLib.cpp`. |
-| `name` | Optional output binary name passed as `NAME=`; defaults to the source filename without its extension (e.g. `FluLibRNTuple.cpp` → `NAME=FluLibRNTuple`). |
+| `rntuple` | `false` (default) → builds against `FluLib.cpp` (`TTree`); `true` → `FluLibRNTuple.cpp` (`RNTuple`). Controls `USE_RNTUPLE=<0\|1>`. |
+| `routines` | Optional list of `.f` routines. Any entry whose basename matches a shipped default (`usrini.f`, `usrout.f`, `mgdraw.f`) **overrides** that default; anything else is an **extra** routine compiled alongside them. Paths resolve relative to the config file's directory. |
+| `name` | Optional output binary name, passed as `NAME=` (default `rootfluka`). |
 
-For each listed file, `fluka-root` sets `USE_RNTUPLE=1` if the filename
-contains `RNTuple`, otherwise `USE_RNTUPLE=0`, and runs:
+`fluka-root` resolves the routine list with the shipped defaults under
+`src/root_output/routines/` (`usrini.f`, `usrout.f`, `mgdraw.f`), applies
+any `routines:` overrides/extras by basename, stages the resulting files
+into a temporary build directory alongside a copy of the Makefile and
+`src/`, and runs:
 
 ```bash
-make -C src/root_output USE_RNTUPLE=<0|1> NAME=<name>
+make -C <build_dir> USE_RNTUPLE=<0|1> NAME=<name> OBJS="usrini.o usrout.o mgdraw.o [extras...]"
 ```
+
+For example, `routines: [mgdraw.f]` (with `mgdraw.f` living next to the
+config file) overrides the shipped `mgdraw.f` and leaves `usrini.f`/
+`usrout.f` at their defaults; an entry like `extra_routine.f` would be
+appended as an additional compiled object instead of overriding anything.
 
 ## Running it
 

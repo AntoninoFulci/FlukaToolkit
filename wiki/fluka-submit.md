@@ -28,9 +28,13 @@ fluka-submit sim.yaml
 fluka-submit --grid sim.yaml
 ```
 
-`<cfg>` may be a standalone submit config or a multi-section `sim.yaml`
-containing a `submit:` section — see [sim.yaml reference](sim-yaml). When a
-`sim.yaml` is passed, `fluka-submit` reads only its `submit:` section.
+`<cfg>` is a `sim.yaml` with a top-level `general:` section plus a
+`submit:` section — see [sim.yaml reference](sim-yaml). `fluka-submit`
+resolves its view as `general` → `submit`: `backend`/`input`/`output`/
+`primaries`/`use_dpm`/`custom_executable`/`rfluka_path` come from
+`general`, while `njobs` and the batch-resource fields (`mem`, `time`,
+`queue`, `ntasks`, `nodes`, `gres`, `ncpu`, `disk`,
+`condor_max_runtime`, `farm_out`, …) come from `submit`.
 
 ## Backends
 
@@ -57,36 +61,40 @@ parsers):
 executable (`rfluka -d`); it is mutually exclusive with `custom_exe`
 (`rfluka -e`).
 
-## The `submit:` config section
+## The `general:` + `submit:` config sections
 
-From `examples/sim.yaml` (lines 23-28):
+From `examples/simple/example.yaml`:
 
 ```yaml
-submit:
-  backend: ts                  # ts | slurm | lsf | condor
-  input: template.inp
-  njobs: 2
+general:
+  input: example.inp        # FLUKA .inp (needs RANDOMIZ + a START card)
+  backend: ts                # ts | slurm | lsf | condor
+  output: results/           # job subfolders are created under here
+  primaries: 1000            # optional — overrides the START primary count
+  use_dpm: false              # true → rfluka -d (DPMJET/RQMD); exclusive with custom_executable
+
+submit:                      # batch resources — the single source used by submit AND grid
+  njobs: 2                   # independent seeded jobs of general.input
   mem: "1500"
   time: "1-00:00:00"
 ```
 
 Field reference:
 
-| Field | Meaning |
-|-------|---------|
-| `backend` | Required. One of `ts`, `slurm`, `lsf`, `condor`. |
-| `input` | Required FLUKA input file; must end in `.inp`. |
-| `njobs` | Required. Number of independent jobs (one random seed each); must be ≥ 1. |
-| `custom_exe` | Optional path to a custom FLUKA executable, passed as `-e` to `rfluka`. Mutually exclusive with `use_dpm`. |
-| `use_dpm` | Optional; launches with `rfluka -d`. |
-| `output_dir` | Optional root directory for job subfolders (default: input name without `.inp`). |
-| `nprim` | Optional primary-particle count that overwrites the `START` card; omit to keep the value in the `.inp`. |
-| `dry_run` | Optional; build scripts and print commands without submitting. |
-| `mem`, `time`, `queue`, `ntasks`, `nodes`, `gres`, `ncpu`, `disk` | Backend-specific fields (see the table above); accepted whether or not the backend uses them. |
+| Section | Field | Meaning |
+|---------|-------|---------|
+| `general` | `input` | Required FLUKA input file; must end in `.inp`. |
+| `general` | `backend` | Required. One of `ts`, `slurm`, `lsf`, `condor`. |
+| `general` | `output` | Root directory for job subfolders (default: input name without `.inp` if omitted). |
+| `general` | `primaries` | Optional; overrides the `START` primary count. |
+| `general` | `custom_executable` | Optional path to a custom FLUKA executable, passed as `-e` to `rfluka`. Mutually exclusive with `use_dpm`. |
+| `general` | `use_dpm` | Optional; launches with `rfluka -d`. |
+| `submit` | `njobs` | Required. Number of independent jobs (one random seed each); must be ≥ 1. |
+| `submit` | `mem`, `time`, `queue`, `ntasks`, `nodes`, `gres`, `ncpu`, `disk`, `condor_max_runtime`, `farm_out` | Backend-specific fields (see the table above); accepted whether or not the backend uses them. |
 
 Your FLUKA input file must contain a `RANDOMIZ` card — the launcher
 rewrites its seed per job. A `START` card is required only if you override
-the primary count with `nprim`.
+the primary count with `general.primaries`.
 
 ## What it produces
 

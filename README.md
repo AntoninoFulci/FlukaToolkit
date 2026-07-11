@@ -28,19 +28,48 @@ library (`from fluka.isotope_inventory import analysis`, etc.).
 
 ## One config, many tools
 
-A single `sim.yaml` describes an entire simulation. Each tool reads **only its
-own section** and ignores the rest, so the whole run lives in one file:
+A single `sim.yaml` describes an entire simulation: a shared **`general`**
+section plus one section per tool. Every tool merges `general` with its own
+section — `general` provides the defaults, the tool section overrides —
+and ignores everything else, so the whole run lives in one file:
 
 ```yaml
-grid:      { ... }   # fluka-grid   reads this
-submit:    { ... }   # fluka-submit reads this
-analysis:  { ... }   # fluka-analysis reads this
-root:      { ... }   # fluka-root   reads this
+general:
+  input: example.inp        # FLUKA .inp (one #define per grid key + RANDOMIZ/START)
+  backend: ts                # ts | slurm | lsf | condor  (used by grid + submit)
+  output: results/           # per-combo run dirs are created under here
+  primaries: 1000
+
+submit:                      # batch resources — used by submit AND grid
+  njobs: 2
+  max_parallel: 10
+  mem: "1500"
+  time: "1-00:00:00"
+
+grid:                        # fluka-grid reads this (+ submit, for resources)
+  parameters:
+    irrtime: [86400, 172800]
+    mat: [COPPER, TUNGSTEN]
+  runs_per_combo: 2
+
+root:                        # fluka-root reads this
+  rntuple: false
+  routines: [mgdraw.f]
+
+analysis:                    # fluka-analysis reads this
+  run: c1/run_0001            # relative to general.output
+  units: [21, 22]
+  volume: 1000
+  isotopes:
+    31: 70
+  output: isotopes.xlsx
 ```
 
-See [`examples/sim.yaml`](examples/sim.yaml) for a fully annotated example.
-Every tool also still accepts its own **standalone** config file (back-compat),
-so existing single-tool configs keep working.
+See [`examples/simple/example.yaml`](examples/simple/example.yaml) for the
+full annotated example (paired with
+[`examples/simple/example.inp`](examples/simple/example.inp)), and the
+[sim.yaml reference](https://github.com/AntoninoFulci/FlukaToolkit/wiki/sim-yaml)
+for the complete schema.
 
 ### Typical flow
 
