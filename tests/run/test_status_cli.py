@@ -14,15 +14,33 @@ def _write_manifest(out_dir, backend="ts"):
 
 def _sim_yaml(tmp_path, out_dir):
     p = tmp_path / "sim.yaml"
-    p.write_text(f"grid:\n  output:\n    directory: {out_dir}\n")
+    p.write_text(
+        "general:\n"
+        "  input: example.inp\n"
+        "  backend: ts\n"
+        f"  output: {out_dir}\n"
+        "  primaries: 1000\n"
+        "grid:\n"
+        "  parameters: { beame: [0.1] }\n"
+        "  runs_per_combo: 2\n"
+    )
     return p
 
-def test_output_dir_helper():
-    assert C._output_dir({"output": {"directory": "/out"}}) == Path("/out")
+def test_output_dir_helper(tmp_path):
+    p = tmp_path / "sim.yaml"
+    p.write_text("general:\n  output: /out\n")
+    assert C._output_dir(p) == Path("/out")
 
-def test_output_dir_missing_raises():
+def test_output_dir_relative_resolves_to_config_dir(tmp_path):
+    p = tmp_path / "sim.yaml"
+    p.write_text("general:\n  output: results/\n")
+    assert C._output_dir(p) == tmp_path / "results"
+
+def test_output_dir_missing_raises(tmp_path):
+    p = tmp_path / "sim.yaml"
+    p.write_text("general:\n  input: example.inp\n")
     with pytest.raises(Exception):
-        C._output_dir({})
+        C._output_dir(p)
 
 def test_build_status_reports_done(tmp_path):
     out = tmp_path / "results"; (out / "c1" / "run_0001").mkdir(parents=True)

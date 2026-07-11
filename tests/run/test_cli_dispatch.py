@@ -1,23 +1,31 @@
-from fluka.cli._common import resolve_config
+import pytest
+from fluka.cli._common import resolve, load_sim
 
 
-def test_multi_section_file_returns_own_section(tmp_path):
+def test_common_reexports_resolve_merges_general_into_tool(tmp_path):
     p = tmp_path / "sim.yaml"
-    p.write_text("grid: {template: a.inp}\nanalysis: {units: [21]}\n")
-    cfg, mode = resolve_config(p, "analysis")
-    assert mode == "section" and cfg == {"units": [21]}
+    p.write_text("general:\n  backend: ts\nanalysis:\n  units: [21]\n")
+    cfg = resolve(p, "analysis")
+    assert cfg["backend"] == "ts"    # from general
+    assert cfg["units"] == [21]      # from tool section
 
 
-def test_standalone_file_passed_through(tmp_path):
-    p = tmp_path / "analysis.yaml"
-    p.write_text("units: [21]\nisotopes: {31: 70}\n")
-    cfg, mode = resolve_config(p, "analysis")
-    assert mode == "standalone" and cfg["units"] == [21]
-
-
-def test_multi_section_missing_own_section_raises(tmp_path):
+def test_common_reexports_resolve_tool_overrides_general(tmp_path):
     p = tmp_path / "sim.yaml"
-    p.write_text("grid: {template: a.inp}\nsubmit: {backend: ts}\n")
-    import pytest
-    with pytest.raises(KeyError):
-        resolve_config(p, "analysis")
+    p.write_text("general:\n  backend: ts\nsubmit:\n  backend: slurm\n")
+    cfg = resolve(p, "submit")
+    assert cfg["backend"] == "slurm"
+
+
+def test_common_reexports_load_sim_returns_raw_sections(tmp_path):
+    p = tmp_path / "sim.yaml"
+    p.write_text("general:\n  backend: ts\nanalysis:\n  units: [21]\n")
+    data = load_sim(p)
+    assert data["analysis"]["units"] == [21]
+
+
+def test_common_reexports_load_sim_requires_general(tmp_path):
+    p = tmp_path / "sim.yaml"
+    p.write_text("analysis: {units: [21]}\n")
+    with pytest.raises(Exception):
+        load_sim(p)

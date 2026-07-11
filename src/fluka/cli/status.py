@@ -7,7 +7,7 @@ from pathlib import Path
 
 from tabulate import tabulate
 
-from fluka.cli._common import resolve_config
+from fluka.run.simconfig import load_sim
 from fluka.grid.backends.queue_adapter import BACKENDS as _BACKEND_CLASSES
 from fluka.run.manifest import load_manifest, manifest_path_for
 from fluka.run import status as S
@@ -15,11 +15,10 @@ from fluka.run.status import resolve_all, all_terminal, summary_counts
 from fluka.run.orchestrator import analyze_phase
 
 
-def _output_dir(cfg: dict) -> Path:
-    try:
-        return Path(cfg["output"]["directory"])
-    except (KeyError, TypeError):
-        raise KeyError("config has no output.directory to locate the job manifest")
+def _output_dir(cfg_path) -> Path:
+    out = load_sim(cfg_path)["general"]["output"]
+    p = Path(out)
+    return p if p.is_absolute() else (Path(cfg_path).parent / p)
 
 
 def _backends():
@@ -27,12 +26,7 @@ def _backends():
 
 
 def build_status(cfg_path) -> list[S.JobStatus]:
-    cfg, mode = resolve_config(cfg_path, "grid")
-    if mode == "standalone" and "output" not in cfg and "grid" in cfg:
-        # sim.yaml with only a `grid:` section (no sibling sections) is passed
-        # through unwrapped by resolve_config; unwrap it here.
-        cfg = cfg["grid"]
-    out_dir = _output_dir(cfg)
+    out_dir = _output_dir(cfg_path)
     jobs = load_manifest(manifest_path_for(out_dir))
     if not jobs:
         print(f"no jobs recorded for {out_dir}; run fluka-grid / fluka-run submit first",
