@@ -11,13 +11,17 @@ def make_project(tmp_path, backend="ts", runs_per_combo=2, params=None):
     inp = tmp_path / "example.inp"
     inp.write_text("#define beame 0.5\n#define mat GALLIUM\nRANDOMIZ         1.0\nSTOP\n")
     cfg = {
-        "fluka": {"input": str(inp), "custom_executable": None, "rfluka_path": "/fluka/bin"},
-        "output": {"directory": str(tmp_path / "results")},
+        "general": {
+            "input": str(inp),
+            "backend": backend,
+            "output": str(tmp_path / "results"),
+            "rfluka_path": "/fluka/bin",
+        },
+        "submit": {"max_parallel": 4},
         "grid": {
             "parameters": params or {"beame": [0.05, 0.1], "mat": ["GALLIUM"]},
             "runs_per_combo": runs_per_combo,
         },
-        "execution": {"max_parallel": 4, "backend": backend},
     }
     cfg_path = tmp_path / "config.yaml"
     cfg_path.write_text(yaml.dump(cfg))
@@ -105,10 +109,10 @@ def test_check_seeds_reports_duplicates(tmp_path, monkeypatch, capsys):
 
     cfg_file = tmp_path / "config.yaml"
     cfg_file.write_text(
-        "fluka:\n  input: sim.inp\n  rfluka_path: /fake/bin\n"
-        "output:\n  directory: %s\n"
-        "grid:\n  parameters:\n    beame: [0.1]\n  runs_per_combo: 1\n"
-        "execution:\n  max_parallel: 4\n" % out
+        "general:\n  input: sim.inp\n  rfluka_path: /fake/bin\n"
+        "  output: %s\n"
+        "submit:\n  max_parallel: 4\n"
+        "grid:\n  parameters:\n    beame: [0.1]\n  runs_per_combo: 1\n" % out
     )
     (tmp_path / "sim.inp").write_text("#define beame 0.1\nRANDOMIZ 1. 1.\nSTART 1000.\nSTOP\n")
 

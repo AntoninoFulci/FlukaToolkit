@@ -11,6 +11,7 @@ from fluka.grid.grid import combo_name, generate_combinations
 from fluka.grid.workspace import create_run_workspace, patch_inp, reseed_inp
 from fluka.grid.seeds import scan_used_seeds, next_seed, find_duplicate_seeds
 from fluka.run.manifest import Job, record_job, manifest_path_for, parse_job_id
+from fluka.run.simconfig import resolve
 
 
 def _parse_args():
@@ -189,7 +190,7 @@ def run_config(config, *, dry_run: bool = False, reset: bool = False) -> None:
 def main() -> None:
     args = _parse_args()
 
-    config = load_config(args.config)
+    config = load_config(resolve(args.config, "grid"))
     validate_config(config)
 
     if args.check_seeds:

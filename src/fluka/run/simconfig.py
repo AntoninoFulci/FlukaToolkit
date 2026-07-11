@@ -27,6 +27,12 @@ def resolve(path, tool: str) -> dict:
     # general provides defaults
     for k, v in data["general"].items():
         merged[k] = v
+    # grid reuses submit's batch-resource defaults (max_parallel, mem, farm_out, ...)
+    if tool == "grid":
+        submit_section = data.get("submit") or {}
+        if isinstance(submit_section, dict):
+            for k, v in submit_section.items():
+                merged[k] = v
     # tool section overrides / adds
     section = data.get(tool) or {}
     if not isinstance(section, dict):

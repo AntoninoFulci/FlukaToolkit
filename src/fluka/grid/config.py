@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Optional
 import re
 import subprocess
-import yaml
 
 
 @dataclass
@@ -46,45 +45,34 @@ class Config:
     execution: ExecutionConfig
 
 
-def load_config(source: dict | Path) -> Config:
-    if isinstance(source, Path):
-        config_dir = source.parent
-        with open(source) as f:
-            raw = yaml.safe_load(f)
-    else:
-        config_dir = None
-        raw = source
-
-    inp = Path(raw["fluka"]["input"])
-    if config_dir is not None and not inp.is_absolute():
-        inp = config_dir / inp
-
+def load_config(view: dict) -> Config:
+    inp = Path(view["input"])          # already resolved by simconfig.resolve
     return Config(
         fluka=FlukaConfig(
             input=inp,
-            custom_executable=raw["fluka"].get("custom_executable"),
-            rfluka_path=raw["fluka"].get("rfluka_path"),
-            primaries=raw["fluka"].get("primaries"),
-            use_dpm=bool(raw["fluka"].get("use_dpm", False)),
+            custom_executable=view.get("custom_executable"),
+            rfluka_path=view.get("rfluka_path"),
+            primaries=view.get("primaries"),
+            use_dpm=bool(view.get("use_dpm", False)),
         ),
-        output_dir=Path(raw["output"]["directory"]),
+        output_dir=Path(view["output"]),
         grid=GridConfig(
-            parameters=raw["grid"]["parameters"],
-            runs_per_combo=raw["grid"]["runs_per_combo"],
+            parameters=view["parameters"],
+            runs_per_combo=view["runs_per_combo"],
         ),
         execution=ExecutionConfig(
-            max_parallel=raw["execution"]["max_parallel"],
-            backend=raw["execution"].get("backend", "ts"),
-            queue=raw["execution"].get("queue"),
-            mem=str(raw["execution"].get("mem", "1500")),
-            time=raw["execution"].get("time", "1-00:00:00"),
-            ntasks=int(raw["execution"].get("ntasks", 1)),
-            nodes=int(raw["execution"].get("nodes", 1)),
-            gres=raw["execution"].get("gres", "disk:1G"),
-            ncpu=int(raw["execution"].get("ncpu", 1)),
-            disk=int(raw["execution"].get("disk", 100000)),
-            condor_max_runtime=int(raw["execution"].get("condor_max_runtime", 86400)),
-            farm_out=raw["execution"].get("farm_out", "/farm_out"),
+            max_parallel=int(view.get("max_parallel", 1)),
+            backend=view.get("backend", "ts"),
+            queue=view.get("queue"),
+            mem=str(view.get("mem", "1500")),
+            time=view.get("time", "1-00:00:00"),
+            ntasks=int(view.get("ntasks", 1)),
+            nodes=int(view.get("nodes", 1)),
+            gres=view.get("gres", "disk:1G"),
+            ncpu=int(view.get("ncpu", 1)),
+            disk=int(view.get("disk", 100000)),
+            condor_max_runtime=int(view.get("condor_max_runtime", 86400)),
+            farm_out=view.get("farm_out", "/farm_out"),
         ),
     )
 
