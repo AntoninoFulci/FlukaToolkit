@@ -1,0 +1,107 @@
+# flair project file
+Version: 300
+Mode: fluka
+Title: FlukaToolkit Example file
+md5: b594e4ad05a427f5860bcb8db259828a
+Input:
+TITLE
+	FlukaToolkit Example file
+#define irrtime 86400
+#define current 6.24E+15
+#define mat COPPER
+*Set the defaults for precision simulations
+DEFAULTS PRECISIO
+*Define the beam characteristics
+BEAM PROTON 0.3 -0.05 0.1 -1.0 -1.0
+*Define the beam position
+BEAMPOS ,,, -10
+GEOBEGIN COMBNAME
+*Black body
+SPH blkbody 0.0 0.0 0.0 1000.0
+*Void sphere
+SPH void 0.0 0.0 0.0 100.0
+*Cylindrical target
+RCC target 0.0 0.0 0.0 0.0 0.0 10.0 5.0
+END
+*Black hole
+REGION BLKBODY 5
+	+blkbody -void
+*Void around
+REGION VOID 5
+	+void -target
+*Target
+REGION TARGET 5
+	+target
+	@select=1
+END
+GEOEND
+*..+....1....+....2....+....3....+....4....+....5....+....6....+....7..
+ASSIGNMA , BLCKHOLE BLKBODY
+ASSIGNMA , VACUUM VOID
+ASSIGNMA , $mat TARGET
+*Requests simulation of radioactive decays and sets the corresponding
+*biasing and transport conditions
+RADDECAY , 1.,, 5
+*Define an irradiation profile for radioactive decay calculations
+IRRPROFI , $irrtime $current
+*Defines decay times for radioactive product scoring
+DCYTIMES , 0 86400
+*Associates selected scoring detectors with user-defined decay times
+DCYSCORE RESNUCLE 1,,, det0
+DCYSCORE , 2
+RESNUCLE det0 3 -21,,, TARGET
+RESNUCLE det1 3 -22,,, TARGET
+USERDUMP dump 100 99 0 1
+*Set the random number seed
+RANDOMIZ , 1.0
+*Set the number of primary histories to be simulated in the run
+START
+STOP
+EndInput
+
+Notes:
+	|Based on the default "decay" example file.
+Page: Input
+
+# Run information
+Run: <default>
+End
+Geometry: Geometry
+	Frame.bsplit: 1.0
+	Frame.vsplit: 0.0
+End
+
+# Plots information
+Plot: Red
+	Type: Geometry
+	basisu: 0 0 1
+	basisv: 1 0 0
+	coord: Z-X
+	extends: 100.0 0.20161290322580647
+	group: Geometry
+	layer: Lattice
+End
+Plot: Green
+	Type: Geometry
+	basisu: 0.836516 0.0173376 0.547668
+	basisv: 0.224144 0.901221 -0.370891
+	extends: 100.0 0.20202020202020202
+	group: Geometry
+	layer: 3D
+End
+Plot: Blue
+	Type: Geometry
+	basisu: 0 0 1
+	coord: Z-Y
+	extends: 69.44444444444437 45.54882834398471
+	group: Geometry
+	layer: Lattice
+	origin: 0 -7.08211 -1.94468
+End
+Plot: Magenta
+	Type: Geometry
+	coord: X-Y
+	extends: 100.0 65000.0
+	group: Geometry
+	layer: Lattice
+End

@@ -2,27 +2,29 @@
 # Each CLI reads ONLY its own section; sections it does not own are ignored.
 # You can also feed each tool its own standalone config (back-compat).
 
-# ── fluka-grid : expand a parameter grid over a template, seed, and submit ──
+# ── fluka-grid : expand a parameter grid over a input, seed, and submit ──
 grid:
   fluka:
-    input: template.inp        # FLUKA .inp template (needs a #define per grid key + RANDOMIZ/START)
-    primaries: 10000           # optional — overrides the START primary count
-    use_dpm: false             # true → rfluka -d (DPMJET/RQMD); exclusive with custom_executable
+    input: example.inp        # FLUKA .inp input (needs a #define per grid key + RANDOMIZ/START)
+    primaries: 1000           # optional — overrides the START primary count
+    use_dpm: false            # true → rfluka -d (DPMJET/RQMD); exclusive with custom_executable
   output:
     directory: results/        # per-combo run dirs + patched inputs written here
   grid:
-    parameters:                # each key MUST match a `#define <key>` in the template
-      beame: [0.05, 0.1, 0.5]
+    parameters:             # each key MUST match a `#define <key>` in the input file
+      irrtime: [86400, 172800, 259200]  # seconds
+      curr: [6.24E+15, 6.24E+16] # particles/s
       mat: [GALLIUM, TUNGSTEN]
-    runs_per_combo: 5          # independent runs per combination (unique seeds)
+
+    runs_per_combo: 2          # independent runs per combination (unique seeds)
   execution:
     backend: ts                # ts | slurm | lsf | condor
-    max_parallel: 4            # ts slot count (local concurrency)
+    max_parallel: 10            # ts slot count (local concurrency)
 
 # ── fluka-submit : submit prepared FLUKA inputs to a batch backend ──
 submit:
   backend: ts                  # ts | slurm | lsf | condor
-  input: template.inp
+  input: example.inp
   njobs: 2
   mem: "1500"
   time: "1-00:00:00"
