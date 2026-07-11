@@ -24,8 +24,11 @@ def resolve(path, tool: str) -> dict:
     data = load_sim(p)
     config_dir = p.parent
     merged: dict = {}
-    # general provides defaults
+    # general provides defaults (but skip "output" for analysis tool since
+    # general.output is a run directory path, while analysis.output is an xlsx filename)
     for k, v in data["general"].items():
+        if k == "output" and tool == "analysis":
+            continue
         merged[k] = v
     # grid reuses submit's batch-resource defaults (max_parallel, mem, farm_out, ...)
     if tool == "grid":
@@ -41,6 +44,9 @@ def resolve(path, tool: str) -> dict:
         merged[k] = v
     # resolve path-valued keys relative to the config dir
     for k in _PATH_KEYS:
+        # skip "output" for analysis tool: it's just a filename (xlsx), not a path
+        if k == "output" and tool == "analysis":
+            continue
         if merged.get(k):
             pv = Path(merged[k])
             merged[k] = str(pv if pv.is_absolute() else (config_dir / pv))

@@ -2,8 +2,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-import yaml
-
 
 @dataclass
 class AnalysisConfig:
@@ -15,42 +13,30 @@ class AnalysisConfig:
     output: str = "isotopes.xlsx"
 
 
-def load_analysis_config(path: Path) -> AnalysisConfig:
-    raw = yaml.safe_load(Path(path).read_text())
-    if not raw or "analysis" not in raw:
-        raise ValueError("config must contain a top-level 'analysis' section")
-    a = raw["analysis"]
-
-    for field in ("directory", "units", "volume", "isotopes"):
-        if field not in a:
+def load_analysis_config(view: dict) -> AnalysisConfig:
+    for field in ("run", "units", "volume", "isotopes"):
+        if field not in view:
             raise ValueError(f"analysis.{field} is required")
-
-    directory = Path(a["directory"])
+    base = view.get("_general_output")
+    if not base:
+        raise ValueError("general.output is required to locate the analysis run")
+    directory = Path(base) / view["run"]
     if not directory.exists():
-        raise ValueError(f"analysis.directory does not exist: {directory}")
-
-    units = [int(u) for u in a["units"]]
+        raise ValueError(f"analysis run directory does not exist: {directory}")
+    units = [int(u) for u in view["units"]]
     if not units:
         raise ValueError("analysis.units must list at least one unit number")
-
-    raw = a["isotopes"]
     isotopes: list[tuple[int, int]] = []
-    for k, v in raw.items():
+    for k, v in view["isotopes"].items():
         z = int(k)
-        if isinstance(v, list):
-            for mass in v:
-                isotopes.append((z, int(mass)))
-        else:
-            isotopes.append((z, int(v)))
+        for mass in (v if isinstance(v, list) else [v]):
+            isotopes.append((z, int(mass)))
     isotopes.sort()
     if not isotopes:
         raise ValueError("analysis.isotopes must list at least one Z: A pair")
-
     return AnalysisConfig(
-        directory=directory,
-        units=units,
-        isotopes=isotopes,
-        volume=float(a["volume"]),
-        executable=a.get("executable", "usrsuw"),
-        output=a.get("output", "isotopes.xlsx"),
+        directory=directory, units=units, isotopes=isotopes,
+        volume=float(view["volume"]),
+        executable=view.get("executable", "usrsuw"),
+        output=view.get("output", "isotopes.xlsx"),
     )

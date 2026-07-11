@@ -2,12 +2,13 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from fluka.run.simconfig import resolve
 from fluka.isotope_inventory.config import load_analysis_config
 from fluka.isotope_inventory.analysis import run_analysis
 
 
 def run_sim(path) -> None:
-    run_analysis(load_analysis_config(path))
+    run_analysis(load_analysis_config(resolve(path, "analysis")))
 
 
 def main() -> None:
