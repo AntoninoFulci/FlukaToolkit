@@ -35,8 +35,8 @@ grid:
     # mat: [COPPER, TUNGSTEN]
   runs_per_combo: 2          # independent runs per combination (unique seeds)
 
-# ── fluka-root : compile the FLUKA ROOT-output executable ──
-root:
+# ── fluka-compile : compile the FLUKA ROOT-output executable ──
+custom_exe:
   rntuple: false            # false → FluLib (TTree); true → FluLibRNTuple (RNTuple)
   routines: [src/root_output/routines/mgdraw.f]      # overrides default usrini/usrout/mgdraw; extras compiled too
 

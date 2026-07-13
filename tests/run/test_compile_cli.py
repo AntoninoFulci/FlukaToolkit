@@ -1,5 +1,5 @@
 from pathlib import Path
-from fluka.cli.root import resolve_routines, build_command
+from fluka.cli.compile import resolve_routines, build_command
 
 def _defaults(tmp_path):
     d = tmp_path / "routines"; d.mkdir()

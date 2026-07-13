@@ -39,7 +39,7 @@ def build_command(section: dict, root_dir, build_dir) -> list[str]:
 
 
 def run_sim(path) -> None:
-    section = resolve(path, "root")
+    section = resolve(path, "custom_exe")
     build_dir = Path(tempfile.mkdtemp(prefix="fluka-root-"))
     # copy the Makefile + FluLib sources into the build dir
     for item in ("Makefile", "src"):
