@@ -1,4 +1,8 @@
 from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
+
 import fluka.run.orchestrator as orch
 import fluka.run.orchestrator as O
 
@@ -50,6 +54,80 @@ def test_launch_no_custom_exe_submit(tmp_path, monkeypatch):
     monkeypatch.setattr(O, "_do_submit", lambda cfg, exe: called.__setitem__("submit_exe", exe))
     O.launch(_sim(tmp_path, custom_exe=False, grid=False))
     assert called["compile"] is False and called["submit_exe"] is None
+
+
+# --- injection seams: _do_grid / _do_submit set custom_executable / custom_exe
+# directly on the config/args object they build. `_do_grid` and `_do_submit`
+# import load_config/validate_config/run_config and build_submit_args/run_from_args
+# *locally* (inside the function body), so they must be monkeypatched at their
+# defining module, not as `orch.<name>` (orchestrator never binds those names
+# at module scope).
+
+def test_do_grid_injects_custom_executable(tmp_path, monkeypatch):
+    fake_cfg = SimpleNamespace(fluka=SimpleNamespace(custom_executable=None, use_dpm=False))
+    captured = {}
+    monkeypatch.setattr("fluka.grid.config.load_config", lambda view: fake_cfg)
+    monkeypatch.setattr(
+        "fluka.grid.config.validate_config",
+        lambda cfg: captured.setdefault("validated", cfg),
+    )
+    monkeypatch.setattr(
+        "fluka.grid.run.run_config", lambda cfg: captured.setdefault("ran", cfg)
+    )
+    sim = _sim(tmp_path, custom_exe=False, grid=True)
+    O._do_grid(sim, Path("/E"))
+    assert fake_cfg.fluka.custom_executable == "/E"
+    assert captured["validated"] is fake_cfg
+    assert captured["ran"] is fake_cfg
+
+def test_do_grid_raises_when_use_dpm_and_custom_exe(tmp_path, monkeypatch):
+    fake_cfg = SimpleNamespace(fluka=SimpleNamespace(custom_executable=None, use_dpm=True))
+
+    def fake_validate(cfg):
+        # mirrors the real fluka.grid.config.validate_config guard
+        if cfg.fluka.use_dpm and cfg.fluka.custom_executable:
+            raise ValueError(
+                "fluka.use_dpm and fluka.custom_executable are mutually exclusive; "
+                "set only one."
+            )
+
+    monkeypatch.setattr("fluka.grid.config.load_config", lambda view: fake_cfg)
+    monkeypatch.setattr("fluka.grid.config.validate_config", fake_validate)
+    monkeypatch.setattr(
+        "fluka.grid.run.run_config",
+        lambda cfg: pytest.fail("run_config should not be reached"),
+    )
+    sim = _sim(tmp_path, custom_exe=False, grid=True)
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        O._do_grid(sim, Path("/E"))
+
+def test_do_submit_injects_custom_exe(tmp_path, monkeypatch):
+    fake_args = SimpleNamespace(custom_exe=None, use_dpm=False)
+    captured = {}
+    monkeypatch.setattr(
+        "fluka.queue.core.config.build_submit_args", lambda view, backends: fake_args
+    )
+    monkeypatch.setattr(
+        "fluka.queue.launch_jobs.run_from_args",
+        lambda args: captured.setdefault("ran", args),
+    )
+    sim = _sim(tmp_path, custom_exe=False, grid=False)
+    O._do_submit(sim, Path("/E"))
+    assert fake_args.custom_exe == "/E"
+    assert captured["ran"] is fake_args
+
+def test_do_submit_raises_when_use_dpm_and_custom_exe(tmp_path, monkeypatch):
+    fake_args = SimpleNamespace(custom_exe=None, use_dpm=True)
+    monkeypatch.setattr(
+        "fluka.queue.core.config.build_submit_args", lambda view, backends: fake_args
+    )
+    monkeypatch.setattr(
+        "fluka.queue.launch_jobs.run_from_args",
+        lambda args: pytest.fail("run_from_args should not be reached"),
+    )
+    sim = _sim(tmp_path, custom_exe=False, grid=False)
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        O._do_submit(sim, Path("/E"))
 
 
 def test_main_bare_argv_dispatches_to_launch(tmp_path, monkeypatch):

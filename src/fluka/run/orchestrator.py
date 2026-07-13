@@ -26,6 +26,10 @@ def _do_submit(sim_path, exe) -> None:
     args = build_submit_args(resolve(sim_path, "submit"), BACKENDS)
     if exe is not None:
         args.custom_exe = str(exe)
+        if getattr(args, "use_dpm", False):
+            raise ValueError(
+                "use_dpm and custom_exe are mutually exclusive: set only one."
+            )
     run_from_args(args)
 
 def launch(sim_path) -> None:
