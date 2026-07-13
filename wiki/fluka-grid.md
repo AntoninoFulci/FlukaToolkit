@@ -126,5 +126,5 @@ fluka-grid sim.yaml
 ```
 
 To generate the grid *and* submit it in one step, use
-[`fluka-submit --grid`](fluka-submit) or `fluka-run submit`
+[`fluka-submit --grid`](fluka-submit) or bare `fluka-run`
 (see [fluka-run](fluka-run)).

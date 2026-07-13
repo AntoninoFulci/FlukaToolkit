@@ -1,38 +1,60 @@
 # fluka-run
 
-`fluka-run <phase> <cfg>` is the whole-simulation orchestrator: a thin
-sequencer, backed by `src/fluka/run/orchestrator.py`, that runs the other
-tools in the right order from a single `sim.yaml`. It has two phases,
-`submit` and `analyze`.
+`fluka-run <cfg>` is the whole-simulation orchestrator: a thin sequencer,
+backed by `src/fluka/run/orchestrator.py`, that runs the other tools in the
+right order from a single `sim.yaml`. It has two entry points: a bare,
+one-shot invocation that launches a simulation, and an `analyze` subcommand
+that collects and post-processes the results afterward.
 
 ```bash
-fluka-run submit sim.yaml
+fluka-run sim.yaml
 fluka-run analyze sim.yaml
 ```
 
-## `submit` phase (grid + submit)
+There is no `submit` subcommand — `fluka-run sim.yaml` (bare) is the launch
+path; see below for exactly what it does.
+
+## Bare `fluka-run <cfg>` (compile + grid/submit)
 
 ```python
-def submit_phase(sim_path, *, do_grid: bool) -> None:
+def launch(sim_path) -> None:
     sim = Path(sim_path)
-    if do_grid:
-        _run_grid(sim)      # fluka.cli.grid.run_sim(sim)
-    _run_submit(sim)        # fluka.cli.submit.run_sim(sim)
+    data = load_sim(sim)
+    exe = None
+    if "custom_exe" in data:
+        recompile = bool((data.get("general") or {}).get("recompile", False))
+        exe = compile_exe(resolve(sim, "custom_exe"), force=recompile)
+    grid = data.get("grid") or {}
+    if grid.get("parameters"):
+        _do_grid(sim, exe)
+    else:
+        _do_submit(sim, exe)
 ```
 
-By default `fluka-run submit sim.yaml` first runs the grid phase (equivalent
-to [`fluka-grid sim.yaml`](fluka-grid)) and then submits
-(equivalent to [`fluka-submit sim.yaml`](fluka-submit)). Pass `--no-grid` to
-skip grid generation and submit an already-prepared set of inputs directly:
+`fluka-run sim.yaml` does the following, in order:
 
-```bash
-fluka-run submit --no-grid sim.yaml
-```
+1. **Compile, if `custom_exe:` is present.** If the config has a top-level
+   `custom_exe:` section, `fluka-run` compiles it first (equivalent to
+   [`fluka-compile sim.yaml`](fluka-compile)), reusing the cached executable
+   at `exe_path` unless `general.recompile: true` forces a rebuild. If
+   `custom_exe:` is absent, this step is skipped entirely — no executable is
+   compiled, and `general.custom_executable` (if set by hand) is left as-is.
+2. **Grid or submit, based on `grid.parameters`.** If the config has a
+   `grid:` section with a non-empty `parameters:` map, `fluka-run` runs the
+   grid phase (equivalent to [`fluka-grid sim.yaml`](fluka-grid), which
+   generates the parameter grid **and** submits it). Otherwise it runs the
+   plain submit phase (equivalent to [`fluka-submit sim.yaml`](fluka-submit)).
+   Either way, if a `custom_exe:` section was compiled in step 1, the
+   resulting executable path is passed straight through — as
+   `FlukaConfig.custom_executable` for the grid path, or `Namespace.custom_exe`
+   for the submit path — so the job is launched with `rfluka -e <exe_path>`
+   without you having to also set `general.custom_executable` by hand.
 
-This is exactly what `fluka-submit --grid sim.yaml` also does — the two
-commands are equivalent entry points into the same code path.
+So a single `fluka-run sim.yaml` call covers: compile (if needed) → grid
+generation + submission, or plain submission — whichever the config calls
+for.
 
-## `analyze` phase (collect + analysis)
+## `analyze` subcommand (collect + analysis)
 
 ```python
 def analyze_phase(sim_path) -> None:
@@ -50,7 +72,7 @@ then runs the isotope inventory over the `analysis:` section of `sim.yaml`
 ## Async by design
 
 `fluka-run` does **not** poll job completion across batch backends. After
-`fluka-run submit`, the jobs are handed off to SLURM/LSF/HTCondor/`ts` and
+`fluka-run sim.yaml`, the jobs are handed off to SLURM/LSF/HTCondor/`ts` and
 run independently on the farm; `fluka-run` returns immediately. `fluka-run`
 itself has no built-in wait loop or status check — for that, use
 [`fluka-status`](fluka-status): it reports each job's state
@@ -59,8 +81,8 @@ terminal. `fluka-status --collect` combines the two: wait for all jobs to
 finish, then run the same collect+analyze step as `fluka-run analyze`.
 
 ```bash
-# 1. generate the grid and submit it
-fluka-run submit sim.yaml
+# 1. compile (if needed), generate the grid (if configured), and submit it
+fluka-run sim.yaml
 
 # 2. wait for the farm jobs to finish
 fluka-status sim.yaml --watch
@@ -75,8 +97,9 @@ fluka-status sim.yaml --collect
 
 | `fluka-run` invocation | Equivalent to |
 |-------------------------|---------------|
-| `fluka-run submit sim.yaml` | `fluka-grid sim.yaml` then `fluka-submit sim.yaml` (i.e. `fluka-submit --grid sim.yaml`) |
-| `fluka-run submit --no-grid sim.yaml` | `fluka-submit sim.yaml` |
+| `fluka-run sim.yaml`, with a `custom_exe:` section | `fluka-compile sim.yaml`, then `fluka-grid sim.yaml` (if `grid.parameters` set) or `fluka-submit sim.yaml`, with the compiled executable passed through as `-e <exe_path>` |
+| `fluka-run sim.yaml`, no `custom_exe:`, with `grid.parameters` | `fluka-grid sim.yaml` (generates the grid **and** submits) |
+| `fluka-run sim.yaml`, no `custom_exe:`, no `grid.parameters` | `fluka-submit sim.yaml` |
 | `fluka-run analyze sim.yaml` | collect results, then `fluka-analysis sim.yaml` |
 
 `fluka-run` always operates on a multi-section `sim.yaml` — see

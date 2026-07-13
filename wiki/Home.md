@@ -44,7 +44,7 @@ grid:                        # fluka-grid reads this (+ submit, for resources)
     mat: [COPPER, TUNGSTEN]
   runs_per_combo: 2
 
-root:                        # fluka-root reads this
+custom_exe:                  # fluka-compile reads this (optional section)
   rntuple: false
   routines: [mgdraw.f]
 
@@ -68,22 +68,24 @@ the full annotated example.
 | `fluka-grid <cfg>` | Expand a parameter grid over a `.inp` template, patch unique seeds, submit each run | [fluka-grid](fluka-grid) |
 | `fluka-submit <cfg>` | Submit FLUKA inputs to a batch backend (SLURM / LSF / HTCondor / Task-Spooler). `--grid` first generates the grid | [fluka-submit](fluka-submit) |
 | `fluka-analysis <cfg>` | Post-process `RESNUCLEi` output → per-isotope activity (Bq) / mass (µg) → Excel | [fluka-analysis](fluka-analysis) |
-| `fluka-root <cfg>` | Compile FLUKA ROOT-output routines via `src/root_output/Makefile` | [fluka-root](fluka-root) |
-| `fluka-run <phase> <cfg>` | Orchestrate a whole simulation from one file: `submit` (grid+submit) / `analyze` (collect+analysis) | [fluka-run](fluka-run) |
+| `fluka-compile <cfg>` | Compile a custom FLUKA ROOT-output executable via `src/root_output/Makefile` | [fluka-compile](fluka-compile) |
+| `fluka-run <cfg>` | Orchestrate a whole simulation from one file: bare invocation compiles (if `custom_exe:` is set) then grid/submit; `analyze` collects+analyzes | [fluka-run](fluka-run) |
 | `fluka-status <cfg>` | Report per-job state (PENDING/RUNNING/DONE/FAIL), `--watch`, `--collect` | [fluka-status](fluka-status) |
 
 ## Typical flow
 
 ```bash
-# 1. (once) compile the ROOT-output routines if your template uses them
-fluka-root sim.yaml
+# 1. compile (if the config has a custom_exe: section), generate the grid,
+#    and submit it to the farm — all in one call
+fluka-run sim.yaml
 
-# 2. generate the grid and submit it to the farm
-fluka-submit --grid sim.yaml        # or: fluka-run submit sim.yaml
+# ...or drive the same steps by hand:
+fluka-compile sim.yaml              # (once) compile the ROOT-output executable
+fluka-submit --grid sim.yaml        # generate the grid and submit it
 
-# 3. ...wait for the farm jobs to finish (FlukaToolkit does not poll)...
+# 2. ...wait for the farm jobs to finish (FlukaToolkit does not poll)...
 
-# 4. collect results and run the isotope inventory
+# 3. collect results and run the isotope inventory
 fluka-run analyze sim.yaml          # or: fluka-analysis sim.yaml
 ```
 
@@ -112,7 +114,7 @@ documentation going forward.
 - [fluka-grid](fluka-grid)
 - [fluka-submit](fluka-submit)
 - [fluka-analysis](fluka-analysis)
-- [fluka-root](fluka-root)
+- [fluka-compile](fluka-compile)
 - [fluka-run](fluka-run)
 - [fluka-status](fluka-status)
 - [sim.yaml reference](sim-yaml)

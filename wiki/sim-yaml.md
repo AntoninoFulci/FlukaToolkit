@@ -2,7 +2,7 @@
 
 `sim.yaml` is the "one config, many tools" file. A single YAML document with a
 shared **`general`** section plus one section per tool — `submit`, `grid`,
-`root`, `analysis`. Every tool reads its own section and falls back to
+`custom_exe`, `analysis`. Every tool reads its own section and falls back to
 `general` for anything shared.
 
 ## The rule: general provides the defaults, each section overrides
@@ -28,7 +28,8 @@ Two extra rules make the shared config work cleanly:
 
 There is **no** old-schema fallback: the pre-v2 layout (`grid.fluka.input`,
 `execution:`, `submit.backend`/`submit.input`, `root.files`/`root.format`) is
-gone.
+gone. The `root:` section from the early v2 layout has since been renamed to
+`custom_exe:` (see below).
 
 ## `general` — shared by every tool
 
@@ -39,8 +40,9 @@ gone.
 | `output` | Results directory; per-combo run dirs are created under it. |
 | `primaries` | Optional — overrides the `START` primary count. |
 | `use_dpm` | Optional — `true` → `rfluka -d`; exclusive with `custom_executable`. |
-| `custom_executable` | Optional — path passed as `-e` to `rfluka`. |
+| `custom_executable` | Optional — path passed as `-e` to `rfluka`. Set automatically by `fluka-run` when a `custom_exe:` section is present — see [fluka-compile](fluka-compile). |
 | `rfluka_path` | Optional — explicit FLUKA bin dir. |
+| `recompile` | Optional — `false` (default). When `fluka-run` auto-compiles a `custom_exe:` section, `true` forces a rebuild even if `exe_path` already exists; `false` reuses the cached binary. Has no effect on the standalone `fluka-compile` command, which always force-rebuilds. |
 
 ## `submit` — batch resources (read by [fluka-submit](fluka-submit) AND [fluka-grid](fluka-grid))
 
@@ -67,16 +69,22 @@ resources for every grid run.
 | `parameters` | Map of `#define` key → list of values (Cartesian product). Each key MUST match a `#define <key>` in `general.input`. |
 | `runs_per_combo` | Independent runs per combination (unique seeds). |
 
-## `root` — read by [fluka-root](fluka-root)
+## `custom_exe` — read by [fluka-compile](fluka-compile)
 
-Compiles the FLUKA ROOT-output executable. See [fluka-root](fluka-root) for the
-routine-resolution rules.
+Compiles the FLUKA ROOT-output executable. See [fluka-compile](fluka-compile)
+for the routine-resolution rules. A `custom_exe:` section is optional — omit
+it entirely if your simulation doesn't need a custom-compiled executable.
+When present, `fluka-run` compiles it automatically before running the
+grid/submit phase and passes the result through as `general.custom_executable`
+(`rfluka -e <exe_path>`).
 
 | Field | Meaning |
 |-------|---------|
 | `rntuple` | `false` (default) → `FluLib` (`TTree`); `true` → `FluLibRNTuple` (`RNTuple`). |
-| `routines` | Optional list of `.f` routines. Overrides the shipped defaults `usrini.f`/`usrout.f`/`mgdraw.f` by basename; anything else is an extra compiled alongside. |
-| `name` | Optional output binary name (`NAME=`, default `rootfluka`). |
+| `use_defaults` | `true` (default) → shipped `usrini.f`/`usrout.f`/`mgdraw.f` are always compiled in, with `routines:` entries overriding by basename or added as extras. `false` → only the files listed in `routines:` are compiled, verbatim. |
+| `routines` | Optional list of `.f` routines. Under `use_defaults: true`, overrides the shipped defaults `usrini.f`/`usrout.f`/`mgdraw.f` by basename; anything else is an extra compiled alongside. Under `use_defaults: false`, this is the complete routine list. |
+| `exe_path` | Optional full path to the compiled executable. Defaults to `<pkg>/src/root_output/fluka_custom_exe` (gitignored build artifact). Relative paths resolve against the config file's directory. |
+| `name` | Optional intermediate binary name (`NAME=`, default `rootfluka`) — internal to the build tree, not the final `exe_path`. |
 
 ## `analysis` — read by [fluka-analysis](fluka-analysis)
 
@@ -125,7 +133,7 @@ grid:
     mat: [COPPER, TUNGSTEN]
   runs_per_combo: 2
 
-root:
+custom_exe:
   rntuple: false
   routines: [mgdraw.f]
 
@@ -140,7 +148,7 @@ analysis:
 ```
 
 Point any tool at this same file — `fluka-grid sim.yaml`,
-`fluka-submit sim.yaml`, `fluka-root sim.yaml`, `fluka-analysis sim.yaml`,
+`fluka-submit sim.yaml`, `fluka-compile sim.yaml`, `fluka-analysis sim.yaml`,
 `fluka-status sim.yaml` — and each uses `general` plus only its own section.
 See [Home](Home) for the end-to-end flow and [fluka-run](fluka-run) for the
 orchestrator.

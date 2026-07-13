@@ -3,7 +3,7 @@
 `fluka-status <cfg>` reports the per-job state of a grid submission —
 PENDING / RUNNING / DONE / FAIL / UNKNOWN — without you having to SSH in
 and run `squeue`/`bjobs`/`condor_q` yourself. It closes the no-polling gap
-called out in [fluka-run](fluka-run): `fluka-run submit` (and `fluka-grid`)
+called out in [fluka-run](fluka-run): `fluka-run` (and `fluka-grid`)
 hand jobs off to the farm and return immediately, and previously the only
 way to know when they were done was to check the batch system by hand.
 It is backed by `fluka.run.status` and `fluka.run.manifest`
@@ -12,7 +12,7 @@ It is backed by `fluka.run.status` and `fluka.run.manifest`
 ## The manifest
 
 Every job submitted through the grid path (`fluka-grid`, and
-`fluka-run submit` / `fluka-submit --grid`, which run the grid phase) is
+`fluka-run` / `fluka-submit --grid`, which run the grid phase) is
 recorded in a manifest file written next to the run outputs, under
 `general.output`:
 
@@ -25,7 +25,7 @@ parsed job ID, input file, submission timestamp, and a small
 backend-specific `extra` payload used to locate the job's output later
 (see below). `fluka-status` reads this file — nothing else — to know which
 jobs exist and where to look for them; if it's missing or empty,
-`fluka-status` tells you to run `fluka-grid` / `fluka-run submit` first.
+`fluka-status` tells you to run `fluka-grid` / `fluka-run` first.
 
 ## The five states
 
@@ -95,12 +95,12 @@ its own are needed), same as [fluka-grid](fluka-grid).
 (`DONE` or `FAIL`). `--collect`, once every job is terminal, refuses to
 proceed if any job `FAIL`ed, and otherwise runs the same
 collect-then-analyze step as `fluka-run analyze` — i.e. it is the
-wait-then-analyze counterpart to `fluka-run submit`.
+wait-then-analyze counterpart to bare `fluka-run`.
 
 ## v1 limitation: manifest recording is grid-path only
 
 Manifest recording (`record_job`, in `src/fluka/grid/run.py`) is wired into
-the **grid submission path** — `fluka-grid`, and `fluka-run submit` /
+the **grid submission path** — `fluka-grid`, and `fluka-run` /
 `fluka-submit --grid` (which run the grid phase before submitting). A plain
 `fluka-submit sim.yaml` invocation, without `--grid`, does **not** currently
 write manifest entries, so `fluka-status` has nothing to report for jobs
