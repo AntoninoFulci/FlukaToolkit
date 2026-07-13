@@ -56,6 +56,9 @@ def resolve(path, tool: str) -> dict:
             str(Path(r) if Path(r).is_absolute() else (config_dir / r))
             for r in merged["routines"]
         ]
+    if merged.get("exe_path"):
+        ep = Path(merged["exe_path"])
+        merged["exe_path"] = str(ep if ep.is_absolute() else (config_dir / ep))
     # keep the shared general.output available under a non-clashing name so an
     # analysis section's `output` (an xlsx filename) never overwrites the dir
     if data["general"].get("output"):

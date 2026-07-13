@@ -51,3 +51,17 @@ def test_resolve_missing_tool_section(tmp_path):
     # required-field errors are raised by the tool loader, not resolve.
     a = resolve(p, "analysis")
     assert a["backend"] == "ts"
+
+
+def test_resolve_custom_exe_path_and_defaults(tmp_path):
+    from fluka.run.simconfig import resolve
+    p = tmp_path / "sim.yaml"
+    p.write_text(
+        "general:\n  input: x.inp\n  backend: ts\n  output: out/\n  recompile: true\n"
+        "custom_exe:\n  use_defaults: false\n  exe_path: build/myexe\n  routines: [mine.f]\n"
+    )
+    v = resolve(p, "custom_exe")
+    assert v["use_defaults"] is False
+    assert v["recompile"] is True                      # from general
+    from pathlib import Path
+    assert Path(v["exe_path"]) == (tmp_path / "build" / "myexe")   # resolved rel config dir
