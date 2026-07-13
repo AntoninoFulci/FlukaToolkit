@@ -2,7 +2,7 @@
 Version: 300
 Mode: fluka
 Title: FlukaToolkit Example file
-md5: b594e4ad05a427f5860bcb8db259828a
+md5: 5acdd9cdc8c2eaa33b5fcca37273b1f0
 Input:
 TITLE
 	FlukaToolkit Example file
@@ -32,7 +32,6 @@ REGION VOID 5
 *Target
 REGION TARGET 5
 	+target
-	@select=1
 END
 GEOEND
 *..+....1....+....2....+....3....+....4....+....5....+....6....+....7..
@@ -46,6 +45,9 @@ RADDECAY , 1.,, 5
 IRRPROFI , $irrtime $current
 *Defines decay times for radioactive product scoring
 DCYTIMES , 0 86400
+PHYSICS EVAPORAT 3
+PHYSICS COALESCE 1
+PHOTONUC ELECTNUC 1111,,, VACUUM @LASTMAT
 *Associates selected scoring detectors with user-defined decay times
 DCYSCORE RESNUCLE 1,,, det0
 DCYSCORE , 2
@@ -77,15 +79,15 @@ Plot: Red
 	basisu: 0 0 1
 	basisv: 1 0 0
 	coord: Z-X
-	extends: 100.0 0.20161290322580647
+	extends: 100.0 75.0
 	group: Geometry
 	layer: Lattice
 End
 Plot: Green
 	Type: Geometry
-	basisu: 0.836516 0.0173376 0.547668
+	basisu: 0.836516 0.0173377 0.547668
 	basisv: 0.224144 0.901221 -0.370891
-	extends: 100.0 0.20202020202020202
+	extends: 100.0 75.0
 	group: Geometry
 	layer: 3D
 End
@@ -93,7 +95,7 @@ Plot: Blue
 	Type: Geometry
 	basisu: 0 0 1
 	coord: Z-Y
-	extends: 69.44444444444437 45.54882834398471
+	extends: 69.44444444444437 52.08333333333328
 	group: Geometry
 	layer: Lattice
 	origin: 0 -7.08211 -1.94468
@@ -101,7 +103,7 @@ End
 Plot: Magenta
 	Type: Geometry
 	coord: X-Y
-	extends: 100.0 65000.0
+	extends: 100.0 64900.0
 	group: Geometry
 	layer: Lattice
 End

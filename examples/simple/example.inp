@@ -37,6 +37,9 @@ RADDECAY          1.                   5
 IRRPROFI    $irrtime  $current
 *Defines decay times for radioactive product scoring
 DCYTIMES           0     86400
+PHYSICS            3                                                  EVAPORAT
+PHYSICS            1                                                  COALESCE
+PHOTONUC        1111                        VACUUM  @LASTMAT          ELECTNUC
 *Associates selected scoring detectors with user-defined decay times
 DCYSCORE           1                          det0                    RESNUCLE
 DCYSCORE           2

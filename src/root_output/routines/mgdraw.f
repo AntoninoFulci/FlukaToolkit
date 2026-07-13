@@ -6,19 +6,6 @@
       INCLUDE 'dblprc.inc'
       INCLUDE 'dimpar.inc'
       INCLUDE 'iounit.inc'
-*
-*----------------------------------------------------------------------*
-*                                                                      *
-*     MaGnetic field trajectory DRAWing: actually this entry manages   *
-*                                        all trajectory dumping for    *
-*                                        drawing                       *
-*                                                                      *
-*     Default empty stub shipped by FlukaToolkit. Fill in the bodies   *
-*     below (or call into src/root_output/src/FluLib.cpp helpers) to   *
-*     save data for the ROOT output.                                   *
-*                                                                      *
-*----------------------------------------------------------------------*
-*
       INCLUDE 'caslim.inc'
       INCLUDE 'comput.inc'
       INCLUDE 'sourcm.inc'
@@ -30,6 +17,10 @@
       INCLUDE 'quemgd.inc'
       INCLUDE 'sumcou.inc'
       INCLUDE 'trackr.inc'
+
+      CHARACTER*8 INREG
+      CHARACTER*8 OUTREG
+      CHARACTER*8 REGNAME
 *
 *----------------------------------------------------------------------*
 *                                                                      *
@@ -51,7 +42,26 @@
 *======================================================================*
 *
       ENTRY BXDRAW ( ICODE, MREG, NEWREG, XSCO, YSCO, ZSCO )
-* *** user code here ***
+      
+      ! Get region names
+      CALL GEOR2N (MREG, INREG, IERR)
+      CALL GEOR2N (NEWREG, OUTREG, IERR)
+
+      IF(JTRACK.eq.1) THEN
+      IF((INREG.eq."VOID").and.(OUTREG.eq."TARGET")) THEN      
+            
+       CALL treefill (NCASE,
+     &               1,JTRACK,ETRACK,PTRACK,
+     &               XSCO, YSCO, ZSCO,
+     &               CXTRCK, CYTRCK, CZTRCK,
+     &               WTRACK, WSCRNG,
+     &               ISPUSR(1),ISPUSR(2),
+     &               SPAUSR(1),SPAUSR(2),SPAUSR(3),SPAUSR(4),
+     &               pID)
+      
+      END IF
+      END IF
+
       RETURN
 *
 *======================================================================*

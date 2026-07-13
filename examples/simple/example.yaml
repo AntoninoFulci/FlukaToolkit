@@ -32,13 +32,13 @@ grid:
   parameters:               # each key MUST match a `#define <key>` in example.inp
     irrtime: [86400, 172800]        # seconds
     current: [6.24E+15, 6.24E+16]   # particles/s
-    mat: [COPPER, TUNGSTEN]
+    # mat: [COPPER, TUNGSTEN]
   runs_per_combo: 2          # independent runs per combination (unique seeds)
 
 # ── fluka-root : compile the FLUKA ROOT-output executable ──
 root:
   rntuple: false            # false → FluLib (TTree); true → FluLibRNTuple (RNTuple)
-  routines: [mgdraw.f]      # overrides default usrini/usrout/mgdraw; extras compiled too
+  routines: [src/root_output/routines/mgdraw.f]      # overrides default usrini/usrout/mgdraw; extras compiled too
 
 # ── fluka-analysis : RESNUCLEi → per-isotope activity/mass → Excel ──
 analysis:

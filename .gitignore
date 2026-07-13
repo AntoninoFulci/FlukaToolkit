@@ -17,3 +17,4 @@ scripts/
 
 # Fluka simulation outputs and related files, never pushed to GitHub
 *~
+**results/
