@@ -28,7 +28,6 @@ def main() -> None:
     ap.add_argument("--grid", action="store_true", help="run grid generation before submitting")
     args = ap.parse_args()
     if args.grid:
-        from fluka.run.orchestrator import submit_phase
-        submit_phase(args.config, do_grid=True)
-    else:
-        run_sim(args.config)
+        from fluka.cli.grid import run_sim as run_grid
+        run_grid(args.config)
+    run_sim(args.config)
