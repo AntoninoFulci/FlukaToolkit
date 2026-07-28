@@ -114,7 +114,7 @@ src/
     isotope_inventory/   # RESNUCLEi → isotope activity/mass → Excel
     cli/                 # console-script entrypoints
     run/                 # sim.yaml loader + fluka-run orchestrator
-    root_output/         # packaged C++/ROOT FLUKA compiler assets
+    root_output/         # compiler assets packaged with fluka-compile
 ```
 
 The original per-project READMEs are preserved under
