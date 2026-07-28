@@ -7,6 +7,7 @@ __pycache__/
 build/
 dist/
 .venv/
+.worktrees/
 
 # Tracked in local-only backup repo (~/.flukatoolkit-local.git), never pushed to GitHub
 docs/
