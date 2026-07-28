@@ -38,8 +38,8 @@ grid:
 # ── fluka-compile : compile the FLUKA ROOT-output executable ──
 custom_exe:
   rntuple: false            # false → FluLib (TTree); true → FluLibRNTuple (RNTuple)
-  routines: [src/root_output/routines/mgdraw.f]      # overrides default usrini/usrout/mgdraw; extras compiled too
-  # exe_path: src/root_output/fluka_custom_exe        # optional — full path to the compiled exe (default shown)
+  routines: [src/fluka/root_output/routines/mgdraw.f]      # overrides default usrini/usrout/mgdraw; extras compiled too
+  # exe_path: src/fluka/root_output/fluka_custom_exe        # optional — full path to the compiled exe (default shown)
 
 # ── fluka-analysis : RESNUCLEi → per-isotope activity/mass → Excel ──
 analysis:

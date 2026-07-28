@@ -1,24 +1,24 @@
 # fluka-compile
 
 `fluka-compile <cfg>` compiles the FLUKA ROOT-output routines under
-`src/root_output/` — a C++/ROOT library, adapted and simplified from
+`src/fluka/root_output/` — a C++/ROOT library, adapted and simplified from
 discussions on the [FLUKA Forum](https://fluka-forum.web.cern.ch/t/saving-the-output-as-root-file/2361)
 and the [official FLUKA examples](http://www.fluka.org/fluka.php?id=examples&sub=example3),
 that lets FLUKA write its output directly in ROOT format instead of the
 usual binary dumps. This page ports the original `FlukaROOTOutput`
 documentation (`docs/legacy/root-README.md`) with every path updated to its
-new home under `src/root_output/`.
+new home under `src/fluka/root_output/`.
 
 ## Purpose
 
-`src/root_output/Makefile` compiles a C++ library containing all the
+`src/fluka/root_output/Makefile` compiles a C++ library containing all the
 variables and functions needed to save data inside `mgdraw.f`, and links it
 with your compiled FLUKA Fortran user routines into a custom FLUKA
 executable. Two ROOT data formats are supported:
 
-- `src/root_output/src/FluLib.cpp` (default) — saves data using the
+- `src/fluka/root_output/src/FluLib.cpp` (default) — saves data using the
   standard ROOT `TTree` structure.
-- `src/root_output/src/FluLibRNTuple.cpp` — saves data using the modern,
+- `src/fluka/root_output/src/FluLibRNTuple.cpp` — saves data using the modern,
   high-performance ROOT `RNTuple` structure.
 
 The routines are compiled using the FLUKA `fff` tool. By default the
@@ -129,20 +129,20 @@ the [FLUKA manual](https://flukafiles.web.cern.ch/manual/index.html)):
    - **WHAT(3):** what part of `mgdraw` to activate (usually `2` is enough)
    - **WHAT(4):** set to `1` if you want to activate `USDRAW` entries.
 
-Use the functions defined in `src/root_output/src/FluLib.cpp` (or
-`src/root_output/src/FluLibRNTuple.cpp`) inside the correct FLUKA user
-routines. See `src/root_output/routines/usrini.f` and
-`src/root_output/routines/usrout.f` for guidance.
+Use the functions defined in `src/fluka/root_output/src/FluLib.cpp` (or
+`src/fluka/root_output/src/FluLibRNTuple.cpp`) inside the correct FLUKA user
+routines. See `src/fluka/root_output/routines/usrini.f` and
+`src/fluka/root_output/routines/usrout.f` for guidance.
 
 ## Building via `make`
 
-`src/root_output/Makefile` selects the source file through `USE_RNTUPLE`
+`src/fluka/root_output/Makefile` selects the source file through `USE_RNTUPLE`
 (`0` → `FluLib.cpp`/`TTree`, the default; `1` → `FluLibRNTuple.cpp`/`RNTuple`)
 and names the output binary via `NAME` (default `rootfluka`). The compiled
 Fortran objects default to `OBJS = usrini.o usrout.o mgdraw.o`.
 
 ```bash
-cd src/root_output
+cd src/fluka/root_output
 
 # Standard TTree output (FluLib.cpp)
 make
@@ -154,7 +154,7 @@ make USE_RNTUPLE=1
 make NAME=myexecutable OBJS="mgdraw.o usrini.o usrout.o"
 ```
 
-The binary is written to `src/root_output/RootFlukaExecutables/<NAME>`, and
+The binary is written to `src/fluka/root_output/RootFlukaExecutables/<NAME>`, and
 intermediate `.o`/`.mod` files are cleaned up after a successful build.
 Other targets:
 
@@ -166,22 +166,22 @@ make cleanall   # wipe the entire RootFlukaExecutables/ directory
 ### Run FLUKA with the executable
 
 ```bash
-rfluka -M 1 -e src/root_output/RootFlukaExecutables/rootfluka example.inp
+rfluka -M 1 -e src/fluka/root_output/RootFlukaExecutables/rootfluka example.inp
 ```
 
 ## The `compilerf` helper
 
 To make compiling easier from any working directory, a bash script,
-`src/root_output/scripts/compilerf.sh`, is provided.
+`src/fluka/root_output/scripts/compilerf.sh`, is provided.
 
 1. **Set up environment variables.** Add the directory containing the
    Makefile to your shell configuration file (`~/.bashrc` or `~/.zshrc`):
    ```bash
-   export FLUKA_ROOT="/path/to/FlukaToolkit/src/root_output"
+   export FLUKA_ROOT="/path/to/FlukaToolkit/src/fluka/root_output"
    ```
 2. **Source the script:**
    ```bash
-   source /path/to/FlukaToolkit/src/root_output/scripts/compilerf.sh
+   source /path/to/FlukaToolkit/src/fluka/root_output/scripts/compilerf.sh
    ```
 
 Available commands:
@@ -210,8 +210,8 @@ Available commands:
 ## Driving it from `fluka-compile`
 
 `fluka-compile <cfg>` is a thin wrapper (`src/fluka/cli/compile.py`) that
-drives `src/root_output/Makefile` on your behalf, so you don't have to `cd`
-into `src/root_output` or remember the `USE_RNTUPLE`/`NAME`/`OBJS`
+drives `src/fluka/root_output/Makefile` on your behalf, so you don't have to `cd`
+into `src/fluka/root_output` or remember the `USE_RNTUPLE`/`NAME`/`OBJS`
 variables. `<cfg>` is a `sim.yaml` with a top-level `general:` section plus
 a `custom_exe:` section — a standalone config works too, as long as it
 still carries its own `general:` section (the top-level `general` section
@@ -222,7 +222,7 @@ From `examples/simple/example.yaml`:
 ```yaml
 custom_exe:
   rntuple: false            # false → FluLib (TTree); true → FluLibRNTuple (RNTuple)
-  routines: [src/root_output/routines/mgdraw.f]      # overrides default usrini/usrout/mgdraw; extras compiled too
+  routines: [src/fluka/root_output/routines/mgdraw.f]      # overrides default usrini/usrout/mgdraw; extras compiled too
 ```
 
 Field reference:
@@ -230,9 +230,9 @@ Field reference:
 | Field | Meaning |
 |-------|---------|
 | `rntuple` | `false` (default) → builds against `FluLib.cpp` (`TTree`); `true` → `FluLibRNTuple.cpp` (`RNTuple`). Controls `USE_RNTUPLE=<0\|1>`. |
-| `use_defaults` | `true` (default) → the shipped `usrini.f`/`usrout.f`/`mgdraw.f` under `src/root_output/routines/` are always compiled in, and `routines:` entries only override-by-basename or add extras (see below). `false` → **only** the files listed in `routines:` are compiled — nothing is injected, so you're responsible for supplying working `usrini.f`/`usrout.f` yourself if you want `dump.root` to open/close correctly (a warning is printed to stderr if they're missing). |
+| `use_defaults` | `true` (default) → the shipped `usrini.f`/`usrout.f`/`mgdraw.f` under `src/fluka/root_output/routines/` are always compiled in, and `routines:` entries only override-by-basename or add extras (see below). `false` → **only** the files listed in `routines:` are compiled — nothing is injected, so you're responsible for supplying working `usrini.f`/`usrout.f` yourself if you want `dump.root` to open/close correctly (a warning is printed to stderr if they're missing). |
 | `routines` | List of `.f` routines. Under `use_defaults: true`, any entry whose basename matches a shipped default (`usrini.f`, `usrout.f`, `mgdraw.f`) **overrides** that default; anything else is an **extra** routine compiled alongside them. Under `use_defaults: false`, this list *is* the full set of routines compiled — verbatim, in the order given. Paths resolve relative to the config file's directory. |
-| `exe_path` | Optional **full path** to the compiled executable. Defaults to `<pkg>/src/root_output/fluka_custom_exe` (gitignored — it's a build artifact). If relative, it resolves relative to the config file's directory (same rule as `routines`). |
+| `exe_path` | Optional **full path** to the compiled executable. Defaults to `<pkg>/fluka/root_output/fluka_custom_exe` (gitignored — it's a build artifact). If relative, it resolves relative to the config file's directory (same rule as `routines`). |
 | `name` | Optional intermediate binary name inside the build tree, passed as `NAME=` (default `rootfluka`). This is *not* the final `exe_path` — `fluka-compile` always copies the built binary to `exe_path` afterward. |
 
 ### `OBJS` under `use_defaults: true` vs `false`
