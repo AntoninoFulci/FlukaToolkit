@@ -5,11 +5,16 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from importlib.resources import files
 from pathlib import Path
 
 from fluka.run.simconfig import resolve
 
-_ROOT_DIR = Path(__file__).resolve().parents[2] / "root_output"
+def _root_output_dir() -> Path:
+    return Path(files("fluka").joinpath("root_output"))
+
+
+_ROOT_DIR = _root_output_dir()
 _DEFAULTS_DIR = _ROOT_DIR / "routines"
 _BASE = ("usrini.f", "usrout.f", "mgdraw.f")
 

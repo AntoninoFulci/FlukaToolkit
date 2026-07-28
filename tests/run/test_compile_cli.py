@@ -1,5 +1,12 @@
 from pathlib import Path
+import fluka.cli.compile as compile_module
 from fluka.cli.compile import resolve_routines, build_command
+
+
+def test_packaged_root_output_contains_makefile_and_default_routines():
+    root_output = compile_module._root_output_dir()
+    assert (root_output / "Makefile").is_file()
+    assert (root_output / "routines" / "mgdraw.f").is_file()
 
 def _defaults(tmp_path):
     d = tmp_path / "routines"; d.mkdir()
