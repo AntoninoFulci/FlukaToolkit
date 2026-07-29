@@ -169,8 +169,8 @@ def execute_plan(plan: MovePlan) -> int:
     return exit_code
 
 
-def main() -> int:
-    cwd = Path.cwd()
+def main(cwd: Path | None = None) -> int:
+    cwd = Path.cwd() if cwd is None else Path(cwd)
     plan = scan_all(cwd)
 
     if not plan.moves and not plan.empty_jobs and not plan.skipped_parents:

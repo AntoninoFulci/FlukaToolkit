@@ -1,0 +1,37 @@
+# Minimal smoke test — 1 combo x 2 runs, 100 primaries, local ts backend.
+# No custom_exe here (fast path: plain FLUKA, no compile). To also test the
+# ROOT/custom-exe path, uncomment the custom_exe block at the bottom.
+
+general:
+  input: example.inp
+  backend: ts
+  output: results/
+  primaries: 100            # tiny — smoke only
+  use_dpm: false
+
+submit:
+  njobs: 2
+  max_parallel: 2
+
+grid:
+  parameters:               # single value each -> 1 combo
+    irrtime: [86400]
+    current: [6.24E+15]
+    mat: [COPPER]
+  runs_per_combo: 2         # -> 2 runs total
+
+analysis:
+  run: c1/run_0001          # adjust to the real combo dir name after the grid runs
+  units: [21, 22]           # RESNUCLE detectors in example.inp
+  volume: 1000
+  isotopes:
+    31: 70
+    30: 69
+  output: isotopes.xlsx
+
+# ── To test the custom-exe + one-shot compile path, uncomment this ──
+# (uses the shipped default usrini/usrout/mgdraw; mgdraw.f is your filled one)
+# custom_exe:
+#   rntuple: false
+#   use_defaults: true
+#   exe_path: ./rootfluka_smoke   # compiled here; reused on re-run, rebuild with general.recompile: true

@@ -14,12 +14,10 @@ def run_sim(path) -> None:
 def collect_sim(path) -> None:
     """Collect ROOT files produced by a submitted run into root_files/.
 
-    Thin wrapper around fluka.queue.collect_results, which operates on the
-    current working directory; the sim/submit config isn't otherwise needed
-    since collection is a directory scan, not a config-driven step.
+    Collect from general.output, resolved relative to sim.yaml.
     """
     from fluka.queue import collect_results
-    collect_results.main()
+    collect_results.main(Path(resolve(path, "submit")["output"]))
 
 
 def main() -> None:
@@ -30,4 +28,5 @@ def main() -> None:
     if args.grid:
         from fluka.cli.grid import run_sim as run_grid
         run_grid(args.config)
+        return
     run_sim(args.config)

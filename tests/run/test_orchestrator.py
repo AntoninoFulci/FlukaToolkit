@@ -30,6 +30,21 @@ def test_analyze_phase_runs_collect_then_analysis(tmp_path, monkeypatch):
     assert calls == ["collect", "analysis"]
 
 
+def test_collect_sim_scans_results_relative_to_sim_config(tmp_path, monkeypatch):
+    """Analysis must collect simulation output, not whichever directory invoked CLI."""
+    from fluka.cli import submit
+
+    sim = tmp_path / "sim.yaml"
+    sim.write_text("general:\n  output: results/\n")
+    seen = {}
+    monkeypatch.setattr(
+        "fluka.queue.collect_results.main",
+        lambda cwd=None: seen.setdefault("cwd", cwd) or 0,
+    )
+    submit.collect_sim(sim)
+    assert seen["cwd"] == tmp_path / "results"
+
+
 def _sim(tmp_path, *, custom_exe=True, grid=True):
     lines = ["general:", "  input: x.inp", "  backend: ts", "  output: out/",
              "  recompile: true", "submit:", "  njobs: 2"]

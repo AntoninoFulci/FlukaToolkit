@@ -20,7 +20,7 @@ _SCRIPT_TEMPLATE = Template("""\
 . /cvmfs/sft.cern.ch/lcg/views/setupViews.sh LCG_97python3 x86_64-centos7-gcc9-opt
 
 $fluka_command $input
-echo "FLUKA_STATUS rc=$$?"
+echo "FLUKA_STATUS rc=$$?" > .fluka_status
 """)
 
 
