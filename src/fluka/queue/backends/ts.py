@@ -1,5 +1,7 @@
 import subprocess
+import shlex
 from argparse import ArgumentParser, Namespace
+from pathlib import Path
 
 from fluka.queue.backends.base import JobInfo, QueueBackend
 from fluka.queue.core.display import COLORS
@@ -22,8 +24,11 @@ class TSBackend(QueueBackend):
             fluka_parts.append("-d")
         elif job_info.custom_exe is not None:
             fluka_parts.extend(["-e", job_info.custom_exe])
-        fluka_parts.append(job_info.input_file)
-        fluka_cmd = " ".join(fluka_parts)
+        input_path = Path(job_info.input_file)
+        fluka_parts.append(input_path.name if input_path.is_absolute() else job_info.input_file)
+        fluka_cmd = shlex.join(fluka_parts)
+        if input_path.is_absolute():
+            fluka_cmd = f"cd {shlex.quote(str(input_path.parent))} && {fluka_cmd}"
         wrapped = f'{fluka_cmd}; echo "FLUKA_STATUS rc=$?" > ./.fluka_status'
         cmd_list = ["ts", "bash", "-c", wrapped]
 

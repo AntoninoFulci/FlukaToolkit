@@ -1,5 +1,7 @@
 import pytest
+from pathlib import Path
 from fluka.cli._common import resolve, load_sim
+from fluka.cli import submit
 
 
 def test_common_reexports_resolve_merges_general_into_tool(tmp_path):
@@ -29,3 +31,13 @@ def test_common_reexports_load_sim_requires_general(tmp_path):
     p.write_text("analysis: {units: [21]}\n")
     with pytest.raises(Exception):
         load_sim(p)
+
+
+def test_submit_grid_does_not_submit_base_input_after_grid(monkeypatch):
+    """Grid runner already submits each generated input; base submit would duplicate work."""
+    calls = []
+    monkeypatch.setattr("sys.argv", ["fluka-submit", "--grid", "sim.yaml"])
+    monkeypatch.setattr("fluka.cli.grid.run_sim", lambda path: calls.append(("grid", path)))
+    monkeypatch.setattr(submit, "run_sim", lambda path: calls.append(("submit", path)))
+    submit.main()
+    assert calls == [("grid", Path("sim.yaml"))]

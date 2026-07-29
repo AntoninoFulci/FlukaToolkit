@@ -1,6 +1,7 @@
 import sys
 import pytest
 import yaml as _yaml
+from pathlib import Path
 from unittest.mock import patch
 
 
@@ -264,3 +265,31 @@ def test_execute_jobs_aborts_on_duplicate_seeds(tmp_path, monkeypatch):
     with pytest.raises(SystemExit):
         launch_jobs._execute_jobs(args, fluka_path="/fake/fluka")
     assert submitted == []  # aborted before any submission
+
+
+def test_execute_jobs_gives_ts_an_absolute_input_path(tmp_path, monkeypatch):
+    """TS backend must know job directory; relative input is absent from caller cwd."""
+    from argparse import Namespace
+    from fluka.queue import launch_jobs
+
+    submitted = []
+
+    class StubBackend:
+        def generate_script(self, job_info, job_dir, args):
+            return None
+
+        def submit(self, script_path, job_info, args):
+            submitted.append(job_info)
+            return "ok"
+
+    monkeypatch.setitem(launch_jobs.BACKENDS, "ts", StubBackend())
+    src = tmp_path / "sim.inp"
+    src.write_text("RANDOMIZ          1.  1\n")
+    args = Namespace(
+        backend="ts", input=str(src), njobs=1, custom_exe=None,
+        output_dir=str(tmp_path / "out"), nprim=None, dry_run=True, use_dpm=False,
+    )
+    launch_jobs._execute_jobs(args, fluka_path="/fake/fluka")
+    submitted_input = Path(submitted[0].input_file)
+    assert submitted_input.is_absolute()
+    assert submitted_input.parent.name == "job_0001"

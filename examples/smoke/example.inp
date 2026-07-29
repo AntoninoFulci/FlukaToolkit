@@ -1,0 +1,53 @@
+TITLE
+FlukaToolkit Example file
+#define irrtime 86400
+#define current 6240000000000000
+#define mat COPPER
+*Set the defaults for precision simulations
+DEFAULTS                                                              PRECISIO
+*Define the beam characteristics
+BEAM             0.3     -0.05       0.1      -1.0      -1.0          PROTON
+*Define the beam position
+BEAMPOS                              -10
+GEOBEGIN                                                              COMBNAME
+    0    0          
+*Black body
+SPH blkbody    0.0 0.0 0.0 1000.0
+*Void sphere
+SPH void       0.0 0.0 0.0 100.0
+*Cylindrical target
+RCC target     0.0 0.0 0.0 0.0 0.0 10.0 5.0
+END
+*Black hole
+BLKBODY      5 +blkbody -void
+*Void around
+VOID         5 +void -target
+*Target
+TARGET       5 +target
+END
+GEOEND
+*..+....1....+....2....+....3....+....4....+....5....+....6....+....7..
+ASSIGNMA    BLCKHOLE   BLKBODY
+ASSIGNMA      VACUUM      VOID
+ASSIGNMA        $mat    TARGET
+*Requests simulation of radioactive decays and sets the corresponding
+*biasing and transport conditions
+RADDECAY          1.                   5
+*Define an irradiation profile for radioactive decay calculations
+IRRPROFI    $irrtime  $current
+*Defines decay times for radioactive product scoring
+DCYTIMES           0     86400
+PHYSICS            3                                                  EVAPORAT
+PHYSICS            1                                                  COALESCE
+PHOTONUC        1111                        VACUUM  @LASTMAT          ELECTNUC
+*Associates selected scoring detectors with user-defined decay times
+DCYSCORE           1                          det0                    RESNUCLE
+DCYSCORE           2
+RESNUCLE           3       -21                        TARGET          det0
+RESNUCLE           3       -22                        TARGET          det1
+USERDUMP         100        99         0         1                    dump
+*Set the random number seed
+RANDOMIZ         1.0
+*Set the number of primary histories to be simulated in the run
+START
+STOP

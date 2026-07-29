@@ -85,6 +85,15 @@ def validate_config(config: Config) -> None:
                 f"Parameter '{param}' not found as '#define {param}' in {config.fluka.input}"
             )
 
+    if not re.search(r"^RANDOMIZ\s", inp_text, re.MULTILINE):
+        raise ValueError(f"Missing RANDOMIZ card in {config.fluka.input}")
+    if config.fluka.primaries is not None and not re.search(
+        r"^START\s", inp_text, re.MULTILINE
+    ):
+        raise ValueError(
+            f"Missing START card in {config.fluka.input}; required to override primaries"
+        )
+
     if config.fluka.rfluka_path is None:
         try:
             subprocess.run(

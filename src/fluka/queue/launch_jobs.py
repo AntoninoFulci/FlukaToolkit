@@ -145,7 +145,9 @@ def _execute_jobs(args: Namespace, fluka_path: str) -> None:
         job_dir = filesystem.setup_job_dir(output_dir, i, args.input)
         seed = fluka.allocate_seed(used_seeds)
         new_input = fluka.generate_input(base_name, i, job_dir, nprim=args.nprim, seed=seed)
-        job_info = JobInfo(new_input, i, fluka_path, args.custom_exe)
+        input_file = str(Path(job_dir) / new_input) if args.backend == "ts" else new_input
+        job_info = JobInfo(input_file, i, fluka_path, args.custom_exe,
+                           use_dpm=getattr(args, "use_dpm", False))
         prepared.append((i, job_dir, job_info))
 
     # Fase 2: verifica seed unici su disco prima di inviare alcun job

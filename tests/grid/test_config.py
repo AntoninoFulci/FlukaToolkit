@@ -91,6 +91,26 @@ def test_validate_config_missing_define(tmp_path):
         validate_config(cfg)
 
 
+def test_validate_config_requires_randomiz_card(tmp_path):
+    """Grid inputs need a seed card; otherwise every generated run is unseeded."""
+    inp = tmp_path / "example.inp"
+    inp.write_text("#define beame 0.5\nSTART 10000.\nSTOP\n")
+    p = _write_sim(tmp_path, grid={"parameters": {"beame": [0.5]}})
+    cfg = load_config(resolve(p, "grid"))
+    with pytest.raises(ValueError, match="RANDOMIZ"):
+        validate_config(cfg)
+
+
+def test_validate_config_requires_start_when_overriding_primaries(tmp_path):
+    """Configured primary count must be written to a real START card."""
+    inp = tmp_path / "example.inp"
+    inp.write_text("#define beame 0.5\nRANDOMIZ 1. 42.\nSTOP\n")
+    p = _write_sim(tmp_path, grid={"parameters": {"beame": [0.5]}})
+    cfg = load_config(resolve(p, "grid"))
+    with pytest.raises(ValueError, match="START"):
+        validate_config(cfg)
+
+
 def test_validate_config_fluka_not_found(tmp_path):
     inp = tmp_path / "example.inp"
     inp.write_text(MINIMAL_INP)

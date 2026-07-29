@@ -32,6 +32,16 @@ def test_submit_dry_run_with_custom_exe():
     result = BACKEND.submit(None, job_info, make_args(dry_run=True, custom_exe="/path/to/exe"))
     assert "-e /path/to/exe" in result
 
+
+def test_submit_absolute_input_runs_from_its_job_directory(tmp_path):
+    """rfluka writes outputs in cwd, so TS must enter input's job directory."""
+    job_dir = tmp_path / "job with space"
+    job_dir.mkdir()
+    job_info = JobInfo(str(job_dir / "sim_0001.inp"), 1, "/usr/local/fluka/bin", None)
+    result = BACKEND.submit(None, job_info, make_args(dry_run=True))
+    assert f"cd '{job_dir}'" in result
+    assert "sim_0001.inp" in result
+
 def test_submit_calls_ts():
     job_info = JobInfo("sim_0001.inp", 1, "/usr/local/fluka/bin", None)
     with patch("subprocess.run") as mock_run:
