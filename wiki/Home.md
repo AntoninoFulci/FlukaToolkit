@@ -4,7 +4,7 @@ FlukaToolkit is a toolkit for FLUKA Monte Carlo workflows — grid generation,
 batch submission, isotope/activation inventory, and ROOT-format output — in
 one installable package. It merges what used to be four separate projects
 (`fluka-grid-search`, `FlukaQueueSub`, `FlukaIsotopeAnalysis`, and
-`FlukaROOTOutput`) into a single `fluka` Python package plus a `root_output/`
+`FlukaROOTOutput`) into a single `fluka` Python package plus packaged compiler
 build tree, all driven from one configuration file per simulation.
 
 ## Install
@@ -46,7 +46,7 @@ grid:                        # fluka-grid reads this (+ submit, for resources)
 
 custom_exe:                  # fluka-compile reads this (optional section)
   rntuple: false
-  routines: [mgdraw.f]
+  # packaged usrini/usrout/mgdraw defaults are used when routines is omitted
 
 analysis:                    # fluka-analysis reads this
   run: c1/run_0001            # relative to general.output
@@ -66,9 +66,9 @@ the full annotated example.
 | Command | Does | Page |
 |---------|------|------|
 | `fluka-grid <cfg>` | Expand a parameter grid over a `.inp` template, patch unique seeds, submit each run | [fluka-grid](fluka-grid) |
-| `fluka-submit <cfg>` | Submit FLUKA inputs to a batch backend (SLURM / LSF / HTCondor / Task-Spooler). `--grid` first generates the grid | [fluka-submit](fluka-submit) |
+| `fluka-submit <cfg>` | Submit one FLUKA input to a batch backend. `--grid` generates and submits every grid run | [fluka-submit](fluka-submit) |
 | `fluka-analysis <cfg>` | Post-process `RESNUCLEi` output → per-isotope activity (Bq) / mass (µg) → Excel | [fluka-analysis](fluka-analysis) |
-| `fluka-compile <cfg>` | Compile a custom FLUKA ROOT-output executable via `src/fluka/root_output/Makefile` | [fluka-compile](fluka-compile) |
+| `fluka-compile <cfg>` | Compile a custom FLUKA ROOT-output executable from packaged compiler assets | [fluka-compile](fluka-compile) |
 | `fluka-run <cfg>` | Orchestrate a whole simulation from one file: bare invocation compiles (if `custom_exe:` is set) then grid/submit; `analyze` collects+analyzes | [fluka-run](fluka-run) |
 | `fluka-status <cfg>` | Report per-job state (PENDING/RUNNING/DONE/FAIL), `--watch`, `--collect` | [fluka-status](fluka-status) |
 
@@ -81,7 +81,7 @@ fluka-run sim.yaml
 
 # ...or drive the same steps by hand:
 fluka-compile sim.yaml              # (once) compile the ROOT-output executable
-fluka-submit --grid sim.yaml        # generate the grid and submit it
+fluka-submit --grid sim.yaml        # generate and submit every grid run
 
 # 2. ...wait for the farm jobs to finish (FlukaToolkit does not poll)...
 

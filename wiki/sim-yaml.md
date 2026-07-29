@@ -135,7 +135,7 @@ grid:
 
 custom_exe:
   rntuple: false
-  routines: [mgdraw.f]
+  # omit routines to use packaged usrini/usrout/mgdraw defaults
 
 analysis:
   run: c1/run_0001          # -> results/c1/run_0001

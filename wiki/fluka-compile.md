@@ -260,7 +260,7 @@ directory alongside a copy of the Makefile and `src/`, and runs:
 make -C <build_dir> USE_RNTUPLE=<0|1> NAME=<name> OBJS="<resolved objects>"
 ```
 
-For example (with `use_defaults: true`), `routines: [mgdraw.f]` (with
+For example (with `use_defaults: true`), `routines: [custom/mgdraw.f]` (with
 `mgdraw.f` living next to the config file) overrides the shipped `mgdraw.f`
 and leaves `usrini.f`/`usrout.f` at their defaults; an entry like
 `extra_routine.f` would be appended as an additional compiled object

@@ -16,7 +16,7 @@ fluka-submit --grid sim.yaml
 ```
 
 The `--grid` flag runs the grid phase first (equivalent to `fluka-grid`)
-and then submits the result — the same sequence bare `fluka-run`
+and submits every generated run — the same sequence bare `fluka-run`
 performs (see [fluka-run](fluka-run)). Without `--grid`, `fluka-submit`
 just submits whatever `submit:`/standalone config it is given.
 
