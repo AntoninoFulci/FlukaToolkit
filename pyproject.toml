@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest", "build>=1.0"]
 htcondor = ["htcondor"]
 
 [project.scripts]
