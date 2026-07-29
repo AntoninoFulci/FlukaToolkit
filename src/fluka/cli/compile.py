@@ -47,7 +47,9 @@ def build_command(section: dict, build_dir, resolved_routines) -> list[str]:
 
 
 def _exe_path(section) -> Path:
-    return Path(section.get("exe_path") or (_ROOT_DIR / "fluka_custom_exe"))
+    if section.get("exe_path"):
+        return Path(section["exe_path"])
+    return Path(section["_config_dir"]) / ".fluka" / "fluka_custom_exe"
 
 
 def compile_exe(section: dict, *, force: bool = False) -> Path:

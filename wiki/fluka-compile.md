@@ -221,9 +221,11 @@ From `examples/simple/example.yaml`:
 
 ```yaml
 custom_exe:
-  rntuple: false            # false → FluLib (TTree); true → FluLibRNTuple (RNTuple)
-  routines: [src/fluka/root_output/routines/mgdraw.f]      # overrides default usrini/usrout/mgdraw; extras compiled too
+  rntuple: false  # false → FluLib (TTree); true → FluLibRNTuple (RNTuple)
 ```
+
+The packaged `usrini.f`, `usrout.f`, and `mgdraw.f` routines are used when
+`routines` is omitted.
 
 Field reference:
 
@@ -232,7 +234,7 @@ Field reference:
 | `rntuple` | `false` (default) → builds against `FluLib.cpp` (`TTree`); `true` → `FluLibRNTuple.cpp` (`RNTuple`). Controls `USE_RNTUPLE=<0\|1>`. |
 | `use_defaults` | `true` (default) → the shipped `usrini.f`/`usrout.f`/`mgdraw.f` under `src/fluka/root_output/routines/` are always compiled in, and `routines:` entries only override-by-basename or add extras (see below). `false` → **only** the files listed in `routines:` are compiled — nothing is injected, so you're responsible for supplying working `usrini.f`/`usrout.f` yourself if you want `dump.root` to open/close correctly (a warning is printed to stderr if they're missing). |
 | `routines` | List of `.f` routines. Under `use_defaults: true`, any entry whose basename matches a shipped default (`usrini.f`, `usrout.f`, `mgdraw.f`) **overrides** that default; anything else is an **extra** routine compiled alongside them. Under `use_defaults: false`, this list *is* the full set of routines compiled — verbatim, in the order given. Paths resolve relative to the config file's directory. |
-| `exe_path` | Optional **full path** to the compiled executable. Defaults to `<pkg>/fluka/root_output/fluka_custom_exe` (gitignored — it's a build artifact). If relative, it resolves relative to the config file's directory (same rule as `routines`). |
+| `exe_path` | Optional path to the compiled executable. Defaults to `<sim.yaml directory>/.fluka/fluka_custom_exe`. If relative, it resolves relative to the config file's directory (same rule as `routines`). |
 | `name` | Optional intermediate binary name inside the build tree, passed as `NAME=` (default `rootfluka`). This is *not* the final `exe_path` — `fluka-compile` always copies the built binary to `exe_path` afterward. |
 
 ### `OBJS` under `use_defaults: true` vs `false`

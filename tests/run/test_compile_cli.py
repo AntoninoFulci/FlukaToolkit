@@ -1,12 +1,37 @@
 from pathlib import Path
 import fluka.cli.compile as compile_module
-from fluka.cli.compile import resolve_routines, build_command
+from fluka.cli.compile import _exe_path, resolve_routines, build_command
+from fluka.run.simconfig import resolve
 
 
 def test_packaged_root_output_contains_makefile_and_default_routines():
     root_output = compile_module._root_output_dir()
     assert (root_output / "Makefile").is_file()
     assert (root_output / "routines" / "mgdraw.f").is_file()
+
+
+def test_default_executable_is_project_local(tmp_path):
+    sim = tmp_path / "sim.yaml"
+    sim.write_text("general:\n  input: example.inp\ncustom_exe: {}\n")
+
+    assert _exe_path(resolve(sim, "custom_exe")) == (
+        tmp_path / ".fluka" / "fluka_custom_exe"
+    )
+
+
+def test_explicit_executable_path_overrides_project_local_default(tmp_path):
+    sim = tmp_path / "sim.yaml"
+    sim.write_text(
+        "general:\n"
+        "  input: example.inp\n"
+        "custom_exe:\n"
+        "  exe_path: builds/custom-fluka\n"
+    )
+
+    assert _exe_path(resolve(sim, "custom_exe")) == (
+        tmp_path / "builds" / "custom-fluka"
+    )
+
 
 def _defaults(tmp_path):
     d = tmp_path / "routines"; d.mkdir()

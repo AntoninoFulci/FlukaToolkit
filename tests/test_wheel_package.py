@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import sys
@@ -11,6 +12,15 @@ from shutil import copytree, ignore_patterns
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+REQUIRED_COMPILER_ASSETS = (
+    "Makefile",
+    "routines/usrini.f",
+    "routines/usrout.f",
+    "routines/mgdraw.f",
+    "src/FluLib.cpp",
+    "src/FluLibRNTuple.cpp",
+    "scripts/compilerf.sh",
+)
 
 
 def _venv_python(venv_dir: Path) -> Path:
@@ -41,10 +51,16 @@ def test_wheel_contains_compiler_assets_and_installed_package_finds_them(tmp_pat
     wheel = next(tmp_path.glob("flukatoolkit-*.whl"))
 
     with zipfile.ZipFile(wheel) as archive:
-        assert "fluka/root_output/Makefile" in archive.namelist()
+        packaged_files = set(archive.namelist())
+        assert {
+            f"fluka/root_output/{asset}" for asset in REQUIRED_COMPILER_ASSETS
+        } <= packaged_files
 
     venv_dir = tmp_path / "installed-wheel"
-    subprocess.run([sys.executable, "-m", "venv", str(venv_dir)], check=True)
+    subprocess.run(
+        [sys.executable, "-m", "venv", "--system-site-packages", str(venv_dir)],
+        check=True,
+    )
     venv_python = _venv_python(venv_dir)
     install_env = os.environ | {"PYTHONPATH": ""}
     subprocess.run(
@@ -68,8 +84,11 @@ def test_wheel_contains_compiler_assets_and_installed_package_finds_them(tmp_pat
             "-I",
             "-c",
             (
-                "from importlib.resources import files; "
-                "print(files('fluka').joinpath('root_output', 'Makefile').is_file())"
+                "import json; "
+                "from fluka.cli.compile import _root_output_dir; "
+                "root = _root_output_dir(); "
+                f"assets = {REQUIRED_COMPILER_ASSETS!r}; "
+                "print(json.dumps({asset: (root / asset).is_file() for asset in assets}))"
             ),
         ],
         cwd=tmp_path,
@@ -77,4 +96,6 @@ def test_wheel_contains_compiler_assets_and_installed_package_finds_them(tmp_pat
         capture_output=True,
         text=True,
     )
-    assert lookup.stdout.strip() == "True"
+    assert json.loads(lookup.stdout) == {
+        asset: True for asset in REQUIRED_COMPILER_ASSETS
+    }
