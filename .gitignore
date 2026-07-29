@@ -20,5 +20,5 @@ scripts/
 *~
 **results/
 
-# compiled custom FLUKA executable (default location)
-src/root_output/fluka_custom_exe
+# Project-local compiled custom FLUKA executable and build artifacts
+.fluka/

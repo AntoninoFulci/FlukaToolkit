@@ -1,10 +1,8 @@
 # tests/run/test_root_routines_present.py
-from pathlib import Path
-import fluka
+from importlib.resources import files
 
 def _routines_dir():
-    # src/root_output/routines relative to the installed src tree
-    return Path(fluka.__file__).resolve().parents[1] / "root_output" / "routines"
+    return files("fluka").joinpath("root_output", "routines")
 
 def test_default_routines_shipped():
     d = _routines_dir()

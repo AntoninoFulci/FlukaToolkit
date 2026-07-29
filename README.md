@@ -22,7 +22,7 @@ library (`from fluka.isotope_inventory import analysis`, etc.).
 | `fluka-grid <cfg>` | Expand a parameter grid over a `.inp` template, patch unique seeds, submit each run | `fluka.grid` |
 | `fluka-submit <cfg>` | Submit FLUKA inputs to a batch backend (SLURM / LSF / HTCondor / Task-Spooler). `--grid` first generates the grid | `fluka.queue` |
 | `fluka-analysis <cfg>` | Post-process `RESNUCLEi` output → per-isotope activity (Bq) / mass (µg) → Excel | `fluka.isotope_inventory` |
-| `fluka-compile <cfg>` | Compile a custom FLUKA ROOT-output executable via `src/root_output/Makefile` | `src/root_output/` |
+| `fluka-compile <cfg>` | Compile a custom FLUKA ROOT-output executable via `src/fluka/root_output/Makefile` | `src/fluka/root_output/` |
 | `fluka-run <cfg>` | Orchestrate a whole simulation from one file: bare invocation compiles (if `custom_exe:` is set) then grid/submit; `analyze` collects+analyzes | `fluka.run` |
 | `fluka-status <cfg>` | Report per-job state (PENDING/RUNNING/DONE/FAIL), `--watch`, `--collect` | `fluka.cli.status` |
 
@@ -114,7 +114,7 @@ src/
     isotope_inventory/   # RESNUCLEi → isotope activity/mass → Excel
     cli/                 # console-script entrypoints
     run/                 # sim.yaml loader + fluka-run orchestrator
-  root_output/           # C++/ROOT FLUKA routines (compiled, not pip-packaged)
+    root_output/         # compiler assets packaged with fluka-compile
 ```
 
 The original per-project READMEs are preserved under

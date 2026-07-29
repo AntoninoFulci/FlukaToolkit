@@ -5,11 +5,16 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from importlib.resources import files
 from pathlib import Path
 
 from fluka.run.simconfig import resolve
 
-_ROOT_DIR = Path(__file__).resolve().parents[2] / "root_output"
+def _root_output_dir() -> Path:
+    return Path(files("fluka").joinpath("root_output"))
+
+
+_ROOT_DIR = _root_output_dir()
 _DEFAULTS_DIR = _ROOT_DIR / "routines"
 _BASE = ("usrini.f", "usrout.f", "mgdraw.f")
 
@@ -42,7 +47,9 @@ def build_command(section: dict, build_dir, resolved_routines) -> list[str]:
 
 
 def _exe_path(section) -> Path:
-    return Path(section.get("exe_path") or (_ROOT_DIR / "fluka_custom_exe"))
+    if section.get("exe_path"):
+        return Path(section["exe_path"])
+    return Path(section["_config_dir"]) / ".fluka" / "fluka_custom_exe"
 
 
 def compile_exe(section: dict, *, force: bool = False) -> Path:

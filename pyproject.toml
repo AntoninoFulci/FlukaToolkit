@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest", "build>=1.0"]
 htcondor = ["htcondor"]
 
 [project.scripts]
@@ -33,6 +33,9 @@ fluka-status   = "fluka.cli.status:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["fluka*"]
+
+[tool.setuptools.package-data]
+fluka = ["root_output/**"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
