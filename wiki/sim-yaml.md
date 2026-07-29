@@ -83,7 +83,7 @@ grid/submit phase and passes the result through as `general.custom_executable`
 | `rntuple` | `false` (default) → `FluLib` (`TTree`); `true` → `FluLibRNTuple` (`RNTuple`). |
 | `use_defaults` | `true` (default) → shipped `usrini.f`/`usrout.f`/`mgdraw.f` are always compiled in, with `routines:` entries overriding by basename or added as extras. `false` → only the files listed in `routines:` are compiled, verbatim. |
 | `routines` | Optional list of `.f` routines. Under `use_defaults: true`, overrides the shipped defaults `usrini.f`/`usrout.f`/`mgdraw.f` by basename; anything else is an extra compiled alongside. Under `use_defaults: false`, this is the complete routine list. |
-| `exe_path` | Optional full path to the compiled executable. Defaults to `<pkg>/fluka/root_output/fluka_custom_exe` (gitignored build artifact). Relative paths resolve against the config file's directory. |
+| `exe_path` | Optional path to the compiled executable. Defaults to `<sim.yaml directory>/.fluka/fluka_custom_exe` (gitignored build artifact). Relative paths resolve against the config file's directory. |
 | `name` | Optional intermediate binary name (`NAME=`, default `rootfluka`) — internal to the build tree, not the final `exe_path`. |
 
 ## `analysis` — read by [fluka-analysis](fluka-analysis)

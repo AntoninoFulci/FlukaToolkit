@@ -14,7 +14,8 @@
   `fluka.cli.compile._root_output_dir()` helper.
 - Removed the invalid source-checkout routine override from the simple example
   and compiler guide; both now explain that packaged routines are the default.
-- Updated the compiler guide with the project-local executable destination.
+- Updated both configuration guides with the project-local executable
+  destination and ignored generated `.fluka/` directories.
 
 ## TDD evidence
 
@@ -40,8 +41,8 @@ temporary working directory.
 
 `fix: use project-local compiler executable`
 
-## Integration note
+## Review
 
-`wiki/sim-yaml.md` still describes the prior package-directory executable
-default. It was not modified because it is outside Task 4's assigned file list;
-the coordinating agent was notified.
+Independent review found that `.gitignore` and `wiki/sim-yaml.md` still
+described the old package-directory destination. Both Important findings were
+corrected in the follow-up commit.
