@@ -4,3 +4,5 @@
 *RootFlukaExecutables*
 *.vscode*
 *Routines*
+!/routines/
+!/routines/*.f

@@ -28,6 +28,7 @@ cd $job_dir
 echo
 echo Launching FLUKA run...
 $fluka_command $job_dir/$input
+echo "FLUKA_STATUS rc=$$?" > $job_dir/.fluka_status
 """)
 
 
@@ -95,3 +96,24 @@ class LSFBackend(QueueBackend):
 
     def set_priority_queue(self, args: Namespace, queue_name: str) -> None:
         args.queue = queue_name
+
+    def _sentinel_path(self, job):
+        from pathlib import Path
+        return Path(job.run_dir) / ".fluka_status"
+
+    def _queue_state(self, job):
+        from fluka.run.status import RUNNING, PENDING
+        try:
+            r = subprocess.run(["bjobs", "-noheader", "-o", "stat", job.job_id],
+                               capture_output=True, text=True)
+        except (FileNotFoundError, OSError):
+            # bjobs not installed on this host; fall back to sentinel-based state.
+            return None
+        if r.returncode != 0:
+            return None
+        stat = r.stdout.strip().upper()
+        if stat.startswith("PEND"):
+            return PENDING
+        if stat.startswith("RUN"):
+            return RUNNING
+        return None

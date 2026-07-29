@@ -21,14 +21,14 @@ _SCRIPT_TEMPLATE = Template("""\
 #SBATCH --ntasks=$ntasks
 #SBATCH --time=$time
 #SBATCH --gres=$gres
-#SBATCH --output=/farm_out/%u/%x-%j-%N.out
-#SBATCH --error=/farm_out/%u/%x-%j-%N.err
+#SBATCH --output=$farm_out/%u/%x-%j-%N.out
+#SBATCH --error=$farm_out/%u/%x-%j-%N.err
 
 cd /scratch/slurm/$$SLURM_JOB_ID
 
 # copia il .err di FLUKA ogni 30 secondi
 while true; do
-    cp fluka_*/*.err /farm_out/$$USER/$$SLURM_JOB_NAME-$$SLURM_JOB_ID-live.err 2>/dev/null
+    cp fluka_*/*.err $farm_out/$$USER/$$SLURM_JOB_NAME-$$SLURM_JOB_ID-live.err 2>/dev/null
     sleep 30
 done &
 WATCHER_PID=$$!
@@ -36,6 +36,7 @@ WATCHER_PID=$$!
 echo
 echo Launching FLUKA run...
 $fluka_command $job_dir/$input
+echo "FLUKA_STATUS rc=$$?" > $farm_out/$$USER/$$SLURM_JOB_NAME-$$SLURM_JOB_ID.fluka_status
 
 kill $$WATCHER_PID 2>/dev/null
 
@@ -63,6 +64,9 @@ class SlurmBackend(QueueBackend):
         parser.add_argument("-g", "--gres", type=str, default="disk:1G",
                             help="Risorse generiche SLURM (--gres), es. disk:2G o gpu:1 "
                                  "(default: disk:1G)")
+        parser.add_argument("--farm-out", dest="farm_out", type=str, default="/farm_out",
+                            help="Directory accessibile dove finiscono out/err/sentinel "
+                                 "(default: /farm_out)")
 
     def validate(self, args: Namespace) -> None:
         if parse_time_to_seconds(args.time) > _MAX_TIME_SECONDS:
@@ -84,6 +88,7 @@ class SlurmBackend(QueueBackend):
             nodes=args.nodes,
             time=args.time,
             gres=args.gres,
+            farm_out=args.farm_out,
         )
         script_path = os.path.join(job_dir, f"job_{job_info.iteration:04d}.sh")
         with open(script_path, "w") as f:
@@ -119,3 +124,25 @@ class SlurmBackend(QueueBackend):
 
     def set_priority_queue(self, args: Namespace, queue_name: str) -> None:
         args.queue = queue_name
+
+    def _sentinel_path(self, job):
+        from pathlib import Path
+        e = job.extra
+        return Path(e["farm_out"]) / e["user"] / f"{e['job_name']}-{job.job_id}.fluka_status"
+
+    def _queue_state(self, job):
+        from fluka.run.status import RUNNING, PENDING
+        try:
+            r = subprocess.run(["squeue", "-j", job.job_id, "-h", "-o", "%t"],
+                               capture_output=True, text=True)
+        except (FileNotFoundError, OSError):
+            # squeue not installed on this host; fall back to sentinel-based state.
+            return None
+        if r.returncode != 0:
+            return None
+        code = r.stdout.strip()
+        if not code:
+            return None
+        if code == "PD":
+            return PENDING
+        return RUNNING

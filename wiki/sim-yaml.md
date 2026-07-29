@@ -1,150 +1,154 @@
-# sim.yaml reference
+# sim.yaml reference (schema v2)
 
-`sim.yaml` is the "one config, many tools" file: a single YAML document with
-up to four top-level sections — `grid`, `submit`, `analysis`, `root` — one
-per command. This mapping is defined by `SECTIONS` in
-`src/fluka/run/config.py`:
+`sim.yaml` is the "one config, many tools" file. A single YAML document with a
+shared **`general`** section plus one section per tool — `submit`, `grid`,
+`custom_exe`, `analysis`. Every tool reads its own section and falls back to
+`general` for anything shared.
 
-```python
-SECTIONS = ("grid", "submit", "analysis", "root")
-```
+## The rule: general provides the defaults, each section overrides
 
-## The rule: each tool reads only its own section
+Every CLI resolves its config through `fluka.run.simconfig.resolve(path, tool)`,
+which:
 
-Every CLI (`fluka-grid`, `fluka-submit`, `fluka-analysis`, `fluka-root`)
-calls `fluka.cli._common.resolve_config(path, tool)`, which:
+1. Loads the YAML file (a top-level `general` section is **required**).
+2. Merges `general` as defaults, then the tool's own section on top (a key in
+   the tool section wins over the same key in `general`).
+3. Resolves path-valued keys (`input`, `output`, `custom_executable`,
+   `rfluka_path`, `routines`) relative to the config file's directory.
 
-1. Loads the YAML file.
-2. If it detects **other** `SECTIONS` keys in the file besides the current
-   tool's, it treats the file as a multi-section `sim.yaml` and extracts
-   just that tool's section (raising an error if the tool's own section is
-   missing).
-3. Otherwise it treats the whole file as a **standalone** config for that
-   tool.
+Two extra rules make the shared config work cleanly:
 
-This means:
+- **grid also inherits `submit`.** The grid view is `general` → `submit` →
+  `grid`, so `fluka-grid` reuses the batch resources declared once in `submit`
+  (backend, `max_parallel`, `mem`, `time`, `farm_out`, …) — you never repeat
+  them.
+- **`analysis.output` never collides with `general.output`.** `general.output`
+  is the results **directory**; `analysis.output` is the Excel **filename**.
+  The loader keeps the shared dir separate internally, so the two never clash.
 
-- A full `sim.yaml` with all four sections works with every command — each
-  one silently ignores the sections it doesn't own.
-- Each tool's **standalone** config format (a file whose top level *is*
-  that tool's fields, no `grid:`/`submit:`/`analysis:`/`root:` wrapper)
-  still works unchanged — full backward compatibility with the original
-  per-project configs.
-- `fluka-run <phase> <cfg>` (see [fluka-run](fluka-run)) always expects a
-  multi-section file and dispatches each phase's own section to the
-  corresponding tool.
+There is **no** old-schema fallback: the pre-v2 layout (`grid.fluka.input`,
+`execution:`, `submit.backend`/`submit.input`, `root.files`/`root.format`) is
+gone. The `root:` section from the early v2 layout has since been renamed to
+`custom_exe:` (see below).
 
-## Section reference
+## `general` — shared by every tool
 
-### `grid` — read by [fluka-grid](fluka-grid)
+| Key | Meaning |
+|-----|---------|
+| `input` | FLUKA `.inp` file. One `#define <key>` per grid parameter + `RANDOMIZ`/`START`. |
+| `backend` | `ts` \| `slurm` \| `lsf` \| `condor`. Used by grid + submit. |
+| `output` | Results directory; per-combo run dirs are created under it. |
+| `primaries` | Optional — overrides the `START` primary count. |
+| `use_dpm` | Optional — `true` → `rfluka -d`; exclusive with `custom_executable`. |
+| `custom_executable` | Optional — path passed as `-e` to `rfluka`. Set automatically by `fluka-run` when a `custom_exe:` section is present — see [fluka-compile](fluka-compile). |
+| `rfluka_path` | Optional — explicit FLUKA bin dir. |
+| `recompile` | Optional — `false` (default). When `fluka-run` auto-compiles a `custom_exe:` section, `true` forces a rebuild even if `exe_path` already exists; `false` reuses the cached binary. Has no effect on the standalone `fluka-compile` command, which always force-rebuilds. |
 
-Expands a parameter grid over a `.inp` template, patches unique seeds, and
-submits each run.
+## `submit` — batch resources (read by [fluka-submit](fluka-submit) AND [fluka-grid](fluka-grid))
 
-| Key | Field | Meaning |
-|-----|-------|---------|
-| `fluka` | `input` | FLUKA `.inp` template. Relative paths resolve next to the config file. |
-| `fluka` | `primaries` | Optional — overrides the `START` primary count. |
-| `fluka` | `use_dpm` | `true` → `rfluka -d` (DPMJET/RQMD); exclusive with `custom_executable`. |
-| `fluka` | `custom_executable` | Optional path passed as `-e` to `rfluka`. |
-| `fluka` | `rfluka_path` | Optional FLUKA bin dir override. |
-| `output` | `directory` | Where per-combo run dirs + patched inputs are written. |
-| `grid` | `parameters` | Map of `#define` key → list of values (Cartesian product). |
-| `grid` | `runs_per_combo` | Independent runs per combination (unique seeds). |
-| `execution` | `backend` | `ts` \| `slurm` \| `lsf` \| `condor`. |
-| `execution` | `max_parallel` | `ts` slot count (local concurrency). |
-| `execution` | `queue`, `mem`, `time`, `ntasks`, `nodes`, `gres`, `ncpu`, `disk`, `condor_max_runtime` | Cluster-backend-specific fields. |
-
-### `submit` — read by [fluka-submit](fluka-submit)
-
-Submits prepared FLUKA inputs to a batch backend.
+The single source of batch/scheduler settings. `fluka-submit` submits `njobs`
+independent seeded jobs of `general.input`; `fluka-grid` reuses the same
+resources for every grid run.
 
 | Field | Meaning |
 |-------|---------|
-| `backend` | `ts` \| `slurm` \| `lsf` \| `condor`. |
-| `input` | FLUKA `.inp` file to submit; must end in `.inp`. |
-| `njobs` | Number of independent jobs (one random seed each). |
-| `mem` | Memory request (backend-dependent units/semantics). |
-| `time` | Wall-time limit, format `D-HH:MM:SS` (SLURM/LSF) or seconds (HTCondor). |
-| `custom_exe`, `use_dpm`, `output_dir`, `nprim`, `dry_run`, `queue`, `ntasks`, `nodes`, `gres`, `ncpu`, `disk` | Optional / backend-specific fields — see [fluka-submit](fluka-submit) for the full list and defaults. |
+| `njobs` | Independent jobs (one random seed each) — submit-standalone only. |
+| `max_parallel` | `ts` slot count (local concurrency). |
+| `mem` | Memory request (MB; backend semantics vary). |
+| `time` | Wall-time limit, `D-HH:MM:SS` (SLURM/LSF) or seconds (HTCondor). |
+| `ntasks`, `nodes` | SLURM task/node counts. |
+| `gres` | SLURM generic resources (e.g. `disk:1G`). |
+| `ncpu`, `disk`, `condor_max_runtime` | HTCondor cpus / `request_disk` (kB) / `+MaxRuntime` (s). |
+| `queue` | partition (SLURM) / queue (LSF) / universe (HTCondor). |
+| `farm_out` | SLURM: accessible dir for out/err + the `fluka-status` sentinel (default `/farm_out`). |
 
-### `analysis` — read by [fluka-analysis](fluka-analysis)
-
-Post-processes `RESNUCLEi` output into per-isotope activity/mass in an
-Excel workbook.
+## `grid` — read by [fluka-grid](fluka-grid)
 
 | Field | Meaning |
 |-------|---------|
-| `directory` | Simulation directory containing `fort.<unit>`/`*.rnc` output. Must exist. |
-| `units` | List of FLUKA RESNUCLEi unit numbers, e.g. `[21, 22, 23]`. |
+| `parameters` | Map of `#define` key → list of values (Cartesian product). Each key MUST match a `#define <key>` in `general.input`. |
+| `runs_per_combo` | Independent runs per combination (unique seeds). |
+
+## `custom_exe` — read by [fluka-compile](fluka-compile)
+
+Compiles the FLUKA ROOT-output executable. See [fluka-compile](fluka-compile)
+for the routine-resolution rules. A `custom_exe:` section is optional — omit
+it entirely if your simulation doesn't need a custom-compiled executable.
+When present, `fluka-run` compiles it automatically before running the
+grid/submit phase and passes the result through as `general.custom_executable`
+(`rfluka -e <exe_path>`).
+
+| Field | Meaning |
+|-------|---------|
+| `rntuple` | `false` (default) → `FluLib` (`TTree`); `true` → `FluLibRNTuple` (`RNTuple`). |
+| `use_defaults` | `true` (default) → shipped `usrini.f`/`usrout.f`/`mgdraw.f` are always compiled in, with `routines:` entries overriding by basename or added as extras. `false` → only the files listed in `routines:` are compiled, verbatim. |
+| `routines` | Optional list of `.f` routines. Under `use_defaults: true`, overrides the shipped defaults `usrini.f`/`usrout.f`/`mgdraw.f` by basename; anything else is an extra compiled alongside. Under `use_defaults: false`, this is the complete routine list. |
+| `exe_path` | Optional path to the compiled executable. Defaults to `<sim.yaml directory>/.fluka/fluka_custom_exe` (gitignored build artifact). Relative paths resolve against the config file's directory. |
+| `name` | Optional intermediate binary name (`NAME=`, default `rootfluka`) — internal to the build tree, not the final `exe_path`. |
+
+## `analysis` — read by [fluka-analysis](fluka-analysis)
+
+Post-processes `RESNUCLEi` output into per-isotope activity/mass in an Excel
+workbook.
+
+| Field | Meaning |
+|-------|---------|
+| `run` | Run subdirectory, relative to `general.output` (e.g. `c1/run_0001` → `results/c1/run_0001`). Must exist. |
+| `units` | List of FLUKA RESNUCLEi unit numbers, e.g. `[21, 22]`. |
 | `volume` | Scoring volume in cm³. |
-| `isotopes` | Map of `Z: A` (or `Z: [A1, A2, ...]` for multiple masses of the same element). |
+| `isotopes` | Map of `Z: A` (or `Z: [A1, A2, ...]` for multiple masses of one element). |
 | `output` | Excel filename (default `isotopes.xlsx`). |
 | `executable` | FLUKA merge tool (default `usrsuw`). |
 
-### `root` — read by [fluka-root](fluka-root)
-
-Compiles the FLUKA ROOT-output routines under `src/root_output/` (drives
-`src/root_output/Makefile`).
-
-| Field | Meaning |
-|-------|---------|
-| `files` | List of source filenames to build: `FluLib.cpp` → `TTree`, `FluLibRNTuple.cpp` → `RNTuple`. |
-| `format` | Shorthand used only if `files` is omitted: `rntuple` → `FluLibRNTuple.cpp`, otherwise → `FluLib.cpp`. |
-| `name` | Optional output binary name (`NAME=`); defaults to the source filename without its extension. |
-
 ## Worked example
 
-The full annotated example, from `examples/sim.yaml`:
+The full annotated example, from `examples/simple/example.yaml`:
 
 ```yaml
-# FlukaToolkit — one file drives a whole simulation.
-# Each CLI reads ONLY its own section; sections it does not own are ignored.
-# You can also feed each tool its own standalone config (back-compat).
+general:
+  input: example.inp        # one #define per grid key + RANDOMIZ/START
+  backend: ts               # ts | slurm | lsf | condor
+  output: results/
+  primaries: 1000
+  use_dpm: false
 
-# ── fluka-grid : expand a parameter grid over a template, seed, and submit ──
-grid:
-  fluka:
-    input: template.inp        # FLUKA .inp template (needs a #define per grid key + RANDOMIZ/START)
-    primaries: 10000           # optional — overrides the START primary count
-    use_dpm: false             # true → rfluka -d (DPMJET/RQMD); exclusive with custom_executable
-  output:
-    directory: results/        # per-combo run dirs + patched inputs written here
-  grid:
-    parameters:                # each key MUST match a `#define <key>` in the template
-      beame: [0.05, 0.1, 0.5]
-      mat: [GALLIUM, TUNGSTEN]
-    runs_per_combo: 5          # independent runs per combination (unique seeds)
-  execution:
-    backend: ts                # ts | slurm | lsf | condor
-    max_parallel: 4            # ts slot count (local concurrency)
-
-# ── fluka-submit : submit prepared FLUKA inputs to a batch backend ──
-submit:
-  backend: ts                  # ts | slurm | lsf | condor
-  input: template.inp
+submit:                     # batch resources — used by submit AND grid
   njobs: 2
+  max_parallel: 10
   mem: "1500"
   time: "1-00:00:00"
+  ntasks: 1
+  nodes: 1
+  gres: "disk:1G"
+  ncpu: 1
+  disk: 100000
+  condor_max_runtime: 86400
+  queue: null
+  farm_out: /farm_out
 
-# ── fluka-analysis : RESNUCLEi → per-isotope activity/mass → Excel ──
+grid:
+  parameters:               # keys MUST match #define lines in example.inp
+    irrtime: [86400, 172800]
+    current: [6.24E+15, 6.24E+16]
+    mat: [COPPER, TUNGSTEN]
+  runs_per_combo: 2
+
+custom_exe:
+  rntuple: false
+  routines: [mgdraw.f]
+
 analysis:
-  directory: results/c1/run_0001
-  units: [21, 22, 23]
-  volume: 1000                 # cm³
-  isotopes:                    # Z: A
+  run: c1/run_0001          # -> results/c1/run_0001
+  units: [21, 22]
+  volume: 1000
+  isotopes:
     31: 70
     30: 69
   output: isotopes.xlsx
-
-# ── fluka-root : compile FLUKA ROOT-output routines (src/root_output/Makefile) ──
-root:
-  files: [FluLibRNTuple.cpp]   # FluLib.cpp → TTree, FluLibRNTuple.cpp → RNTuple
-  format: rntuple
 ```
 
-Any tool can be pointed at this same file — `fluka-grid sim.yaml`,
-`fluka-submit sim.yaml`, `fluka-analysis sim.yaml`, `fluka-root sim.yaml` —
-and each will use only the section it owns. See [Home](Home) for the
-typical end-to-end flow and [fluka-run](fluka-run) for the orchestrator
-that sequences `grid` → `submit` and `collect` → `analysis` automatically.
+Point any tool at this same file — `fluka-grid sim.yaml`,
+`fluka-submit sim.yaml`, `fluka-compile sim.yaml`, `fluka-analysis sim.yaml`,
+`fluka-status sim.yaml` — and each uses `general` plus only its own section.
+See [Home](Home) for the end-to-end flow and [fluka-run](fluka-run) for the
+orchestrator.

@@ -7,11 +7,18 @@ __pycache__/
 build/
 dist/
 .venv/
+.worktrees/
 
 # Tracked in local-only backup repo (~/.flukatoolkit-local.git), never pushed to GitHub
 docs/
 .superpowers/
-tests/
 
 # Local-only tooling, never pushed to GitHub
 scripts/
+
+# Fluka simulation outputs and related files, never pushed to GitHub
+*~
+**results/
+
+# Project-local compiled custom FLUKA executable and build artifacts
+.fluka/

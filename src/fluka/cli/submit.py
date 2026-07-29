@@ -1,26 +1,14 @@
 from __future__ import annotations
 import argparse
-import tempfile
-import yaml
 from pathlib import Path
 
-from fluka.cli._common import resolve_config
-from fluka.queue.core.config import load_yaml_config
+from fluka.run.simconfig import resolve
+from fluka.queue.core.config import build_submit_args
 from fluka.queue.launch_jobs import BACKENDS, run_from_args
 
 
-def _section_to_tempfile(section: dict) -> str:
-    fh = tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False)
-    yaml.safe_dump(section, fh)
-    fh.close()
-    return fh.name
-
-
 def run_sim(path) -> None:
-    cfg, mode = resolve_config(path, "submit")
-    src = str(path) if mode == "standalone" else _section_to_tempfile(cfg)
-    args = load_yaml_config(src, BACKENDS)
-    run_from_args(args)
+    run_from_args(build_submit_args(resolve(path, "submit"), BACKENDS))
 
 
 def collect_sim(path) -> None:
@@ -40,7 +28,6 @@ def main() -> None:
     ap.add_argument("--grid", action="store_true", help="run grid generation before submitting")
     args = ap.parse_args()
     if args.grid:
-        from fluka.run.orchestrator import submit_phase
-        submit_phase(args.config, do_grid=True)
-    else:
-        run_sim(args.config)
+        from fluka.cli.grid import run_sim as run_grid
+        run_grid(args.config)
+    run_sim(args.config)
