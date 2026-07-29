@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 import zipfile
@@ -45,17 +46,20 @@ def test_wheel_contains_compiler_assets_and_installed_package_finds_them(tmp_pat
     venv_dir = tmp_path / "installed-wheel"
     subprocess.run([sys.executable, "-m", "venv", str(venv_dir)], check=True)
     venv_python = _venv_python(venv_dir)
+    install_env = os.environ | {"PYTHONPATH": ""}
     subprocess.run(
         [
             str(venv_python),
             "-m",
             "pip",
             "install",
+            "--force-reinstall",
             "--no-deps",
             "--no-index",
             str(wheel),
         ],
         check=True,
+        env=install_env,
     )
 
     lookup = subprocess.run(
