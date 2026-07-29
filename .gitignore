@@ -22,3 +22,6 @@ scripts/
 
 # Project-local compiled custom FLUKA executable and build artifacts
 .fluka/
+
+# Legacy pre-packaging compiler output directory
+src/root_output/
