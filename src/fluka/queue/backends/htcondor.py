@@ -20,7 +20,9 @@ _SCRIPT_TEMPLATE = Template("""\
 . /cvmfs/sft.cern.ch/lcg/views/setupViews.sh LCG_97python3 x86_64-centos7-gcc9-opt
 
 $fluka_command $input
-echo "FLUKA_STATUS rc=$$?" > .fluka_status
+rc=$$?
+echo "FLUKA_STATUS rc=$$rc" > .fluka_status
+exit "$$rc"
 """)
 
 
@@ -120,11 +122,7 @@ class HTCondorBackend(QueueBackend):
         _logging.warning("HTCondorBackend: benchmark_priority_queue ignorato (universe != coda nominata).")
 
     def _sentinel_path(self, job):
-        out = job.extra.get("output", "")
-        # output pattern may contain $(Cluster)/$(Process); best-effort: use as-is
-        # relative to the run dir if not absolute.
-        p = Path(out)
-        return p if p.is_absolute() else Path(job.run_dir) / p
+        return Path(job.run_dir) / ".fluka_status"
 
     def _queue_state(self, job):
         from fluka.run.status import RUNNING, PENDING

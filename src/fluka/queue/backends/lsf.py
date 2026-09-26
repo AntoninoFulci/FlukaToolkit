@@ -28,7 +28,9 @@ cd $job_dir
 echo
 echo Launching FLUKA run...
 $fluka_command $job_dir/$input
-echo "FLUKA_STATUS rc=$$?" > $job_dir/.fluka_status
+rc=$$?
+echo "FLUKA_STATUS rc=$$rc" > $job_dir/.fluka_status
+exit "$$rc"
 """)
 
 

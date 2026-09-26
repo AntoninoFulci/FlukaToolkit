@@ -20,12 +20,21 @@ def _job(run_dir="/o/c1/run_0001", output="job.out"):
 def test_script_echoes_sentinel(tmp_path):
     ji = JobInfo(input_file="s.inp", iteration=1, fluka_path="/f", custom_exe=None)
     content = Path(HTCondorBackend().generate_script(ji, str(tmp_path), _args())).read_text()
-    assert "FLUKA_STATUS rc=$?" in content
+    assert "FLUKA_STATUS rc=$rc" in content
 
-def test_sentinel_path_joins_run_dir(tmp_path):
-    (tmp_path / "job.out").write_text("FLUKA_STATUS rc=0")
+def test_sentinel_path_uses_transferred_status_file(tmp_path):
     p = Path(HTCondorBackend()._sentinel_path(_job(run_dir=tmp_path, output="job.out")))
-    assert p == Path(tmp_path) / "job.out"
+    assert p == Path(tmp_path) / ".fluka_status"
+
+
+def test_job_state_uses_failed_sentinel_when_condor_q_is_missing(tmp_path, monkeypatch):
+    (tmp_path / ".fluka_status").write_text("FLUKA_STATUS rc=1")
+
+    def missing_binary(cmd, **kw):
+        raise FileNotFoundError("condor_q not found")
+
+    monkeypatch.setattr(subprocess, "run", missing_binary)
+    assert HTCondorBackend().job_state(_job(run_dir=tmp_path)) == (S.FAIL, "rc=1")
 
 def test_queue_state_running(monkeypatch):
     def fake_run(cmd, **kw):

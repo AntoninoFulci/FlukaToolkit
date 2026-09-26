@@ -36,7 +36,8 @@ WATCHER_PID=$$!
 echo
 echo Launching FLUKA run...
 $fluka_command $job_dir/$input
-echo "FLUKA_STATUS rc=$$?" > $farm_out/$$USER/$$SLURM_JOB_NAME-$$SLURM_JOB_ID.fluka_status
+rc=$$?
+echo "FLUKA_STATUS rc=$$rc" > $farm_out/$$USER/$$SLURM_JOB_NAME-$$SLURM_JOB_ID.fluka_status
 
 kill $$WATCHER_PID 2>/dev/null
 
@@ -44,6 +45,7 @@ echo
 echo Job completed. Transferring files to $job_dir
 
 mv ./*.root $job_dir
+exit "$$rc"
 """)
 
 

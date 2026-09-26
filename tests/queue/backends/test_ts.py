@@ -26,6 +26,9 @@ def test_submit_dry_run_contains_ts_and_rfluka():
     assert "ts" in result
     assert "rfluka" in result
     assert "sim_0001.inp" in result
+    assert "rc=$?" in result
+    assert "FLUKA_STATUS rc=$rc" in result
+    assert 'exit "$rc"' in result
 
 def test_submit_dry_run_with_custom_exe():
     job_info = JobInfo("sim_0001.inp", 1, "/usr/local/fluka/bin", "/path/to/exe")

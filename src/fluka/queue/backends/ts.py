@@ -29,7 +29,11 @@ class TSBackend(QueueBackend):
         fluka_cmd = shlex.join(fluka_parts)
         if input_path.is_absolute():
             fluka_cmd = f"cd {shlex.quote(str(input_path.parent))} && {fluka_cmd}"
-        wrapped = f'{fluka_cmd}; echo "FLUKA_STATUS rc=$?" > ./.fluka_status'
+        wrapped = (
+            f'{fluka_cmd}; rc=$?; '
+            'echo "FLUKA_STATUS rc=$rc" > ./.fluka_status; '
+            'exit "$rc"'
+        )
         cmd_list = ["ts", "bash", "-c", wrapped]
 
         if args.dry_run:

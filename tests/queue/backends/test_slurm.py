@@ -34,6 +34,14 @@ def test_generate_script_contains_sbatch_directives(tmp_path):
     assert "#SBATCH" in content
     assert "3000" in content
 
+
+def test_generate_script_propagates_fluka_exit_status(tmp_path):
+    job_info = JobInfo("sim_0001.inp", 1, "/usr/local/fluka/bin", None)
+    content = open(BACKEND.generate_script(job_info, str(tmp_path), make_args())).read()
+    assert "rc=$?" in content
+    assert "FLUKA_STATUS rc=$rc" in content
+    assert 'exit "$rc"' in content
+
 def test_submit_dry_run(tmp_path):
     job_info = JobInfo("sim_0001.inp", 1, "/usr/local/fluka/bin", None)
     result = BACKEND.submit("/tmp/job_0001.sh", job_info, make_args(dry_run=True, queue="mypartition"))

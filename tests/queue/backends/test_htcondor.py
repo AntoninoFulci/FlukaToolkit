@@ -42,8 +42,10 @@ def test_generate_script_writes_status_sentinel(tmp_path):
     """Completed Condor jobs need .fluka_status for fluka-status fallback."""
     job_info = JobInfo("sim_0001.inp", 1, "/usr/local/fluka/bin", None)
     content = open(BACKEND.generate_script(job_info, str(tmp_path), make_args())).read()
-    assert 'FLUKA_STATUS rc=$?' in content
+    assert "rc=$?" in content
+    assert "FLUKA_STATUS rc=$rc" in content
     assert '> .fluka_status' in content
+    assert 'exit "$rc"' in content
 
 def test_submit_dry_run_returns_description():
     job_info = JobInfo("sim_0001.inp", 1, "/usr/local/fluka/bin", None)

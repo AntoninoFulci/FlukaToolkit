@@ -40,6 +40,14 @@ def test_generate_script_includes_custom_exe(tmp_path):
     content = open(BACKEND.generate_script(job_info, str(tmp_path), make_args())).read()
     assert "-e /path/to/myexe" in content
 
+
+def test_generate_script_propagates_fluka_exit_status(tmp_path):
+    job_info = JobInfo("sim_0001.inp", 1, "/usr/local/fluka/bin", None)
+    content = open(BACKEND.generate_script(job_info, str(tmp_path), make_args())).read()
+    assert "rc=$?" in content
+    assert "FLUKA_STATUS rc=$rc" in content
+    assert 'exit "$rc"' in content
+
 def test_submit_dry_run_returns_string():
     job_info = JobInfo("sim_0001.inp", 1, "/usr/local/fluka/bin", None)
     result = BACKEND.submit("/tmp/job_0001.sh", job_info, make_args(dry_run=True))

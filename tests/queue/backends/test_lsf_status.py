@@ -17,7 +17,7 @@ def _job(run_dir="/o/c1/run_0001"):
 def test_template_writes_sentinel(tmp_path):
     ji = JobInfo(input_file="s.inp", iteration=1, fluka_path="/f", custom_exe=None)
     content = Path(LSFBackend().generate_script(ji, str(tmp_path), _args())).read_text()
-    assert "FLUKA_STATUS rc=$?" in content and ".fluka_status" in content
+    assert "FLUKA_STATUS rc=$rc" in content and ".fluka_status" in content
 
 def test_sentinel_path(tmp_path):
     assert Path(LSFBackend()._sentinel_path(_job(tmp_path))) == Path(tmp_path) / ".fluka_status"

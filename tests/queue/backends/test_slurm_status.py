@@ -17,7 +17,7 @@ def test_template_uses_farm_out(tmp_path):
     path = SlurmBackend().generate_script(ji, str(tmp_path), _args())
     content = Path(path).read_text()
     assert "/myfarm" in content and "/farm_out" not in content
-    assert "FLUKA_STATUS rc=$?" in content
+    assert "FLUKA_STATUS rc=$rc" in content
 
 def test_sentinel_path_from_extra():
     j = Job(combo="c1", run_idx=1, run_name="run_0001", run_dir="/o/c1/run_0001",

@@ -36,4 +36,4 @@ def test_submit_wraps_sentinel(monkeypatch):
     ji = JobInfo(input_file="s.inp", iteration=1, fluka_path="/f", custom_exe=None)
     TSBackend().submit(None, ji, Namespace(dry_run=False))
     joined = " ".join(captured["cmd"])
-    assert "FLUKA_STATUS rc=$?" in joined and ".fluka_status" in joined
+    assert "FLUKA_STATUS rc=$rc" in joined and ".fluka_status" in joined
