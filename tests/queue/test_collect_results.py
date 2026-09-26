@@ -79,15 +79,17 @@ def test_scan_records_file_size(tmp_path):
     assert plan.moves[0].size == 512
 
 
-def test_scan_skips_parent_with_nonempty_root_files(tmp_path):
+def test_scan_records_collision_with_existing_root_file(tmp_path):
     make_tree(tmp_path, {"SimLead": {"job_0001": ["a.root"]}})
     root_files_dir = tmp_path / "SimLead" / "root_files"
     root_files_dir.mkdir()
-    (root_files_dir / "existing.root").touch()
+    (root_files_dir / "a.root").touch()
 
     plan = scan_all(tmp_path)
     assert len(plan.moves) == 0
-    assert tmp_path / "SimLead" in plan.skipped_parents
+    assert len(plan.collisions) == 1
+    assert plan.collisions[0].dest == root_files_dir / "a.root"
+    assert plan.collisions[0].destination_exists is True
 
 
 def test_scan_proceeds_if_root_files_dir_is_empty(tmp_path):
@@ -127,7 +129,37 @@ def test_scan_empty_cwd_returns_empty_plan(tmp_path):
     plan = scan_all(tmp_path)
     assert plan.moves == []
     assert plan.empty_jobs == []
-    assert plan.skipped_parents == []
+    assert plan.collisions == []
+
+
+def test_duplicate_destination_aborts_parent_without_moving(tmp_path):
+    make_tree(tmp_path, {
+        "SimLead": {
+            "job_0001": ["dump.root"],
+            "job_0002": ["dump.root"],
+        }
+    })
+    plan = scan_all(tmp_path)
+
+    assert [c.dest.name for c in plan.collisions] == ["dump.root"]
+    assert execute_plan(plan) == 1
+    assert (tmp_path / "SimLead" / "job_0001" / "dump.root").exists()
+    assert (tmp_path / "SimLead" / "job_0002" / "dump.root").exists()
+    assert not (tmp_path / "SimLead" / "root_files" / "dump.root").exists()
+
+
+def test_existing_destination_is_never_overwritten(tmp_path):
+    make_tree(tmp_path, {"SimLead": {"job_0001": ["dump.root"]}})
+    dest_dir = tmp_path / "SimLead" / "root_files"
+    dest_dir.mkdir()
+    dest = dest_dir / "dump.root"
+    dest.write_bytes(b"original")
+
+    plan = scan_all(tmp_path)
+
+    assert execute_plan(plan) == 1
+    assert dest.read_bytes() == b"original"
+    assert (tmp_path / "SimLead" / "job_0001" / "dump.root").exists()
 
 
 def test_scan_cwd_with_no_job_dirs_returns_empty_plan(tmp_path):
@@ -215,18 +247,20 @@ def test_display_plan_shows_empty_job_warning(tmp_path):
     assert "no .root" in buf.getvalue()
 
 
-def test_display_plan_shows_skipped_parent_warning(tmp_path):
+def test_display_plan_shows_existing_destination_collision(tmp_path):
     from rich.console import Console
     make_tree(tmp_path, {"SimLead": {"job_0001": ["a.root"]}})
     root_files_dir = tmp_path / "SimLead" / "root_files"
     root_files_dir.mkdir()
-    (root_files_dir / "existing.root").touch()
+    (root_files_dir / "a.root").touch()
     plan = scan_all(tmp_path)
     buf = StringIO()
     console = Console(file=buf, highlight=False, no_color=True)
     display_plan(plan, console=console)
-    assert "SKIP" in buf.getvalue()
-    assert "SimLead" in buf.getvalue()
+    assert "COLLISION" in buf.getvalue()
+    assert "a.root" in buf.getvalue()
+    assert "destination" in buf.getvalue()
+    assert "exists" in buf.getvalue()
 
 
 # ── integration (subprocess) ───────────────────────────────────────────────────

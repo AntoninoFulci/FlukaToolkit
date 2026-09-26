@@ -27,36 +27,61 @@ class EmptyJob:
 
 
 @dataclass
+class CollectionCollision:
+    parent_dir: Path
+    dest: Path
+    sources: list[Path]
+    destination_exists: bool = False
+
+
+@dataclass
 class MovePlan:
     moves: list[FileMove] = field(default_factory=list)
     empty_jobs: list[EmptyJob] = field(default_factory=list)
-    skipped_parents: list[Path] = field(default_factory=list)
+    collisions: list[CollectionCollision] = field(default_factory=list)
 
 
 def scan_all(cwd: Path) -> MovePlan:
     plan = MovePlan()
     for parent_dir in sorted(p for p in cwd.iterdir() if p.is_dir()):
         root_files_dir = parent_dir / "root_files"
-        if root_files_dir.exists() and next(root_files_dir.iterdir(), None) is not None:
-            plan.skipped_parents.append(parent_dir)
-            continue
         job_dirs = sorted(
             p for p in parent_dir.iterdir()
             if p.is_dir() and p.name.startswith("job_")
         )
+        parent_moves: list[FileMove] = []
         for job_dir in job_dirs:
             root_files = list(job_dir.glob("*.root"))
             if not root_files:
                 plan.empty_jobs.append(EmptyJob(parent_dir=parent_dir, job_dir=job_dir))
                 continue
             for f in root_files:
-                plan.moves.append(FileMove(
+                parent_moves.append(FileMove(
                     parent_dir=parent_dir,
                     job_dir=job_dir,
                     source=f,
                     dest=root_files_dir / f.name,
                     size=f.stat().st_size,
                 ))
+
+        by_dest: dict[Path, list[FileMove]] = {}
+        for move in parent_moves:
+            by_dest.setdefault(move.dest, []).append(move)
+
+        parent_collisions = [
+            CollectionCollision(
+                parent_dir=parent_dir,
+                dest=dest,
+                sources=[move.source for move in moves],
+                destination_exists=dest.exists(),
+            )
+            for dest, moves in sorted(by_dest.items())
+            if len(moves) > 1 or dest.exists()
+        ]
+        if parent_collisions:
+            plan.collisions.extend(parent_collisions)
+        else:
+            plan.moves.extend(parent_moves)
     return plan
 
 
@@ -73,8 +98,12 @@ def display_plan(plan: MovePlan, console: Console | None = None) -> None:
     if console is None:
         console = Console()
 
-    for p in plan.skipped_parents:
-        console.print(f"[yellow]SKIP[/yellow] {p.name}: root_files/ already non-empty")
+    for collision in plan.collisions:
+        sources = ", ".join(str(source) for source in collision.sources)
+        reason = "destination exists" if collision.destination_exists else "duplicate filename"
+        console.print(
+            f"[red]COLLISION[/red] {collision.dest} ({reason}); sources: {sources}"
+        )
 
     if not plan.moves and not plan.empty_jobs:
         return
@@ -134,7 +163,7 @@ def execute_plan(plan: MovePlan) -> int:
     for m in plan.moves:
         parents.setdefault(m.parent_dir, []).append(m)
 
-    exit_code = 0
+    exit_code = 1 if plan.collisions else 0
     for parent_dir, moves in sorted(parents.items()):
         dest_dir = parent_dir / "root_files"
         try:
@@ -173,14 +202,14 @@ def main(cwd: Path | None = None) -> int:
     cwd = Path.cwd() if cwd is None else Path(cwd)
     plan = scan_all(cwd)
 
-    if not plan.moves and not plan.empty_jobs and not plan.skipped_parents:
+    if not plan.moves and not plan.empty_jobs and not plan.collisions:
         print("ERROR: no job_* directories found under any subdirectory", file=sys.stderr)
         return 1
 
     display_plan(plan)
 
     if not plan.moves:
-        return 0
+        return 1 if plan.collisions else 0
 
     answer = input("Proceed? [y/N]: ").strip().lower()
     if answer != "y":
