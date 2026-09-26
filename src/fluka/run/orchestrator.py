@@ -22,7 +22,7 @@ def _do_grid(sim_path, exe) -> None:
 
 def _do_submit(sim_path, exe) -> None:
     from fluka.queue.core.config import build_submit_args
-    from fluka.queue.launch_jobs import BACKENDS, run_from_args
+    from fluka.queue.launch_jobs import BACKENDS, run_submission
     args = build_submit_args(resolve(sim_path, "submit"), BACKENDS)
     if exe is not None:
         args.custom_exe = str(exe)
@@ -30,7 +30,7 @@ def _do_submit(sim_path, exe) -> None:
             raise ValueError(
                 "use_dpm and custom_exe are mutually exclusive: set only one."
             )
-    run_from_args(args)
+    run_submission(args)
 
 def launch(sim_path) -> None:
     sim = Path(sim_path)
@@ -64,10 +64,18 @@ def main() -> None:
         )
         ap.add_argument("sim", type=Path)
         args = ap.parse_args(argv[1:])
-        analyze_phase(args.sim)
+        try:
+            analyze_phase(args.sim)
+        except (OSError, ValueError, RuntimeError) as error:
+            print(error, file=sys.stderr)
+            raise SystemExit(1) from error
         return
 
     ap = argparse.ArgumentParser(description="Run a FLUKA simulation from one sim.yaml")
     ap.add_argument("sim", type=Path, help="sim.yaml (compile + grid/submit)")
     args = ap.parse_args(argv)
-    launch(args.sim)
+    try:
+        launch(args.sim)
+    except (OSError, ValueError, RuntimeError) as error:
+        print(error, file=sys.stderr)
+        raise SystemExit(1) from error

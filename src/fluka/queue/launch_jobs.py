@@ -136,19 +136,17 @@ def _log_submission_batch(error: SubmissionBatchError) -> None:
         logging.error("Job %d fallito: %s", failure.iteration, failure.error)
 
 
-def run_from_args(args: SubmissionConfig) -> None:
+def run_submission(args: SubmissionConfig) -> SubmissionSummary | None:
     if not args.input.endswith(".inp"):
-        logging.error("Il file di input deve terminare con .inp")
-        sys.exit(1)
+        raise ValueError("Input file must end with .inp")
 
     fluka_path, fluka_folder = fluka.detect_fluka_path()
-    backend = BACKENDS[args.backend]
-
     try:
-        backend.validate(args)
-    except ValueError as e:
-        logging.error(str(e))
-        sys.exit(1)
+        backend = BACKENDS[args.backend]
+    except KeyError as error:
+        raise ValueError(f"Backend sconosciuto: {args.backend!r}") from error
+
+    backend.validate(args)
 
     C = display.COLORS
     common_rows = [
@@ -164,10 +162,11 @@ def run_from_args(args: SubmissionConfig) -> None:
 
     if not display.confirm():
         logging.info("Lancio annullato.")
-        sys.exit(0)
+        return None
 
     summary = submit_jobs(args, fluka_path, BACKENDS)
     _log_summary(summary)
+    return summary
 
 
 def run_folder(folder: str) -> int:
@@ -186,7 +185,7 @@ def run_folder(folder: str) -> int:
             cfg = config.load_yaml_config(path, BACKENDS)
             BACKENDS[cfg.backend].validate(cfg)
             configs.append((path, cfg))
-        except Exception as e:
+        except (OSError, ValueError, RuntimeError) as e:
             logging.error("File %r non valido: %s", path, e)
 
     if not configs:
@@ -217,7 +216,7 @@ def run_folder(folder: str) -> int:
         except SubmissionBatchError as e:
             _log_submission_batch(e)
             failures += 1
-        except Exception as e:
+        except (OSError, ValueError, RuntimeError) as e:
             logging.error("Errore in %r: %s", path, e)
             failures += 1
     return failures
@@ -246,7 +245,7 @@ def run_benchmark(mode: str, target: str) -> int:
                 cfg = config.load_yaml_config(path, BACKENDS)
                 BACKENDS[cfg.backend].validate(cfg)
                 configs.append((path, cfg))
-            except Exception as e:
+            except (OSError, ValueError, RuntimeError) as e:
                 logging.error("File %r non valido: %s", path, e)
 
         if not configs:
@@ -254,11 +253,7 @@ def run_benchmark(mode: str, target: str) -> int:
             return 0
 
         for path, cfg in configs:
-            try:
-                _apply_benchmark_overrides(cfg, mode, BACKENDS[cfg.backend])
-            except ValueError as e:
-                logging.error(str(e))
-                sys.exit(1)
+            _apply_benchmark_overrides(cfg, mode, BACKENDS[cfg.backend])
 
         params = _BENCHMARK_MODES[mode]
         print(
@@ -295,25 +290,17 @@ def run_benchmark(mode: str, target: str) -> int:
             except SubmissionBatchError as e:
                 _log_submission_batch(e)
                 failures += 1
-            except Exception as e:
+            except (OSError, ValueError, RuntimeError) as e:
                 logging.error("Errore in %r: %s", path, e)
                 failures += 1
         return failures
 
     else:
-        try:
-            cfg = config.load_yaml_config(target, BACKENDS)
-        except (FileNotFoundError, ValueError) as e:
-            logging.error(str(e))
-            sys.exit(1)
+        cfg = config.load_yaml_config(target, BACKENDS)
 
         backend = BACKENDS[cfg.backend]
-        try:
-            backend.validate(cfg)
-            _apply_benchmark_overrides(cfg, mode, backend)
-        except ValueError as e:
-            logging.error(str(e))
-            sys.exit(1)
+        backend.validate(cfg)
+        _apply_benchmark_overrides(cfg, mode, backend)
 
         if cfg.nprim is not None and not _has_start_card(cfg.input):
             logging.warning(
@@ -354,6 +341,9 @@ def main() -> None:
         except SubmissionBatchError as e:
             _log_submission_batch(e)
             sys.exit(1)
+        except (OSError, ValueError, RuntimeError) as e:
+            logging.error(str(e))
+            sys.exit(1)
         if failures:
             sys.exit(1)
         return
@@ -366,21 +356,32 @@ def main() -> None:
                 logging.error(str(e))
                 sys.exit(1)
             try:
-                run_from_args(args)
+                run_submission(args)
             except SubmissionBatchError as e:
                 _log_submission_batch(e)
                 sys.exit(1)
+            except (OSError, ValueError, RuntimeError) as e:
+                logging.error(str(e))
+                sys.exit(1)
             return
         if os.path.isdir(first_arg):
-            if run_folder(first_arg):
+            try:
+                failures = run_folder(first_arg)
+            except (OSError, ValueError, RuntimeError) as e:
+                logging.error(str(e))
+                sys.exit(1)
+            if failures:
                 sys.exit(1)
             return
     parser = _build_parser()
     namespace = parser.parse_args()
     try:
-        run_from_args(SubmissionConfig.from_mapping(vars(namespace)))
+        run_submission(SubmissionConfig.from_mapping(vars(namespace)))
     except SubmissionBatchError as e:
         _log_submission_batch(e)
+        sys.exit(1)
+    except (OSError, ValueError, RuntimeError) as e:
+        logging.error(str(e))
         sys.exit(1)
 
 

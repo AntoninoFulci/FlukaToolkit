@@ -19,7 +19,46 @@ def test_invalid_extension_exits():
     from fluka.queue import launch_jobs
     import importlib
     importlib.reload(launch_jobs)
-    with pytest.raises(SystemExit):
+    with pytest.raises(SystemExit) as exc:
+        launch_jobs.main()
+    assert exc.value.code == 1
+
+
+def test_run_submission_raises_validation_error_instead_of_system_exit():
+    from fluka.queue.core.config import SubmissionConfig
+    from fluka.queue.launch_jobs import run_submission
+
+    config = SubmissionConfig(backend="ts", input="not-an-input.txt", njobs=1)
+    with pytest.raises(ValueError, match="must end with .inp"):
+        run_submission(config)
+
+
+def test_main_translates_submission_error_to_exit_one(monkeypatch):
+    from fluka.queue import launch_jobs
+
+    def fail(config):
+        raise ValueError("invalid submission")
+
+    monkeypatch.setattr(launch_jobs, "run_submission", fail, raising=False)
+    monkeypatch.setattr(
+        "sys.argv", ["launch_jobs.py", "ts", "-f", "input.inp", "-n", "1"]
+    )
+    with pytest.raises(SystemExit) as exc:
+        launch_jobs.main()
+    assert exc.value.code == 1
+
+
+def test_main_does_not_hide_unexpected_submission_errors(monkeypatch):
+    from fluka.queue import launch_jobs
+
+    def fail(config):
+        raise AssertionError("programming defect")
+
+    monkeypatch.setattr(launch_jobs, "run_submission", fail, raising=False)
+    monkeypatch.setattr(
+        "sys.argv", ["launch_jobs.py", "ts", "-f", "input.inp", "-n", "1"]
+    )
+    with pytest.raises(AssertionError, match="programming defect"):
         launch_jobs.main()
 
 

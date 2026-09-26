@@ -1,10 +1,11 @@
 from __future__ import annotations
 import argparse
+import sys
 from pathlib import Path
 
 from fluka.run.simconfig import resolve
 from fluka.queue.core.config import build_submit_args
-from fluka.queue.launch_jobs import BACKENDS, run_from_args
+from fluka.queue.launch_jobs import BACKENDS, run_submission
 
 
 class CollectionError(RuntimeError):
@@ -12,7 +13,7 @@ class CollectionError(RuntimeError):
 
 
 def run_sim(path) -> None:
-    run_from_args(build_submit_args(resolve(path, "submit"), BACKENDS))
+    run_submission(build_submit_args(resolve(path, "submit"), BACKENDS))
 
 
 def collect_sim(path) -> None:
@@ -32,8 +33,12 @@ def main() -> None:
     ap.add_argument("config", type=Path, help="submit config.yaml or sim.yaml")
     ap.add_argument("--grid", action="store_true", help="run grid generation before submitting")
     args = ap.parse_args()
-    if args.grid:
-        from fluka.cli.grid import run_sim as run_grid
-        run_grid(args.config)
-        return
-    run_sim(args.config)
+    try:
+        if args.grid:
+            from fluka.cli.grid import run_sim as run_grid
+            run_grid(args.config)
+            return
+        run_sim(args.config)
+    except (OSError, ValueError, RuntimeError) as error:
+        print(error, file=sys.stderr)
+        raise SystemExit(1) from error

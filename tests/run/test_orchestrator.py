@@ -89,7 +89,7 @@ def test_launch_no_custom_exe_submit(tmp_path, monkeypatch):
 
 # --- injection seams: _do_grid / _do_submit set custom_executable / custom_exe
 # directly on the config/args object they build. `_do_grid` and `_do_submit`
-# import load_config/validate_config/run_config and build_submit_args/run_from_args
+# import load_config/validate_config/run_config and build_submit_args/run_submission
 # *locally* (inside the function body), so they must be monkeypatched at their
 # defining module, not as `orch.<name>` (orchestrator never binds those names
 # at module scope).
@@ -139,7 +139,7 @@ def test_do_submit_injects_custom_exe(tmp_path, monkeypatch):
         "fluka.queue.core.config.build_submit_args", lambda view, backends: fake_args
     )
     monkeypatch.setattr(
-        "fluka.queue.launch_jobs.run_from_args",
+        "fluka.queue.launch_jobs.run_submission",
         lambda args: captured.setdefault("ran", args),
     )
     sim = _sim(tmp_path, custom_exe=False, grid=False)
@@ -153,8 +153,8 @@ def test_do_submit_raises_when_use_dpm_and_custom_exe(tmp_path, monkeypatch):
         "fluka.queue.core.config.build_submit_args", lambda view, backends: fake_args
     )
     monkeypatch.setattr(
-        "fluka.queue.launch_jobs.run_from_args",
-        lambda args: pytest.fail("run_from_args should not be reached"),
+        "fluka.queue.launch_jobs.run_submission",
+        lambda args: pytest.fail("run_submission should not be reached"),
     )
     sim = _sim(tmp_path, custom_exe=False, grid=False)
     with pytest.raises(ValueError, match="mutually exclusive"):
@@ -177,3 +177,22 @@ def test_main_analyze_argv_dispatches_to_analyze_phase(tmp_path, monkeypatch):
     monkeypatch.setattr("sys.argv", ["fluka-run", "analyze", "cfg.yaml"])
     O.main()
     assert seen == {"analyze": Path("cfg.yaml")}
+
+
+def test_main_translates_expected_launch_error_to_exit_one(monkeypatch):
+    monkeypatch.setattr(O, "launch", lambda sim: (_ for _ in ()).throw(ValueError("bad config")))
+    monkeypatch.setattr("sys.argv", ["fluka-run", "cfg.yaml"])
+    with pytest.raises(SystemExit) as exc:
+        O.main()
+    assert exc.value.code == 1
+
+
+def test_main_does_not_hide_unexpected_launch_error(monkeypatch):
+    monkeypatch.setattr(
+        O,
+        "launch",
+        lambda sim: (_ for _ in ()).throw(AssertionError("programming defect")),
+    )
+    monkeypatch.setattr("sys.argv", ["fluka-run", "cfg.yaml"])
+    with pytest.raises(AssertionError, match="programming defect"):
+        O.main()
