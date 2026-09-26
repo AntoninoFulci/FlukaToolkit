@@ -30,6 +30,20 @@ def test_analyze_phase_runs_collect_then_analysis(tmp_path, monkeypatch):
     assert calls == ["collect", "analysis"]
 
 
+def test_analyze_phase_stops_when_collection_fails(monkeypatch):
+    analyzed = []
+    monkeypatch.setattr(
+        "fluka.cli.submit.collect_sim",
+        lambda sim: (_ for _ in ()).throw(RuntimeError("collection failed")),
+    )
+    monkeypatch.setattr("fluka.cli.analysis.run_sim", lambda sim: analyzed.append(sim))
+
+    with pytest.raises(RuntimeError, match="collection failed"):
+        orch.analyze_phase(Path("sim.yaml"))
+
+    assert analyzed == []
+
+
 def test_collect_sim_scans_results_relative_to_sim_config(tmp_path, monkeypatch):
     """Analysis must collect simulation output, not whichever directory invoked CLI."""
     from fluka.cli import submit
@@ -37,10 +51,12 @@ def test_collect_sim_scans_results_relative_to_sim_config(tmp_path, monkeypatch)
     sim = tmp_path / "sim.yaml"
     sim.write_text("general:\n  output: results/\n")
     seen = {}
-    monkeypatch.setattr(
-        "fluka.queue.collect_results.main",
-        lambda cwd=None: seen.setdefault("cwd", cwd) or 0,
-    )
+
+    def collect(cwd=None):
+        seen["cwd"] = cwd
+        return 0
+
+    monkeypatch.setattr("fluka.queue.collect_results.main", collect)
     submit.collect_sim(sim)
     assert seen["cwd"] == tmp_path / "results"
 

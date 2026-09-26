@@ -7,6 +7,10 @@ from fluka.queue.core.config import build_submit_args
 from fluka.queue.launch_jobs import BACKENDS, run_from_args
 
 
+class CollectionError(RuntimeError):
+    """Raised when submitted run results cannot be collected safely."""
+
+
 def run_sim(path) -> None:
     run_from_args(build_submit_args(resolve(path, "submit"), BACKENDS))
 
@@ -17,7 +21,10 @@ def collect_sim(path) -> None:
     Collect from general.output, resolved relative to sim.yaml.
     """
     from fluka.queue import collect_results
-    collect_results.main(Path(resolve(path, "submit")["output"]))
+
+    output_dir = Path(resolve(path, "submit")["output"])
+    if collect_results.main(output_dir) != 0:
+        raise CollectionError(f"collection failed for {output_dir}")
 
 
 def main() -> None:

@@ -41,3 +41,11 @@ def test_submit_grid_does_not_submit_base_input_after_grid(monkeypatch):
     monkeypatch.setattr(submit, "run_sim", lambda path: calls.append(("submit", path)))
     submit.main()
     assert calls == [("grid", Path("sim.yaml"))]
+
+
+def test_collect_sim_raises_on_nonzero_result(monkeypatch):
+    monkeypatch.setattr(submit, "resolve", lambda path, tool: {"output": "/runs"})
+    monkeypatch.setattr("fluka.queue.collect_results.main", lambda path: 1)
+
+    with pytest.raises(submit.CollectionError, match="collection failed"):
+        submit.collect_sim(Path("sim.yaml"))
