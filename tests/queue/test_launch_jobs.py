@@ -237,7 +237,7 @@ def test_folder_mode_cancelled_by_user(tmp_path, monkeypatch, caplog):
 def test_execute_jobs_aborts_on_duplicate_seeds(tmp_path, monkeypatch):
     from fluka.queue import launch_jobs
     from fluka.queue.core import fluka
-    from argparse import Namespace
+    from fluka.queue.core.config import SubmissionConfig
 
     submitted = []
 
@@ -258,7 +258,7 @@ def test_execute_jobs_aborts_on_duplicate_seeds(tmp_path, monkeypatch):
 
     src = tmp_path / "sim.inp"
     src.write_text("RANDOMIZ          1.  1\n")
-    args = Namespace(
+    args = SubmissionConfig(
         backend="stub", input=str(src), njobs=2, custom_exe=None,
         output_dir=str(tmp_path / "out"), nprim=None,
     )
@@ -269,8 +269,8 @@ def test_execute_jobs_aborts_on_duplicate_seeds(tmp_path, monkeypatch):
 
 def test_execute_jobs_gives_ts_an_absolute_input_path(tmp_path, monkeypatch):
     """TS backend must know job directory; relative input is absent from caller cwd."""
-    from argparse import Namespace
     from fluka.queue import launch_jobs
+    from fluka.queue.core.config import SubmissionConfig
 
     submitted = []
 
@@ -285,7 +285,7 @@ def test_execute_jobs_gives_ts_an_absolute_input_path(tmp_path, monkeypatch):
     monkeypatch.setitem(launch_jobs.BACKENDS, "ts", StubBackend())
     src = tmp_path / "sim.inp"
     src.write_text("RANDOMIZ          1.  1\n")
-    args = Namespace(
+    args = SubmissionConfig(
         backend="ts", input=str(src), njobs=1, custom_exe=None,
         output_dir=str(tmp_path / "out"), nprim=None, dry_run=True, use_dpm=False,
     )

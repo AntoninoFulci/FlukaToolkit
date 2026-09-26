@@ -1,16 +1,19 @@
-from argparse import Namespace
 from pathlib import Path
 import subprocess
 from fluka.queue.backends.htcondor import HTCondorBackend
 from fluka.queue.backends.base import JobInfo
+from fluka.queue.core.config import SubmissionConfig
 from fluka.run.manifest import Job
 from fluka.run import status as S
 
 
 def _args():
-    return Namespace(dry_run=True, queue="vanilla", mem="1500", ncpu=1, disk=100000,
-                     time=86400, transfer_files="yes",
-                     output="job.out", error="job.err", log="job.log")
+    return SubmissionConfig(
+        backend="condor", input="s.inp", njobs=1, dry_run=True,
+        queue="vanilla", mem="1500", ncpu=1, disk=100000,
+        time=86400, transfer_files="yes", stdout="job.out",
+        stderr="job.err", log="job.log",
+    )
 
 def _job(run_dir="/o/c1/run_0001", output="job.out"):
     return Job(combo="c1", run_idx=1, run_name="run_0001", run_dir=run_dir,

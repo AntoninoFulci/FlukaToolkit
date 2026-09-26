@@ -3,25 +3,18 @@
 import logging
 import os
 import sys
-from argparse import ArgumentParser, Namespace, RawTextHelpFormatter
+from argparse import ArgumentParser, RawTextHelpFormatter
 from pathlib import Path
 from typing import TypedDict
 
 from fluka.queue.backends.base import JobInfo, QueueBackend
-from fluka.queue.backends.htcondor import HTCondorBackend
-from fluka.queue.backends.lsf import LSFBackend
-from fluka.queue.backends.slurm import SlurmBackend
-from fluka.queue.backends.ts import TSBackend
+from fluka.queue.backends.registry import new_backends
 from fluka.queue.core import config, display, filesystem, fluka
+from fluka.queue.core.config import SubmissionConfig
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-BACKENDS = {
-    "lsf":    LSFBackend(),
-    "slurm":  SlurmBackend(),
-    "condor": HTCondorBackend(),
-    "ts":     TSBackend(),
-}
+BACKENDS = new_backends()
 
 class _BenchmarkParams(TypedDict):
     njobs: int
@@ -35,7 +28,9 @@ _BENCHMARK_MODES: dict[str, _BenchmarkParams] = {
 }
 
 
-def _apply_benchmark_overrides(args: Namespace, mode: str, backend: QueueBackend) -> None:
+def _apply_benchmark_overrides(
+    args: SubmissionConfig, mode: str, backend: QueueBackend
+) -> None:
     if mode not in _BENCHMARK_MODES:
         raise ValueError(
             f"Modalita' benchmark sconosciuta: {mode!r}. Disponibili: {sorted(_BENCHMARK_MODES)}"
@@ -128,7 +123,7 @@ def _build_parser() -> ArgumentParser:
     return parser
 
 
-def _execute_jobs(args: Namespace, fluka_path: str) -> None:
+def _execute_jobs(args: SubmissionConfig, fluka_path: str) -> None:
     if args.custom_exe is not None and not os.path.isfile(args.custom_exe):
         logging.error("Custom exe non trovato: %s", args.custom_exe)
         sys.exit(1)
@@ -169,7 +164,7 @@ def _execute_jobs(args: Namespace, fluka_path: str) -> None:
             logging.error("Job %d fallito: %s", i, e)
 
 
-def run_from_args(args: Namespace) -> None:
+def run_from_args(args: SubmissionConfig) -> None:
     if not args.input.endswith(".inp"):
         logging.error("Il file di input deve terminare con .inp")
         sys.exit(1)
@@ -385,8 +380,8 @@ def main() -> None:
             run_folder(first_arg)
             return
     parser = _build_parser()
-    args = parser.parse_args()
-    run_from_args(args)
+    namespace = parser.parse_args()
+    run_from_args(SubmissionConfig.from_mapping(vars(namespace)))
 
 
 if __name__ == "__main__":

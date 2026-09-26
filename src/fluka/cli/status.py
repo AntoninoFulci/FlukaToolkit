@@ -8,7 +8,7 @@ from pathlib import Path
 from tabulate import tabulate
 
 from fluka.run.simconfig import load_sim
-from fluka.grid.backends.queue_adapter import BACKENDS as _BACKEND_CLASSES
+from fluka.queue.backends.registry import new_backends
 from fluka.run.manifest import load_manifest, manifest_path_for
 from fluka.run import status as S
 from fluka.run.status import resolve_all, all_terminal, summary_counts
@@ -21,10 +21,6 @@ def _output_dir(cfg_path) -> Path:
     return p if p.is_absolute() else (Path(cfg_path).parent / p)
 
 
-def _backends():
-    return {name: cls() for name, cls in _BACKEND_CLASSES.items()}
-
-
 def build_status(cfg_path) -> list[S.JobStatus]:
     out_dir = _output_dir(cfg_path)
     jobs = load_manifest(manifest_path_for(out_dir))
@@ -32,7 +28,7 @@ def build_status(cfg_path) -> list[S.JobStatus]:
         print(f"no jobs recorded for {out_dir}; run fluka-grid / fluka-run submit first",
               file=sys.stderr)
         raise SystemExit(1)
-    return resolve_all(jobs, _backends())
+    return resolve_all(jobs, new_backends())
 
 
 def render_table(statuses) -> str:

@@ -1,14 +1,17 @@
-from argparse import Namespace
 from pathlib import Path
 import subprocess
 from fluka.queue.backends.lsf import LSFBackend
 from fluka.queue.backends.base import JobInfo
+from fluka.queue.core.config import SubmissionConfig
 from fluka.run.manifest import Job
 from fluka.run import status as S
 
 
 def _args():
-    return Namespace(dry_run=True, queue="normal", mem="1500", ntasks=1, time="1-00:00:00")
+    return SubmissionConfig(
+        backend="lsf", input="s.inp", njobs=1, dry_run=True,
+        queue="normal", mem="1500", ntasks=1, time="1-00:00:00",
+    )
 
 def _job(run_dir="/o/c1/run_0001"):
     return Job(combo="c1", run_idx=1, run_name="run_0001", run_dir=run_dir,

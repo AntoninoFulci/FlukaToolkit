@@ -1,6 +1,7 @@
 import pytest
-from argparse import Namespace
 from fluka.queue.backends.base import QueueBackend, JobInfo
+from fluka.queue.backends.registry import BACKEND_TYPES, new_backends
+from fluka.queue.core.config import SubmissionConfig
 
 
 class ConcreteBackend(QueueBackend):
@@ -24,4 +25,15 @@ def test_cannot_instantiate_abstract_backend():
 
 def test_concrete_backend_instantiates():
     b = ConcreteBackend()
-    assert b.submit(None, JobInfo("f", 1, "/p", None), Namespace()) == "submitted"
+    config = SubmissionConfig(backend="ts", input="f.inp", njobs=1)
+    assert b.submit(None, JobInfo("f", 1, "/p", None), config) == "submitted"
+
+
+def test_registry_exposes_all_supported_backends():
+    assert set(BACKEND_TYPES) == {"ts", "slurm", "lsf", "condor"}
+    instances = new_backends()
+    assert set(instances) == set(BACKEND_TYPES)
+    assert all(
+        isinstance(instances[name], backend_type)
+        for name, backend_type in BACKEND_TYPES.items()
+    )

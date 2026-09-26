@@ -1,11 +1,15 @@
 import os
 import subprocess
-from argparse import ArgumentParser, Namespace
+from argparse import ArgumentParser
 from pathlib import Path
 from string import Template
+from typing import TYPE_CHECKING
 
 from fluka.queue.backends.base import JobInfo, QueueBackend
 from fluka.queue.core.display import COLORS
+
+if TYPE_CHECKING:
+    from fluka.queue.core.config import SubmissionConfig
 
 try:
     import htcondor
@@ -43,21 +47,25 @@ class HTCondorBackend(QueueBackend):
         parser.add_argument("--transfer-files", dest="transfer_files", type=str, default="yes",
                             help="Trasferisce i file di input al nodo worker "
                                  "(should_transfer_files: yes/no, default: yes)")
-        parser.add_argument("--output", type=str, default="job_$(Cluster)_$(Process).out",
+        parser.add_argument("--output", dest="stdout", type=str,
+                            default="job_$(Cluster)_$(Process).out",
                             help="Pattern per il file di stdout del job "
                                  "(default: job_$(Cluster)_$(Process).out)")
-        parser.add_argument("--error",  type=str, default="job_$(Cluster)_$(Process).err",
+        parser.add_argument("--error", dest="stderr", type=str,
+                            default="job_$(Cluster)_$(Process).err",
                             help="Pattern per il file di stderr del job "
                                  "(default: job_$(Cluster)_$(Process).err)")
         parser.add_argument("--log",    type=str, default="job_$(Cluster)_$(Process).log",
                             help="Pattern per il file di log HTCondor "
                                  "(default: job_$(Cluster)_$(Process).log)")
 
-    def validate(self, args: Namespace) -> None:
+    def validate(self, args: "SubmissionConfig") -> None:
         if args.time > _MAX_TIME:
             raise ValueError(f"Il time limit non puo' superare {_MAX_TIME} secondi")
 
-    def generate_script(self, job_info: JobInfo, job_dir: str, args: Namespace) -> str:
+    def generate_script(
+        self, job_info: JobInfo, job_dir: str, args: "SubmissionConfig"
+    ) -> str:
         fluka_cmd = f"{job_info.fluka_path}/rfluka -M 1"
         if job_info.use_dpm:
             fluka_cmd += " -d"
@@ -74,15 +82,17 @@ class HTCondorBackend(QueueBackend):
         os.chmod(script_path, 0o755)
         return script_path
 
-    def submit(self, script_path: str | None, job_info: JobInfo, args: Namespace) -> str:
+    def submit(
+        self, script_path: str | None, job_info: JobInfo, args: "SubmissionConfig"
+    ) -> str:
         submit_desc = {
             "universe": args.queue,
             "executable": script_path,
             "transfer_input_files": job_info.input_file,
             "should_transfer_files": args.transfer_files,
             "when_to_transfer_output": "ON_EXIT",
-            "output": args.output,
-            "error": args.error,
+            "output": args.stdout,
+            "error": args.stderr,
             "log": args.log,
             "request_memory": args.mem,
             "request_cpus": str(args.ncpu),
@@ -100,7 +110,9 @@ class HTCondorBackend(QueueBackend):
         result = schedd.submit(htcondor.Submit(submit_desc))
         return f"cluster {result.cluster()}"
 
-    def table_rows(self, args: Namespace, fluka_path: str, fluka_folder: str) -> list[list[str]]:
+    def table_rows(
+        self, args: "SubmissionConfig", fluka_path: str, fluka_folder: str
+    ) -> list[list[str]]:
         C = COLORS
         return [
             ["-q",               f"{C['M']}Universe{C['RE']}",       f"{C['M']}{args.queue}{C['RE']}"],
@@ -111,12 +123,12 @@ class HTCondorBackend(QueueBackend):
             [" ",                f"{C['B']}FLUKA bin{C['RE']}",      f"{C['B']}{fluka_path}{C['RE']}"],
             [" ",                f"{C['B']}FLUKA folder{C['RE']}",   f"{C['B']}{fluka_folder}{C['RE']}"],
             ["--transfer-files", f"{C['Y']}Transfer files{C['RE']}", f"{C['Y']}{args.transfer_files}{C['RE']}"],
-            ["--output",         f"{C['Y']}Output file{C['RE']}",    f"{C['Y']}{args.output}{C['RE']}"],
-            ["--error",          f"{C['Y']}Error file{C['RE']}",     f"{C['Y']}{args.error}{C['RE']}"],
+            ["--output",         f"{C['Y']}Output file{C['RE']}",    f"{C['Y']}{args.stdout}{C['RE']}"],
+            ["--error",          f"{C['Y']}Error file{C['RE']}",     f"{C['Y']}{args.stderr}{C['RE']}"],
             ["--log",            f"{C['Y']}Log file{C['RE']}",       f"{C['Y']}{args.log}{C['RE']}"],
         ]
 
-    def set_priority_queue(self, args: Namespace, queue_name: str) -> None:
+    def set_priority_queue(self, args: "SubmissionConfig", queue_name: str) -> None:
         # HTCondor usa 'universe', non una partizione/coda nominata; l'override viene ignorato.
         import logging as _logging
         _logging.warning("HTCondorBackend: benchmark_priority_queue ignorato (universe != coda nominata).")

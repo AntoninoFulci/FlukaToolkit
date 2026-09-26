@@ -1,23 +1,24 @@
 import os
 import pytest
-from argparse import Namespace
 from unittest.mock import patch, MagicMock
 from fluka.queue.backends.htcondor import HTCondorBackend
 from fluka.queue.backends.base import JobInfo
+from fluka.queue.core.config import SubmissionConfig
 
 BACKEND = HTCondorBackend()
 
 def make_args(**kwargs):
     defaults = dict(
+        backend="condor", input="sim.inp", njobs=1,
         queue="vanilla", mem="1500", ncpu=1, disk=100000,
         time=86400, dry_run=False, custom_exe=None,
         transfer_files="yes",
-        output="job_$(Cluster)_$(Process).out",
-        error="job_$(Cluster)_$(Process).err",
+        stdout="job_$(Cluster)_$(Process).out",
+        stderr="job_$(Cluster)_$(Process).err",
         log="job_$(Cluster)_$(Process).log",
     )
     defaults.update(kwargs)
-    return Namespace(**defaults)
+    return SubmissionConfig(**defaults)
 
 def test_validate_accepts_valid_time():
     BACKEND.validate(make_args(time=86400))

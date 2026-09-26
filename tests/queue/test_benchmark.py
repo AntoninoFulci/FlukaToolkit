@@ -1,18 +1,28 @@
 import sys
 import pytest
 import yaml as _yaml
-from argparse import Namespace
 from unittest.mock import patch
 
 from fluka.queue.backends.slurm import SlurmBackend
 from fluka.queue.backends.ts import TSBackend
 from fluka.queue.launch_jobs import _apply_benchmark_overrides
+from fluka.queue.core.config import SubmissionConfig
+
+
+def _config(backend="slurm", **overrides):
+    values = {
+        "backend": backend,
+        "input": "sim.inp",
+        "njobs": 10,
+        "nprim": 50000,
+    }
+    values.update(overrides)
+    return SubmissionConfig(**values)
 
 
 def test_apply_quick_overrides_njobs_nprim_queue():
     backend = SlurmBackend()
-    args = Namespace(njobs=10, nprim=50000, queue="production",
-                     benchmark_priority_queue="priority")
+    args = _config(queue="production", benchmark_priority_queue="priority")
     _apply_benchmark_overrides(args, "quick", backend)
     assert args.njobs == 2
     assert args.nprim == 100
@@ -21,7 +31,7 @@ def test_apply_quick_overrides_njobs_nprim_queue():
 
 def test_apply_extensive_overrides_njobs_nprim_only():
     backend = SlurmBackend()
-    args = Namespace(njobs=10, nprim=50000, queue="production")
+    args = _config(queue="production")
     _apply_benchmark_overrides(args, "extensive", backend)
     assert args.njobs == 5
     assert args.nprim == 1000
@@ -30,26 +40,25 @@ def test_apply_extensive_overrides_njobs_nprim_only():
 
 def test_apply_unknown_mode_raises():
     backend = SlurmBackend()
-    args = Namespace(njobs=1, nprim=100)
+    args = _config(njobs=1, nprim=100)
     with pytest.raises(ValueError, match="Modalita'"):
         _apply_benchmark_overrides(args, "turbo", backend)
 
 
 def test_apply_quick_without_priority_queue_raises():
     backend = SlurmBackend()
-    args = Namespace(njobs=10, nprim=50000, queue="production")
+    args = _config(queue="production")
     with pytest.raises(ValueError, match="benchmark_priority_queue"):
         _apply_benchmark_overrides(args, "quick", backend)
 
 
 def test_apply_ts_quick_noop_on_queue():
     backend = TSBackend()
-    args = Namespace(njobs=10, nprim=50000, benchmark_priority_queue="priority")
-    attrs_before = set(vars(args))
+    args = _config("ts", benchmark_priority_queue="priority")
     _apply_benchmark_overrides(args, "quick", backend)
     assert args.njobs == 2
     assert args.nprim == 100
-    assert set(vars(args)) == attrs_before  # nothing added or removed
+    assert args.queue is None
 
 
 def test_benchmark_quick_single_yaml_creates_2_job_dirs(tmp_path, monkeypatch):

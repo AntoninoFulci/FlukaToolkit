@@ -1,15 +1,18 @@
 import pytest
-from argparse import Namespace
 from unittest.mock import patch
 from fluka.queue.backends.ts import TSBackend
 from fluka.queue.backends.base import JobInfo
+from fluka.queue.core.config import SubmissionConfig
 
 BACKEND = TSBackend()
 
 def make_args(**kwargs):
-    defaults = dict(dry_run=False, custom_exe=None)
+    defaults = dict(
+        backend="ts", input="sim.inp", njobs=1,
+        dry_run=False, custom_exe=None,
+    )
     defaults.update(kwargs)
-    return Namespace(**defaults)
+    return SubmissionConfig(**defaults)
 
 def test_validate_does_not_raise():
     BACKEND.validate(make_args())

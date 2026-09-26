@@ -1,9 +1,9 @@
-from argparse import Namespace
 from pathlib import Path
 import subprocess
 from fluka.queue.backends.ts import TSBackend
 from fluka.run.manifest import Job
 from fluka.run import status as S
+from fluka.queue.core.config import SubmissionConfig
 
 
 def _job(run_dir):
@@ -34,6 +34,7 @@ def test_submit_wraps_sentinel(monkeypatch):
     monkeypatch.setattr(subprocess, "run", fake_run)
     from fluka.queue.backends.base import JobInfo
     ji = JobInfo(input_file="s.inp", iteration=1, fluka_path="/f", custom_exe=None)
-    TSBackend().submit(None, ji, Namespace(dry_run=False))
+    config = SubmissionConfig(backend="ts", input="s.inp", njobs=1)
+    TSBackend().submit(None, ji, config)
     joined = " ".join(captured["cmd"])
     assert "FLUKA_STATUS rc=$rc" in joined and ".fluka_status" in joined

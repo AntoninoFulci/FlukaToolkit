@@ -1,51 +1,41 @@
 from __future__ import annotations
 import getpass
 import os
-from argparse import Namespace
 from pathlib import Path
 
 # FlukaQueueSub (installed via submodule, editable)
 from fluka.queue.backends.base import JobInfo
-from fluka.queue.backends.slurm import SlurmBackend
-from fluka.queue.backends.lsf import LSFBackend
-from fluka.queue.backends.htcondor import HTCondorBackend
-from fluka.queue.backends.ts import TSBackend
-
-BACKENDS = {
-    "ts": TSBackend,
-    "slurm": SlurmBackend,
-    "lsf": LSFBackend,
-    "condor": HTCondorBackend,
-}
+from fluka.queue.backends.registry import BACKEND_TYPES
+from fluka.queue.core.config import SubmissionConfig
 
 _DEFAULT_QUEUE = {"slurm": "production", "lsf": "normal", "condor": "vanilla"}
 
 
-def _build_namespace(backend_name: str, config, dry_run: bool) -> Namespace:
-    if backend_name == "ts":
-        return Namespace(dry_run=dry_run)
-    if backend_name not in _DEFAULT_QUEUE:
+def _build_submission_config(
+    backend_name: str, config, dry_run: bool
+) -> SubmissionConfig:
+    if backend_name not in BACKEND_TYPES:
         raise ValueError(f"Unknown backend: {backend_name!r}")
     ex = config.execution
-    queue = ex.queue or _DEFAULT_QUEUE[backend_name]
-    if backend_name == "slurm":
-        return Namespace(
-            dry_run=dry_run, queue=queue, mem=ex.mem, ntasks=ex.ntasks,
-            nodes=ex.nodes, time=ex.time, gres=ex.gres, farm_out=ex.farm_out,
-        )
-    if backend_name == "lsf":
-        return Namespace(
-            dry_run=dry_run, queue=queue, mem=ex.mem, ntasks=ex.ntasks, time=ex.time,
-        )
-    if backend_name == "condor":
-        return Namespace(
-            dry_run=dry_run, queue=queue, mem=ex.mem, ncpu=ex.ncpu, disk=ex.disk,
-            time=ex.condor_max_runtime, transfer_files="yes",
-            # NOTE: keep in sync with FlukaQueueSub HTCondorBackend.add_args defaults
-            output="job_$(Cluster)_$(Process).out",
-            error="job_$(Cluster)_$(Process).err",
-            log="job_$(Cluster)_$(Process).log",
-        )
+    queue = ex.queue or _DEFAULT_QUEUE.get(backend_name)
+    time = ex.condor_max_runtime if backend_name == "condor" else ex.time
+    return SubmissionConfig(
+        backend=backend_name,
+        input=str(getattr(config.fluka, "input", "")),
+        njobs=1,
+        custom_exe=config.fluka.custom_executable,
+        use_dpm=bool(getattr(config.fluka, "use_dpm", False)),
+        dry_run=dry_run,
+        queue=queue,
+        mem=ex.mem,
+        ntasks=ex.ntasks,
+        nodes=ex.nodes,
+        time=time,
+        gres=ex.gres,
+        farm_out=ex.farm_out,
+        ncpu=ex.ncpu,
+        disk=ex.disk,
+    )
 
 
 def manifest_extra(backend_name: str, config, run_dir, input_file) -> dict:
@@ -73,9 +63,9 @@ def submit_run(
     dry_run: bool,
 ) -> str:
     """Submit one run via a FlukaQueueSub backend. Returns the job-id string."""
-    backend = BACKENDS[backend_name]()
-    ns = _build_namespace(backend_name, config, dry_run)
-    backend.validate(ns)
+    backend = BACKEND_TYPES[backend_name]()
+    submission = _build_submission_config(backend_name, config, dry_run)
+    backend.validate(submission)
 
     if backend_name == "ts":
         # TSBackend runs `ts rfluka -M 1 <input>` in the process CWD, so run it
@@ -90,7 +80,7 @@ def submit_run(
         cwd = os.getcwd()
         os.chdir(run_dir)
         try:
-            return backend.submit(None, job_info, ns)
+            return backend.submit(None, job_info, submission)
         finally:
             os.chdir(cwd)
 
@@ -101,5 +91,7 @@ def submit_run(
         custom_exe=config.fluka.custom_executable,
         use_dpm=config.fluka.use_dpm,
     )
-    script_path = backend.generate_script(job_info, str(Path(run_dir).resolve()), ns)
-    return backend.submit(script_path, job_info, ns)
+    script_path = backend.generate_script(
+        job_info, str(Path(run_dir).resolve()), submission
+    )
+    return backend.submit(script_path, job_info, submission)

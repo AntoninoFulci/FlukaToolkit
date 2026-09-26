@@ -1,18 +1,19 @@
 import os
 import pytest
-from argparse import Namespace
 from unittest.mock import patch
 from fluka.queue.backends.slurm import SlurmBackend
 from fluka.queue.backends.base import JobInfo
+from fluka.queue.core.config import SubmissionConfig
 
 BACKEND = SlurmBackend()
 
 def make_args(**kwargs):
-    defaults = dict(queue="production", mem="1500", ntasks=1, nodes=1,
+    defaults = dict(backend="slurm", input="sim.inp", njobs=1,
+                    queue="production", mem="1500", ntasks=1, nodes=1,
                     time="1-00:00:00", gres="disk:1G", dry_run=False, custom_exe=None,
                     farm_out="/farm_out")
     defaults.update(kwargs)
-    return Namespace(**defaults)
+    return SubmissionConfig(**defaults)
 
 def test_validate_accepts_valid_time():
     BACKEND.validate(make_args(time="2-00:00:00"))

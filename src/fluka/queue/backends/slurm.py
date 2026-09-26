@@ -1,11 +1,15 @@
 import os
 import subprocess
-from argparse import ArgumentParser, Namespace
+from argparse import ArgumentParser
 from string import Template
+from typing import TYPE_CHECKING
 
 from fluka.queue.backends.base import JobInfo, QueueBackend
 from fluka.queue.core.display import COLORS
 from fluka.queue.core.utils import parse_time_to_seconds
+
+if TYPE_CHECKING:
+    from fluka.queue.core.config import SubmissionConfig
 
 _DEFAULT_QUEUE = "production"
 _MAX_TIME = "4-00:00:00"
@@ -70,11 +74,13 @@ class SlurmBackend(QueueBackend):
                             help="Directory accessibile dove finiscono out/err/sentinel "
                                  "(default: /farm_out)")
 
-    def validate(self, args: Namespace) -> None:
+    def validate(self, args: "SubmissionConfig") -> None:
         if parse_time_to_seconds(args.time) > _MAX_TIME_SECONDS:
             raise ValueError(f"Il time limit non puo' superare {_MAX_TIME}")
 
-    def generate_script(self, job_info: JobInfo, job_dir: str, args: Namespace) -> str:
+    def generate_script(
+        self, job_info: JobInfo, job_dir: str, args: "SubmissionConfig"
+    ) -> str:
         fluka_cmd = f"{job_info.fluka_path}/rfluka -M 1"
         if job_info.use_dpm:
             fluka_cmd += " -d"
@@ -98,7 +104,9 @@ class SlurmBackend(QueueBackend):
         os.chmod(script_path, 0o755)
         return script_path
 
-    def submit(self, script_path: str | None, job_info: JobInfo, args: Namespace) -> str:
+    def submit(
+        self, script_path: str | None, job_info: JobInfo, args: "SubmissionConfig"
+    ) -> str:
         if script_path is None:
             raise RuntimeError("SlurmBackend requires a script file (script_path cannot be None)")
         if args.dry_run:
@@ -111,7 +119,9 @@ class SlurmBackend(QueueBackend):
             raise RuntimeError(result.stderr.strip())
         return result.stdout.strip()
 
-    def table_rows(self, args: Namespace, fluka_path: str, fluka_folder: str) -> list[list[str]]:
+    def table_rows(
+        self, args: "SubmissionConfig", fluka_path: str, fluka_folder: str
+    ) -> list[list[str]]:
         C = COLORS
         return [
             ["-q", f"{C['M']}Partizione{C['RE']}",  f"{C['M']}{args.queue}{C['RE']}"],
@@ -124,7 +134,7 @@ class SlurmBackend(QueueBackend):
             [" ",  f"{C['B']}FLUKA folder{C['RE']}", f"{C['B']}{fluka_folder}{C['RE']}"],
         ]
 
-    def set_priority_queue(self, args: Namespace, queue_name: str) -> None:
+    def set_priority_queue(self, args: "SubmissionConfig", queue_name: str) -> None:
         args.queue = queue_name
 
     def _sentinel_path(self, job):

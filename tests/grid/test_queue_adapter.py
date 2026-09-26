@@ -3,6 +3,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from fluka.grid.backends import queue_adapter
+from fluka.queue.core.config import SubmissionConfig
 
 
 def _config(backend):
@@ -30,19 +31,25 @@ def test_submit_run_ts_dpm_passes_d_flag(tmp_path):
     assert "-e" not in result.split()
 
 
-def test_build_namespace_slurm_defaults_queue():
-    ns = queue_adapter._build_namespace("slurm", _config("slurm"), dry_run=True)
-    assert ns.queue == "production"
-    assert ns.mem == "2000"
-    assert ns.gres == "disk:1G"
-    assert ns.dry_run is True
+def test_build_submission_config_slurm_defaults_queue():
+    config = queue_adapter._build_submission_config(
+        "slurm", _config("slurm"), dry_run=True
+    )
+    assert isinstance(config, SubmissionConfig)
+    assert config.queue == "production"
+    assert config.mem == "2000"
+    assert config.gres == "disk:1G"
+    assert config.dry_run is True
 
 
-def test_build_namespace_condor_defaults_universe():
-    ns = queue_adapter._build_namespace("condor", _config("condor"), dry_run=True)
-    assert ns.queue == "vanilla"
-    assert ns.ncpu == 2
-    assert ns.time == 86400
+def test_build_submission_config_condor_defaults_universe():
+    config = queue_adapter._build_submission_config(
+        "condor", _config("condor"), dry_run=True
+    )
+    assert isinstance(config, SubmissionConfig)
+    assert config.queue == "vanilla"
+    assert config.ncpu == 2
+    assert config.time == 86400
 
 
 def test_submit_run_slurm_dry_run(tmp_path):
@@ -63,7 +70,7 @@ def test_submit_run_slurm_dry_run(tmp_path):
     assert (run_dir / "job_0001.sh").exists()
 
 
-def test_build_namespace_unknown_backend_raises():
+def test_build_submission_config_unknown_backend_raises():
     cfg = SimpleNamespace(
         execution=SimpleNamespace(
             backend="pbs", queue=None, mem="1500", time="1-00:00:00",
@@ -73,14 +80,14 @@ def test_build_namespace_unknown_backend_raises():
         fluka=SimpleNamespace(custom_executable=None),
     )
     with pytest.raises(ValueError, match="Unknown backend"):
-        queue_adapter._build_namespace("pbs", cfg, dry_run=True)
+        queue_adapter._build_submission_config("pbs", cfg, dry_run=True)
 
 
-def test_build_namespace_ts_minimal():
-    ns = queue_adapter._build_namespace("ts", _config("ts"), dry_run=True)
-    assert ns.dry_run is True
-    # ts has no queue/cluster attrs
-    assert not hasattr(ns, "queue")
+def test_build_submission_config_ts_minimal():
+    config = queue_adapter._build_submission_config("ts", _config("ts"), dry_run=True)
+    assert isinstance(config, SubmissionConfig)
+    assert config.dry_run is True
+    assert config.queue is None
 
 
 def test_submit_run_ts_dry_run(tmp_path):
@@ -101,15 +108,15 @@ def test_submit_run_ts_dry_run(tmp_path):
     assert "FLUKA_STATUS" in result
 
 
-def test_build_namespace_lsf_has_expected_attrs():
-    ns = queue_adapter._build_namespace("lsf", _config("lsf"), dry_run=True)
-    assert ns.queue == "normal"          # lsf default
-    assert ns.mem == "2000"
-    assert ns.ntasks == 1
-    assert ns.time == "2-00:00:00"
-    # lsf namespace must NOT carry slurm-only attrs
-    assert not hasattr(ns, "nodes")
-    assert not hasattr(ns, "gres")
+def test_build_submission_config_lsf_has_expected_values():
+    config = queue_adapter._build_submission_config(
+        "lsf", _config("lsf"), dry_run=True
+    )
+    assert isinstance(config, SubmissionConfig)
+    assert config.queue == "normal"
+    assert config.mem == "2000"
+    assert config.ntasks == 1
+    assert config.time == "2-00:00:00"
 
 
 def test_submit_run_condor_dry_run(tmp_path):

@@ -1,8 +1,12 @@
 from abc import ABC, abstractmethod
-from argparse import ArgumentParser, Namespace
+from argparse import ArgumentParser
 from dataclasses import dataclass
 import re as _re
 from pathlib import Path as _Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from fluka.queue.core.config import SubmissionConfig
 
 _SENTINEL_RE = _re.compile(r"FLUKA_STATUS rc=(-?\d+)")
 
@@ -51,21 +55,27 @@ class QueueBackend(ABC):
         """Aggiunge gli argomenti specifici del backend al subparser."""
 
     @abstractmethod
-    def validate(self, args: Namespace) -> None:
+    def validate(self, args: "SubmissionConfig") -> None:
         """Valida gli argomenti. Lancia ValueError se non validi."""
 
     @abstractmethod
-    def generate_script(self, job_info: JobInfo, job_dir: str, args: Namespace) -> str | None:
+    def generate_script(
+        self, job_info: JobInfo, job_dir: str, args: "SubmissionConfig"
+    ) -> str | None:
         """Genera lo script di job. Restituisce il path o None (es. Task Spooler)."""
 
     @abstractmethod
-    def submit(self, script_path: str | None, job_info: JobInfo, args: Namespace) -> str:
+    def submit(
+        self, script_path: str | None, job_info: JobInfo, args: "SubmissionConfig"
+    ) -> str:
         """Invia il job. Restituisce una stringa descrittiva (job ID, ecc.)."""
 
     @abstractmethod
-    def table_rows(self, args: Namespace, fluka_path: str, fluka_folder: str) -> list[list[str]]:
+    def table_rows(
+        self, args: "SubmissionConfig", fluka_path: str, fluka_folder: str
+    ) -> list[list[str]]:
         """Restituisce le righe specifiche del backend per la tabella di riepilogo."""
 
     @abstractmethod
-    def set_priority_queue(self, args: Namespace, queue_name: str) -> None:
+    def set_priority_queue(self, args: "SubmissionConfig", queue_name: str) -> None:
         """Sovrascrive il campo queue/partition in args per la modalita' benchmark rapida."""

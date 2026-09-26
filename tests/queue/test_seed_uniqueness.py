@@ -1,5 +1,6 @@
 from fluka.queue import launch_jobs
 from fluka.queue.core import fluka
+from fluka.queue.core.config import SubmissionConfig
 
 
 def test_execute_jobs_allocates_unique_seeds(tmp_path, monkeypatch):
@@ -16,8 +17,6 @@ def test_execute_jobs_allocates_unique_seeds(tmp_path, monkeypatch):
     monkeypatch.setattr(fluka.random, "randint", lambda a, b: next(seq))
     monkeypatch.setattr(launch_jobs.fluka, "generate_input", spy_generate)
 
-    from argparse import Namespace
-
     class StubBackend:
         def generate_script(self, job_info, job_dir, args):
             return None
@@ -28,7 +27,7 @@ def test_execute_jobs_allocates_unique_seeds(tmp_path, monkeypatch):
 
     src = tmp_path / "sim.inp"
     src.write_text("RANDOMIZ          1.  1\n")
-    args = Namespace(
+    args = SubmissionConfig(
         backend="stub", input=str(src), njobs=2, custom_exe=None,
         output_dir=str(tmp_path / "out"), nprim=None,
     )

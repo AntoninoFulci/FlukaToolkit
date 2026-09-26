@@ -1,17 +1,21 @@
 import io
 import os
 import pytest
-from argparse import Namespace
 from unittest.mock import patch, mock_open
 from fluka.queue.backends.lsf import LSFBackend
 from fluka.queue.backends.base import JobInfo
+from fluka.queue.core.config import SubmissionConfig
 
 BACKEND = LSFBackend()
 
 def make_args(**kwargs):
-    defaults = dict(queue="normal", mem="1500", ntasks=1, time="1-00:00:00", dry_run=False, custom_exe=None)
+    defaults = dict(
+        backend="lsf", input="sim.inp", njobs=1, queue="normal",
+        mem="1500", ntasks=1, time="1-00:00:00", dry_run=False,
+        custom_exe=None,
+    )
     defaults.update(kwargs)
-    return Namespace(**defaults)
+    return SubmissionConfig(**defaults)
 
 def test_validate_accepts_valid_time():
     BACKEND.validate(make_args(time="1-00:00:00"))

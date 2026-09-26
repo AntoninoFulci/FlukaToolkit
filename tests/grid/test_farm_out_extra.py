@@ -1,6 +1,6 @@
 import getpass
 from types import SimpleNamespace
-from fluka.grid.backends.queue_adapter import _build_namespace, manifest_extra
+from fluka.grid.backends.queue_adapter import _build_submission_config, manifest_extra
 
 
 def _config(backend="slurm", farm_out="/myfarm"):
@@ -10,9 +10,9 @@ def _config(backend="slurm", farm_out="/myfarm"):
     fluka = SimpleNamespace(custom_executable=None, use_dpm=False, input="s.inp")
     return SimpleNamespace(execution=ex, fluka=fluka)
 
-def test_slurm_namespace_has_farm_out():
-    ns = _build_namespace("slurm", _config(), dry_run=True)
-    assert ns.farm_out == "/myfarm"
+def test_slurm_submission_config_has_farm_out():
+    config = _build_submission_config("slurm", _config(), dry_run=True)
+    assert config.farm_out == "/myfarm"
 
 def test_manifest_extra_slurm():
     extra = manifest_extra("slurm", _config(), run_dir="/o/c1/run_0001", input_file="s.inp")

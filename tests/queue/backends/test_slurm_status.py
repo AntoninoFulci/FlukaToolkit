@@ -1,16 +1,18 @@
-from argparse import Namespace
 from pathlib import Path
 import subprocess
 from fluka.queue.backends.slurm import SlurmBackend
 from fluka.queue.backends.base import JobInfo
+from fluka.queue.core.config import SubmissionConfig
 from fluka.run.manifest import Job
 from fluka.run import status as S
 
 
 def _args(**kw):
-    base = dict(dry_run=True, queue="production", mem="1500", ntasks=1, nodes=1,
+    base = dict(backend="slurm", input="s.inp", njobs=1, dry_run=True,
+                queue="production", mem="1500", ntasks=1, nodes=1,
                 time="1-00:00:00", gres="disk:1G", farm_out="/myfarm")
-    base.update(kw); return Namespace(**base)
+    base.update(kw)
+    return SubmissionConfig(**base)
 
 def test_template_uses_farm_out(tmp_path):
     ji = JobInfo(input_file="s.inp", iteration=1, fluka_path="/f", custom_exe=None)

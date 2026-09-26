@@ -1,7 +1,5 @@
 import pytest
 import yaml
-from argparse import Namespace
-
 from fluka.run.simconfig import resolve
 
 
@@ -165,8 +163,8 @@ def test_load_htcondor_defaults(tmp_path):
     assert args.disk == 100000
     assert args.time == 86400
     assert args.transfer_files == "yes"
-    assert args.output == "job_$(Cluster)_$(Process).out"
-    assert args.output_dir is None  # common arg, should be separate from args.output
+    assert args.stdout == "job_$(Cluster)_$(Process).out"
+    assert args.output_dir is None  # common arg, separate from scheduler stdout
 
 
 def test_njobs_zero_raises(tmp_path):
@@ -188,11 +186,11 @@ def test_input_wrong_extension_raises(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# build_submit_args: v2 merged view (general + submit) -> Namespace
+# build_submit_args: v2 merged view (general + submit) -> SubmissionConfig
 # ---------------------------------------------------------------------------
 
 def test_build_submit_args_from_v2_view(tmp_path):
-    from fluka.queue.core.config import build_submit_args
+    from fluka.queue.core.config import SubmissionConfig, build_submit_args
     from fluka.queue.backends.ts import TSBackend
     backends = {"ts": TSBackend()}
     p = _write_sim(tmp_path)
@@ -200,7 +198,7 @@ def test_build_submit_args_from_v2_view(tmp_path):
 
     args = build_submit_args(view, backends)
 
-    assert isinstance(args, Namespace)
+    assert isinstance(args, SubmissionConfig)
     assert args.backend == "ts"
     assert args.input.endswith("example.inp")
     assert args.njobs == 2
@@ -300,4 +298,40 @@ def test_build_submit_args_condor_output_not_clobbered(tmp_path):
     args = build_submit_args(view, backends)
 
     assert args.output_dir.endswith("results")
-    assert args.output == "job_$(Cluster)_$(Process).out"
+    assert args.stdout == "job_$(Cluster)_$(Process).out"
+
+
+def test_legacy_and_merged_view_build_equivalent_typed_configs(tmp_path):
+    from fluka.queue.backends.registry import new_backends
+    from fluka.queue.core.config import (
+        SubmissionConfig,
+        load_submission_config,
+        submission_config_from_view,
+    )
+
+    backends = new_backends()
+    input_path = str(tmp_path / "sim.inp")
+    legacy_path = make_yaml(tmp_path, {
+        "backend": "slurm",
+        "input": input_path,
+        "njobs": 3,
+        "mem": "2400",
+        "time": "2-00:00:00",
+    })
+    legacy = load_submission_config(legacy_path, backends)
+
+    sim_path = _write_sim(
+        tmp_path,
+        general={"backend": "slurm", "input": input_path},
+        submit={"njobs": 3, "mem": "2400", "time": "2-00:00:00"},
+    )
+    merged = submission_config_from_view(resolve(sim_path, "submit"), backends)
+
+    assert isinstance(legacy, SubmissionConfig)
+    assert isinstance(merged, SubmissionConfig)
+    assert legacy.backend == merged.backend == "slurm"
+    assert legacy.input == merged.input
+    assert legacy.njobs == merged.njobs == 3
+    assert legacy.mem == merged.mem == "2400"
+    assert legacy.time == merged.time == "2-00:00:00"
+    assert legacy.dry_run is False and merged.dry_run is False
