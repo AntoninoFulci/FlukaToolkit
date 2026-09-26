@@ -25,9 +25,7 @@ def test_submit_prepared_attempts_all_jobs_then_raises(tmp_path):
                 raise RuntimeError("queue down")
             return f"job {job_info.iteration}"
 
-    config = SubmissionConfig(
-        backend="ts", input="sim.inp", njobs=3, dry_run=True
-    )
+    config = SubmissionConfig(backend="ts", input="sim.inp", njobs=3, dry_run=True)
     prepared = [
         PreparedJob(
             i,

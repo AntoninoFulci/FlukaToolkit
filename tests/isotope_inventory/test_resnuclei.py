@@ -1,7 +1,9 @@
 import io
 import struct
+
 import pytest
-from fluka.isotope_inventory.resnuclei import fortran_read, fortran_skip, unpack_array, Detector
+
+from fluka.isotope_inventory.resnuclei import fortran_read, fortran_skip, unpack_array
 
 
 def make_block(payload: bytes) -> bytes:

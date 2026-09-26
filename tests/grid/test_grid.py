@@ -1,4 +1,4 @@
-from fluka.grid.grid import generate_combinations, combo_name
+from fluka.grid.grid import combo_name, generate_combinations
 
 
 def test_generate_combinations_count():

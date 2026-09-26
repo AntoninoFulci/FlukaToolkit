@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import getpass
 from pathlib import Path
 
@@ -10,9 +11,7 @@ from fluka.queue.core.config import SubmissionConfig
 _DEFAULT_QUEUE = {"slurm": "production", "lsf": "normal", "condor": "vanilla"}
 
 
-def _build_submission_config(
-    backend_name: str, config, dry_run: bool
-) -> SubmissionConfig:
+def _build_submission_config(backend_name: str, config, dry_run: bool) -> SubmissionConfig:
     if backend_name not in BACKEND_TYPES:
         raise ValueError(f"Unknown backend: {backend_name!r}")
     ex = config.execution
@@ -40,15 +39,19 @@ def _build_submission_config(
 def manifest_extra(backend_name: str, config, run_dir, input_file) -> dict:
     """Build the per-backend `extra` payload stored in the run manifest."""
     if backend_name == "slurm":
-        return {"farm_out": config.execution.farm_out,
-                "user": getpass.getuser(),
-                "job_name": input_file}
+        return {
+            "farm_out": config.execution.farm_out,
+            "user": getpass.getuser(),
+            "job_name": input_file,
+        }
     if backend_name == "lsf":
         return {"job_dir": str(run_dir)}
     if backend_name == "condor":
-        return {"output": "job_$(Cluster)_$(Process).out",
-                "error": "job_$(Cluster)_$(Process).err",
-                "log": "job_$(Cluster)_$(Process).log"}
+        return {
+            "output": "job_$(Cluster)_$(Process).out",
+            "error": "job_$(Cluster)_$(Process).err",
+            "log": "job_$(Cluster)_$(Process).log",
+        }
     return {}
 
 
@@ -84,7 +87,5 @@ def submit_run(
         custom_exe=config.fluka.custom_executable,
         use_dpm=config.fluka.use_dpm,
     )
-    script_path = backend.generate_script(
-        job_info, str(Path(run_dir).resolve()), submission
-    )
+    script_path = backend.generate_script(job_info, str(Path(run_dir).resolve()), submission)
     return backend.submit(script_path, job_info, submission)

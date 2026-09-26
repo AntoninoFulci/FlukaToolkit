@@ -18,6 +18,7 @@ from fluka.queue.service import (
 
 BACKENDS = new_backends()
 
+
 class _BenchmarkParams(TypedDict):
     njobs: int
     nprim: int
@@ -25,14 +26,12 @@ class _BenchmarkParams(TypedDict):
 
 
 _BENCHMARK_MODES: dict[str, _BenchmarkParams] = {
-    "quick":     {"njobs": 2,  "nprim": 100,  "use_priority_queue": True},
-    "extensive": {"njobs": 5,  "nprim": 1000, "use_priority_queue": False},
+    "quick": {"njobs": 2, "nprim": 100, "use_priority_queue": True},
+    "extensive": {"njobs": 5, "nprim": 1000, "use_priority_queue": False},
 }
 
 
-def _apply_benchmark_overrides(
-    args: SubmissionConfig, mode: str, backend: QueueBackend
-) -> None:
+def _apply_benchmark_overrides(args: SubmissionConfig, mode: str, backend: QueueBackend) -> None:
     if mode not in _BENCHMARK_MODES:
         raise ValueError(
             f"Modalita' benchmark sconosciuta: {mode!r}. Disponibili: {sorted(_BENCHMARK_MODES)}"
@@ -43,9 +42,7 @@ def _apply_benchmark_overrides(
     if params["use_priority_queue"]:
         queue_name = getattr(args, "benchmark_priority_queue", None)
         if not queue_name:
-            raise ValueError(
-                "Campo 'benchmark_priority_queue' richiesto per benchmark quick"
-            )
+            raise ValueError("Campo 'benchmark_priority_queue' richiesto per benchmark quick")
         backend.set_priority_queue(args, queue_name)
 
 
@@ -99,27 +96,56 @@ def _build_parser() -> ArgumentParser:
 
     for name, backend in BACKENDS.items():
         sub = subparsers.add_parser(name, help=f"Invia job a {name.upper()}")
-        sub.add_argument("-f", "--input",      type=str, required=True,
-                         help="Percorso al file di input FLUKA (deve terminare in .inp)")
-        sub.add_argument("-n", "--njobs",      type=int, required=True,
-                         help="Numero di job indipendenti da lanciare (uno per seed casuale)")
-        sub.add_argument("-c", "--custom-exe", type=str, default=None,
-                         dest="custom_exe",
-                         help="Percorso all'eseguibile FLUKA custom (passato come -e a rfluka); "
-                              "se omesso usa l'eseguibile di default di FLUKA")
-        sub.add_argument("-w", "--dry-run",    action="store_true",
-                         dest="dry_run",
-                         help="Modalita' dry-run: costruisce gli script e mostra i comandi "
-                              "senza inviare alcun job al sistema di code")
-        sub.add_argument("-d", "--output-dir", type=str, default=None,
-                         dest="output_dir",
-                         help="Directory radice dove creare le sottocartelle dei job "
-                              "(default: nome del file di input senza estensione)")
-        sub.add_argument("-N", "--nprim", type=int, default=None,
-                         dest="nprim",
-                         help="Numero di particelle primarie per job: sovrascrive la card "
-                              "START nel file .inp rispettando il formato colonnare FLUKA; "
-                              "se omesso il valore nel .inp rimane invariato")
+        sub.add_argument(
+            "-f",
+            "--input",
+            type=str,
+            required=True,
+            help="Percorso al file di input FLUKA (deve terminare in .inp)",
+        )
+        sub.add_argument(
+            "-n",
+            "--njobs",
+            type=int,
+            required=True,
+            help="Numero di job indipendenti da lanciare (uno per seed casuale)",
+        )
+        sub.add_argument(
+            "-c",
+            "--custom-exe",
+            type=str,
+            default=None,
+            dest="custom_exe",
+            help="Percorso all'eseguibile FLUKA custom (passato come -e a rfluka); "
+            "se omesso usa l'eseguibile di default di FLUKA",
+        )
+        sub.add_argument(
+            "-w",
+            "--dry-run",
+            action="store_true",
+            dest="dry_run",
+            help="Modalita' dry-run: costruisce gli script e mostra i comandi "
+            "senza inviare alcun job al sistema di code",
+        )
+        sub.add_argument(
+            "-d",
+            "--output-dir",
+            type=str,
+            default=None,
+            dest="output_dir",
+            help="Directory radice dove creare le sottocartelle dei job "
+            "(default: nome del file di input senza estensione)",
+        )
+        sub.add_argument(
+            "-N",
+            "--nprim",
+            type=int,
+            default=None,
+            dest="nprim",
+            help="Numero di particelle primarie per job: sovrascrive la card "
+            "START nel file .inp rispettando il formato colonnare FLUKA; "
+            "se omesso il valore nel .inp rimane invariato",
+        )
         backend.add_args(sub)
 
     return parser
@@ -151,12 +177,16 @@ def run_submission(args: SubmissionConfig) -> SubmissionSummary | None:
     C = display.COLORS
     common_rows = [
         ["Flag", "Parametro", "Valore"],
-        ["-f", f"{C['R']}Input file{C['RE']}",  f"{C['M']}{args.input}{C['RE']}"],
-        ["-n", f"{C['R']}Numero job{C['RE']}",  f"{C['M']}{args.njobs}{C['RE']}"],
-        ["-c", f"{C['M']}Custom exe{C['RE']}",  f"{C['M']}{args.custom_exe or 'None'}{C['RE']}"],
-        ["-d", f"{C['B']}Output dir{C['RE']}",  f"{C['B']}{args.output_dir or 'Default'}{C['RE']}"],
-        ["-N", f"{C['C']}N. primarie{C['RE']}", f"{C['C']}{args.nprim if args.nprim is not None else 'dal file'}{C['RE']}"],
-        ["-w", f"{C['Y']}Dry run{C['RE']}",     f"{C['Y']}{args.dry_run}{C['RE']}"],
+        ["-f", f"{C['R']}Input file{C['RE']}", f"{C['M']}{args.input}{C['RE']}"],
+        ["-n", f"{C['R']}Numero job{C['RE']}", f"{C['M']}{args.njobs}{C['RE']}"],
+        ["-c", f"{C['M']}Custom exe{C['RE']}", f"{C['M']}{args.custom_exe or 'None'}{C['RE']}"],
+        ["-d", f"{C['B']}Output dir{C['RE']}", f"{C['B']}{args.output_dir or 'Default'}{C['RE']}"],
+        [
+            "-N",
+            f"{C['C']}N. primarie{C['RE']}",
+            f"{C['C']}{args.nprim if args.nprim is not None else 'dal file'}{C['RE']}",
+        ],
+        ["-w", f"{C['Y']}Dry run{C['RE']}", f"{C['Y']}{args.dry_run}{C['RE']}"],
     ]
     display.print_table(common_rows + backend.table_rows(args, fluka_path, fluka_folder))
 
@@ -170,9 +200,7 @@ def run_submission(args: SubmissionConfig) -> SubmissionSummary | None:
 
 
 def run_folder(folder: str) -> int:
-    yaml_files = sorted(
-        f for f in os.listdir(folder) if f.endswith((".yaml", ".yml"))
-    )
+    yaml_files = sorted(f for f in os.listdir(folder) if f.endswith((".yaml", ".yml")))
     yaml_paths = [os.path.join(folder, f) for f in yaml_files]
 
     if not yaml_paths:
@@ -195,11 +223,13 @@ def run_folder(folder: str) -> int:
     C = display.COLORS
     rows = [["File", "Backend", "N. job"]]
     for path, cfg in configs:
-        rows.append([
-            os.path.basename(path),
-            f"{C['M']}{cfg.backend}{C['RE']}",
-            f"{C['M']}{cfg.njobs}{C['RE']}",
-        ])
+        rows.append(
+            [
+                os.path.basename(path),
+                f"{C['M']}{cfg.backend}{C['RE']}",
+                f"{C['M']}{cfg.njobs}{C['RE']}",
+            ]
+        )
     display.print_table(rows)
 
     if not display.confirm(f"Procedere con {len(configs)} lanci? (yes/no): "):
@@ -264,11 +294,13 @@ def run_benchmark(mode: str, target: str) -> int:
         )
         rows = [["File", "Backend", "N. job (benchmark)"]]
         for path, cfg in configs:
-            rows.append([
-                os.path.basename(path),
-                f"{C['M']}{cfg.backend}{C['RE']}",
-                f"{C['M']}{cfg.njobs}{C['RE']}",
-            ])
+            rows.append(
+                [
+                    os.path.basename(path),
+                    f"{C['M']}{cfg.backend}{C['RE']}",
+                    f"{C['M']}{cfg.njobs}{C['RE']}",
+                ]
+            )
         display.print_table(rows)
 
         if not display.confirm(f"Procedere con {len(configs)} lanci benchmark? (yes/no): "):
@@ -334,7 +366,9 @@ def main() -> None:
             print("Utilizzo: launch_jobs.py benchmark <quick|extensive> <config.yaml|cartella/>")
             sys.exit(1)
         if sys.argv[2] not in _BENCHMARK_MODES:
-            print(f"Modalita' sconosciuta: {sys.argv[2]!r}. Disponibili: {sorted(_BENCHMARK_MODES)}")
+            print(
+                f"Modalita' sconosciuta: {sys.argv[2]!r}. Disponibili: {sorted(_BENCHMARK_MODES)}"
+            )
             sys.exit(1)
         try:
             failures = run_benchmark(sys.argv[2], sys.argv[3])

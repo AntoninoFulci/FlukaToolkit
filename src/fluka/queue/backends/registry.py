@@ -4,7 +4,6 @@ from fluka.queue.backends.lsf import LSFBackend
 from fluka.queue.backends.slurm import SlurmBackend
 from fluka.queue.backends.ts import TSBackend
 
-
 BACKEND_TYPES: dict[str, type[QueueBackend]] = {
     "ts": TSBackend,
     "slurm": SlurmBackend,

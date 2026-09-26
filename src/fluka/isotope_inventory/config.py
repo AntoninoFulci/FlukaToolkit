@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -29,13 +30,15 @@ def load_analysis_config(view: dict) -> AnalysisConfig:
     isotopes: list[tuple[int, int]] = []
     for k, v in view["isotopes"].items():
         z = int(k)
-        for mass in (v if isinstance(v, list) else [v]):
+        for mass in v if isinstance(v, list) else [v]:
             isotopes.append((z, int(mass)))
     isotopes.sort()
     if not isotopes:
         raise ValueError("analysis.isotopes must list at least one Z: A pair")
     return AnalysisConfig(
-        directory=directory, units=units, isotopes=isotopes,
+        directory=directory,
+        units=units,
+        isotopes=isotopes,
         volume=float(view["volume"]),
         executable=view.get("executable", "usrsuw"),
         output=view.get("output", "isotopes.xlsx"),

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from fluka.grid.seeds import scan_used_seeds, next_seed, find_duplicate_seeds
+from fluka.grid.seeds import find_duplicate_seeds, next_seed, scan_used_seeds
 
 
 def _write_inp(path: Path, seed: int) -> None:

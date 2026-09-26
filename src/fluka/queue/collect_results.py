@@ -46,8 +46,7 @@ def scan_all(cwd: Path) -> MovePlan:
     for parent_dir in sorted(p for p in cwd.iterdir() if p.is_dir()):
         root_files_dir = parent_dir / "root_files"
         job_dirs = sorted(
-            p for p in parent_dir.iterdir()
-            if p.is_dir() and p.name.startswith("job_")
+            p for p in parent_dir.iterdir() if p.is_dir() and p.name.startswith("job_")
         )
         parent_moves: list[FileMove] = []
         for job_dir in job_dirs:
@@ -56,13 +55,15 @@ def scan_all(cwd: Path) -> MovePlan:
                 plan.empty_jobs.append(EmptyJob(parent_dir=parent_dir, job_dir=job_dir))
                 continue
             for f in root_files:
-                parent_moves.append(FileMove(
-                    parent_dir=parent_dir,
-                    job_dir=job_dir,
-                    source=f,
-                    dest=root_files_dir / f.name,
-                    size=f.stat().st_size,
-                ))
+                parent_moves.append(
+                    FileMove(
+                        parent_dir=parent_dir,
+                        job_dir=job_dir,
+                        source=f,
+                        dest=root_files_dir / f.name,
+                        size=f.stat().st_size,
+                    )
+                )
 
         by_dest: dict[Path, list[FileMove]] = {}
         for move in parent_moves:
@@ -101,9 +102,7 @@ def display_plan(plan: MovePlan, console: Console | None = None) -> None:
     for collision in plan.collisions:
         sources = ", ".join(str(source) for source in collision.sources)
         reason = "destination exists" if collision.destination_exists else "duplicate filename"
-        console.print(
-            f"[red]COLLISION[/red] {collision.dest} ({reason}); sources: {sources}"
-        )
+        console.print(f"[red]COLLISION[/red] {collision.dest} ({reason}); sources: {sources}")
 
     if not plan.moves and not plan.empty_jobs:
         return
@@ -116,18 +115,19 @@ def display_plan(plan: MovePlan, console: Console | None = None) -> None:
     table.add_column("Destination", style="dim")
 
     parent_names = sorted(
-        {m.parent_dir.name for m in plan.moves}
-        | {e.parent_dir.name for e in plan.empty_jobs}
+        {m.parent_dir.name for m in plan.moves} | {e.parent_dir.name for e in plan.empty_jobs}
     )
     colors = ["white", "bright_white"]
     color_map = {name: colors[i % 2] for i, name in enumerate(parent_names)}
 
     rows: list[FileMove | EmptyJob] = [*plan.moves, *plan.empty_jobs]
-    rows.sort(key=lambda r: (
-        r.parent_dir.name,
-        r.job_dir.name,
-        r.source.name if isinstance(r, FileMove) else "",
-    ))
+    rows.sort(
+        key=lambda r: (
+            r.parent_dir.name,
+            r.job_dir.name,
+            r.source.name if isinstance(r, FileMove) else "",
+        )
+    )
 
     for item in rows:
         if isinstance(item, FileMove):
@@ -153,8 +153,7 @@ def display_plan(plan: MovePlan, console: Console | None = None) -> None:
     n_parents = len({m.parent_dir for m in plan.moves} | {e.parent_dir for e in plan.empty_jobs})
     n_jobs = len({m.job_dir for m in plan.moves} | {e.job_dir for e in plan.empty_jobs})
     console.print(
-        f"[bold]{len(plan.moves)} files[/bold] across "
-        f"{n_jobs} job dirs in {n_parents} parent dirs"
+        f"[bold]{len(plan.moves)} files[/bold] across {n_jobs} job dirs in {n_parents} parent dirs"
     )
 
 
@@ -194,7 +193,9 @@ def execute_plan(plan: MovePlan) -> int:
                 print(f"ERROR: {parent_dir.name}/{job_dir.name}: {e}", file=sys.stderr)
                 exit_code = 1
 
-        print(f"{parent_dir.name}: moved {n_moved} files, deleted {len(job_dirs_to_delete)} job dirs")
+        print(
+            f"{parent_dir.name}: moved {n_moved} files, deleted {len(job_dirs_to_delete)} job dirs"
+        )
     return exit_code
 
 

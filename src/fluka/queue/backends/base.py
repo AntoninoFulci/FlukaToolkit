@@ -1,7 +1,7 @@
+import re as _re
 from abc import ABC, abstractmethod
 from argparse import ArgumentParser
 from dataclasses import dataclass
-import re as _re
 from pathlib import Path as _Path
 from typing import TYPE_CHECKING
 
@@ -32,9 +32,9 @@ class JobInfo:
 
 
 class QueueBackend(ABC):
-
     def job_state(self, job, args=None) -> tuple[str, str]:
-        from fluka.run.status import PENDING, RUNNING, DONE, FAIL, UNKNOWN  # noqa: F401
+        from fluka.run.status import DONE, FAIL, PENDING, RUNNING, UNKNOWN  # noqa: F401
+
         qs = self._queue_state(job)
         if qs is not None:
             return qs, "in queue"
@@ -65,9 +65,7 @@ class QueueBackend(ABC):
         """Genera lo script di job. Restituisce il path o None (es. Task Spooler)."""
 
     @abstractmethod
-    def submit(
-        self, script_path: str | None, job_info: JobInfo, args: "SubmissionConfig"
-    ) -> str:
+    def submit(self, script_path: str | None, job_info: JobInfo, args: "SubmissionConfig") -> str:
         """Invia il job. Restituisce una stringa descrittiva (job ID, ecc.)."""
 
     @abstractmethod

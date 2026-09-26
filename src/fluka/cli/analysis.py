@@ -1,10 +1,11 @@
 from __future__ import annotations
+
 import argparse
 from pathlib import Path
 
-from fluka.run.simconfig import resolve
-from fluka.isotope_inventory.config import load_analysis_config
 from fluka.isotope_inventory.analysis import run_analysis
+from fluka.isotope_inventory.config import load_analysis_config
+from fluka.run.simconfig import resolve
 
 
 def run_sim(path) -> None:

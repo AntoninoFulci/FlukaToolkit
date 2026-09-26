@@ -1,8 +1,7 @@
-import pytest
-from unittest.mock import patch, MagicMock
-from pathlib import Path
-from fluka.isotope_inventory.config import AnalysisConfig
+from unittest.mock import MagicMock, patch
+
 from fluka.isotope_inventory import analysis as A
+from fluka.isotope_inventory.config import AnalysisConfig
 
 
 def _cfg(directory, **kw):
@@ -48,8 +47,12 @@ def test_run_analysis_writes_workbook(tmp_path):
     (tmp_path / "merged_21.rnc").write_bytes(b"")
     cfg = _cfg(tmp_path, units=[21])
     fake_row = {
-        "_tdecay_s": 0.0, "CoolingTime": "0 s", "Parameters": "",
-        "Co-60 (Bq)": 1000.0, "Co-60 (% Error)": 5.0, "Co-60 (µg)": 0.42,
+        "_tdecay_s": 0.0,
+        "CoolingTime": "0 s",
+        "Parameters": "",
+        "Co-60 (Bq)": 1000.0,
+        "Co-60 (% Error)": 5.0,
+        "Co-60 (µg)": 0.42,
     }
     with patch.object(A, "read_resnuclei_file", return_value=fake_row):
         A.run_analysis(cfg)
@@ -69,7 +72,7 @@ def test_resolve_rnc_ignores_substring_unit_collision(tmp_path):
     (tmp_path / "merged_22.rnc").write_bytes(b"")
     with patch.object(A.subprocess, "run") as mock_run:
         result = A.resolve_rnc(tmp_path, 2, "usrsuw")
-    assert result is None          # no raw files for unit 2 either
+    assert result is None  # no raw files for unit 2 either
     mock_run.assert_not_called()
 
 

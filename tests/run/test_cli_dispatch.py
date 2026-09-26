@@ -1,15 +1,17 @@
-import pytest
 from pathlib import Path
-from fluka.cli._common import resolve, load_sim
+
+import pytest
+
 from fluka.cli import submit
+from fluka.cli._common import load_sim, resolve
 
 
 def test_common_reexports_resolve_merges_general_into_tool(tmp_path):
     p = tmp_path / "sim.yaml"
     p.write_text("general:\n  backend: ts\nanalysis:\n  units: [21]\n")
     cfg = resolve(p, "analysis")
-    assert cfg["backend"] == "ts"    # from general
-    assert cfg["units"] == [21]      # from tool section
+    assert cfg["backend"] == "ts"  # from general
+    assert cfg["units"] == [21]  # from tool section
 
 
 def test_common_reexports_resolve_tool_overrides_general(tmp_path):

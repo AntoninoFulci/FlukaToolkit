@@ -3,8 +3,8 @@ from types import SimpleNamespace
 
 import pytest
 
-import fluka.run.orchestrator as orch
 import fluka.run.orchestrator as O
+import fluka.run.orchestrator as orch
 
 SIM_YAML = """
 general:
@@ -21,8 +21,10 @@ analysis:
   units: [21]
 """
 
+
 def test_analyze_phase_runs_collect_then_analysis(tmp_path, monkeypatch):
-    p = tmp_path / "sim.yaml"; p.write_text(SIM_YAML)
+    p = tmp_path / "sim.yaml"
+    p.write_text(SIM_YAML)
     calls = []
     monkeypatch.setattr(orch, "_run_collect", lambda sim: calls.append("collect"))
     monkeypatch.setattr(orch, "_run_analysis", lambda sim: calls.append("analysis"))
@@ -62,13 +64,23 @@ def test_collect_sim_scans_results_relative_to_sim_config(tmp_path, monkeypatch)
 
 
 def _sim(tmp_path, *, custom_exe=True, grid=True):
-    lines = ["general:", "  input: x.inp", "  backend: ts", "  output: out/",
-             "  recompile: true", "submit:", "  njobs: 2"]
+    lines = [
+        "general:",
+        "  input: x.inp",
+        "  backend: ts",
+        "  output: out/",
+        "  recompile: true",
+        "submit:",
+        "  njobs: 2",
+    ]
     if grid:
         lines += ["grid:", "  parameters: { beame: [0.1] }", "  runs_per_combo: 1"]
     if custom_exe:
         lines += ["custom_exe:", "  routines: [mgdraw.f]"]
-    p = tmp_path / "sim.yaml"; p.write_text("\n".join(lines) + "\n"); return p
+    p = tmp_path / "sim.yaml"
+    p.write_text("\n".join(lines) + "\n")
+    return p
+
 
 def test_launch_compiles_then_grid(tmp_path, monkeypatch):
     seen = {}
@@ -77,6 +89,7 @@ def test_launch_compiles_then_grid(tmp_path, monkeypatch):
     monkeypatch.setattr(O, "_do_submit", lambda cfg, exe: seen.update(submit=exe))
     O.launch(_sim(tmp_path, custom_exe=True, grid=True))
     assert seen.get("grid") == Path("/E") and "submit" not in seen
+
 
 def test_launch_no_custom_exe_submit(tmp_path, monkeypatch):
     called = {"compile": False}
@@ -94,6 +107,7 @@ def test_launch_no_custom_exe_submit(tmp_path, monkeypatch):
 # defining module, not as `orch.<name>` (orchestrator never binds those names
 # at module scope).
 
+
 def test_do_grid_injects_custom_executable(tmp_path, monkeypatch):
     fake_cfg = SimpleNamespace(fluka=SimpleNamespace(custom_executable=None, use_dpm=False))
     captured = {}
@@ -102,14 +116,13 @@ def test_do_grid_injects_custom_executable(tmp_path, monkeypatch):
         "fluka.grid.config.validate_config",
         lambda cfg: captured.setdefault("validated", cfg),
     )
-    monkeypatch.setattr(
-        "fluka.grid.run.run_config", lambda cfg: captured.setdefault("ran", cfg)
-    )
+    monkeypatch.setattr("fluka.grid.run.run_config", lambda cfg: captured.setdefault("ran", cfg))
     sim = _sim(tmp_path, custom_exe=False, grid=True)
     O._do_grid(sim, Path("/E"))
     assert fake_cfg.fluka.custom_executable == "/E"
     assert captured["validated"] is fake_cfg
     assert captured["ran"] is fake_cfg
+
 
 def test_do_grid_raises_when_use_dpm_and_custom_exe(tmp_path, monkeypatch):
     fake_cfg = SimpleNamespace(fluka=SimpleNamespace(custom_executable=None, use_dpm=True))
@@ -118,8 +131,7 @@ def test_do_grid_raises_when_use_dpm_and_custom_exe(tmp_path, monkeypatch):
         # mirrors the real fluka.grid.config.validate_config guard
         if cfg.fluka.use_dpm and cfg.fluka.custom_executable:
             raise ValueError(
-                "fluka.use_dpm and fluka.custom_executable are mutually exclusive; "
-                "set only one."
+                "fluka.use_dpm and fluka.custom_executable are mutually exclusive; set only one."
             )
 
     monkeypatch.setattr("fluka.grid.config.load_config", lambda view: fake_cfg)
@@ -131,6 +143,7 @@ def test_do_grid_raises_when_use_dpm_and_custom_exe(tmp_path, monkeypatch):
     sim = _sim(tmp_path, custom_exe=False, grid=True)
     with pytest.raises(ValueError, match="mutually exclusive"):
         O._do_grid(sim, Path("/E"))
+
 
 def test_do_submit_injects_custom_exe(tmp_path, monkeypatch):
     fake_args = SimpleNamespace(custom_exe=None, use_dpm=False)
@@ -146,6 +159,7 @@ def test_do_submit_injects_custom_exe(tmp_path, monkeypatch):
     O._do_submit(sim, Path("/E"))
     assert fake_args.custom_exe == "/E"
     assert captured["ran"] is fake_args
+
 
 def test_do_submit_raises_when_use_dpm_and_custom_exe(tmp_path, monkeypatch):
     fake_args = SimpleNamespace(custom_exe=None, use_dpm=True)

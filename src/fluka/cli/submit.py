@@ -1,11 +1,12 @@
 from __future__ import annotations
+
 import argparse
 import sys
 from pathlib import Path
 
-from fluka.run.simconfig import resolve
 from fluka.queue.core.config import build_submit_args
 from fluka.queue.launch_jobs import BACKENDS, run_submission
+from fluka.run.simconfig import resolve
 
 
 class CollectionError(RuntimeError):
@@ -36,6 +37,7 @@ def main() -> None:
     try:
         if args.grid:
             from fluka.cli.grid import run_sim as run_grid
+
             run_grid(args.config)
             return
         run_sim(args.config)

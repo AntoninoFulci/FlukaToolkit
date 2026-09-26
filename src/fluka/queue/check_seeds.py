@@ -16,8 +16,7 @@ def scan_seeds(root: Path) -> dict[int, list[Path]]:
     seeds: dict[int, list[Path]] = {}
     for parent_dir in sorted(p for p in root.iterdir() if p.is_dir()):
         job_dirs = sorted(
-            p for p in parent_dir.iterdir()
-            if p.is_dir() and p.name.startswith("job_")
+            p for p in parent_dir.iterdir() if p.is_dir() and p.name.startswith("job_")
         )
         for job_dir in job_dirs:
             for inp in sorted(job_dir.glob("*.inp")):

@@ -1,6 +1,8 @@
 import struct
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
+
 from fluka.isotope_inventory.reader import read_resnuclei_file
 from fluka.isotope_inventory.resnuclei import Detector
 

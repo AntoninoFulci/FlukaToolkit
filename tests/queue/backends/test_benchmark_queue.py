@@ -1,14 +1,12 @@
-from fluka.queue.backends.slurm import SlurmBackend
-from fluka.queue.backends.lsf import LSFBackend
 from fluka.queue.backends.htcondor import HTCondorBackend
+from fluka.queue.backends.lsf import LSFBackend
+from fluka.queue.backends.slurm import SlurmBackend
 from fluka.queue.backends.ts import TSBackend
 from fluka.queue.core.config import SubmissionConfig
 
 
 def _config(backend, queue=None):
-    return SubmissionConfig(
-        backend=backend, input="s.inp", njobs=1, queue=queue
-    )
+    return SubmissionConfig(backend=backend, input="s.inp", njobs=1, queue=queue)
 
 
 def test_slurm_set_priority_queue():

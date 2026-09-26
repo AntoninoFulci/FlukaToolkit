@@ -1,5 +1,5 @@
-from dataclasses import dataclass
 import os
+from dataclasses import dataclass
 from pathlib import Path
 
 from fluka.queue.backends.base import JobInfo, QueueBackend
@@ -34,9 +34,7 @@ class SubmissionBatchError(RuntimeError):
         super().__init__(f"{len(self.failures)} job submission(s) failed")
 
 
-def prepare_jobs(
-    config: SubmissionConfig, fluka_path: str
-) -> list[PreparedJob]:
+def prepare_jobs(config: SubmissionConfig, fluka_path: str) -> list[PreparedJob]:
     if config.custom_exe is not None and not os.path.isfile(config.custom_exe):
         raise FileNotFoundError(f"Custom exe non trovato: {config.custom_exe}")
 
@@ -46,9 +44,7 @@ def prepare_jobs(
     prepared: list[PreparedJob] = []
 
     for iteration in range(1, config.njobs + 1):
-        job_dir = Path(
-            filesystem.setup_job_dir(str(output_dir), iteration, config.input)
-        )
+        job_dir = Path(filesystem.setup_job_dir(str(output_dir), iteration, config.input))
         seed = fluka.allocate_seed(used_seeds)
         new_input = fluka.generate_input(
             base_name,
@@ -57,11 +53,7 @@ def prepare_jobs(
             nprim=config.nprim,
             seed=seed,
         )
-        input_file = (
-            str((job_dir / new_input).resolve())
-            if config.backend == "ts"
-            else new_input
-        )
+        input_file = str((job_dir / new_input).resolve()) if config.backend == "ts" else new_input
         job_info = JobInfo(
             input_file,
             iteration,
@@ -92,9 +84,7 @@ def submit_prepared(
 
     for job in prepared:
         try:
-            script_path = backend.generate_script(
-                job.job_info, str(job.job_dir), config
-            )
+            script_path = backend.generate_script(job.job_info, str(job.job_dir), config)
             result = backend.submit(script_path, job.job_info, config)
         except RuntimeError as error:
             failures.append(SubmissionFailure(job.iteration, error))

@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import argparse
 import os
 import shutil
@@ -10,8 +11,9 @@ from pathlib import Path
 
 from fluka.run.simconfig import resolve
 
+
 def _root_output_dir() -> Path:
-    return Path(files("fluka").joinpath("root_output"))
+    return Path(str(files("fluka").joinpath("root_output")))
 
 
 _ROOT_DIR = _root_output_dir()
@@ -21,13 +23,16 @@ _BASE = ("usrini.f", "usrout.f", "mgdraw.f")
 
 def resolve_routines(routines, defaults_dir=_DEFAULTS_DIR, use_defaults=True) -> list[Path]:
     if not use_defaults:
-        resolved = [Path(r) for r in (routines or [])]
-        names = {p.name for p in resolved}
+        custom_routines = [Path(r) for r in (routines or [])]
+        names = {p.name for p in custom_routines}
         if "usrini.f" not in names or "usrout.f" not in names:
-            print("warning: ROOT open/close routines (usrini.f/usrout.f) missing; "
-                  "dump.root may not be produced", file=sys.stderr)
-        return resolved
-    resolved = {n: Path(defaults_dir) / n for n in _BASE}
+            print(
+                "warning: ROOT open/close routines (usrini.f/usrout.f) missing; "
+                "dump.root may not be produced",
+                file=sys.stderr,
+            )
+        return custom_routines
+    resolved: dict[str, Path] = {n: Path(defaults_dir) / n for n in _BASE}
     extras: list[Path] = []
     for r in routines or []:
         p = Path(r)
@@ -42,8 +47,14 @@ def build_command(section: dict, build_dir, resolved_routines) -> list[str]:
     use_rntuple = "1" if section.get("rntuple") else "0"
     name = section.get("name") or "rootfluka"
     objs = [Path(r).with_suffix(".o").name for r in resolved_routines]
-    return ["make", "-C", str(build_dir),
-            f"USE_RNTUPLE={use_rntuple}", f"NAME={name}", f"OBJS={' '.join(objs)}"]
+    return [
+        "make",
+        "-C",
+        str(build_dir),
+        f"USE_RNTUPLE={use_rntuple}",
+        f"NAME={name}",
+        f"OBJS={' '.join(objs)}",
+    ]
 
 
 def _exe_path(section) -> Path:
@@ -57,14 +68,18 @@ def compile_exe(section: dict, *, force: bool = False) -> Path:
     if exe.exists() and not force:
         return exe
     name = section.get("name") or "rootfluka"
-    routines = resolve_routines(section.get("routines"), _DEFAULTS_DIR,
-                                use_defaults=section.get("use_defaults", True))
+    routines = resolve_routines(
+        section.get("routines"), _DEFAULTS_DIR, use_defaults=section.get("use_defaults", True)
+    )
     build_dir = Path(tempfile.mkdtemp(prefix="fluka-compile-"))
     try:
         for item in ("Makefile", "src"):
             s = _ROOT_DIR / item
-            (shutil.copytree(s, build_dir / item) if s.is_dir()
-             else shutil.copy(s, build_dir / item))
+            (
+                shutil.copytree(s, build_dir / item)
+                if s.is_dir()
+                else shutil.copy(s, build_dir / item)
+            )
         for f in routines:
             shutil.copy(f, build_dir / Path(f).name)
         subprocess.run(build_command(section, build_dir, routines), check=True)

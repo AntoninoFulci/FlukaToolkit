@@ -1,17 +1,26 @@
-import pytest
 import pandas as pd
+import pytest
+
 from fluka.isotope_inventory.excel import write_activity_workbook
 
 
 def test_write_activity_workbook(tmp_path):
     rows = [
         {
-            "_tdecay_s": 86400.0, "CoolingTime": "1.0 d", "Parameters": "",
-            "Co-60 (Bq)": 1000.0, "Co-60 (% Error)": 5.0, "Co-60 (µg)": 0.42,
+            "_tdecay_s": 86400.0,
+            "CoolingTime": "1.0 d",
+            "Parameters": "",
+            "Co-60 (Bq)": 1000.0,
+            "Co-60 (% Error)": 5.0,
+            "Co-60 (µg)": 0.42,
         },
         {
-            "_tdecay_s": 0.0, "CoolingTime": "0 s", "Parameters": "",
-            "Co-60 (Bq)": 2000.0, "Co-60 (% Error)": 4.0, "Co-60 (µg)": 0.84,
+            "_tdecay_s": 0.0,
+            "CoolingTime": "0 s",
+            "Parameters": "",
+            "Co-60 (Bq)": 2000.0,
+            "Co-60 (% Error)": 4.0,
+            "Co-60 (µg)": 0.84,
         },
     ]
     out = tmp_path / "out.xlsx"

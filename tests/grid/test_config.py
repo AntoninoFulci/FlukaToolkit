@@ -1,11 +1,14 @@
-from pathlib import Path
+from unittest.mock import patch
+
 import pytest
 import yaml
-from unittest.mock import patch
-from fluka.run.simconfig import resolve
+
 from fluka.grid.config import (
-    load_config, Config, FlukaConfig, GridConfig, ExecutionConfig, validate_config,
+    Config,
+    load_config,
+    validate_config,
 )
+from fluka.run.simconfig import resolve
 
 
 def _write_sim(tmp_path, **overrides):
@@ -139,6 +142,7 @@ def test_load_config_use_dpm_true(tmp_path):
 # ---------------------------------------------------------------------------
 # backend + dpm guard (submission delegated to FlukaQueueSub)
 # ---------------------------------------------------------------------------
+
 
 def _base_sim(tmp_path, backend="ts", use_dpm=False):
     inp = tmp_path / "sim.inp"

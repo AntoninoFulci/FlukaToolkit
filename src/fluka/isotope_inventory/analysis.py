@@ -1,15 +1,15 @@
 from __future__ import annotations
+
 import re
 import subprocess
 from pathlib import Path
-from typing import Optional
 
 from .config import AnalysisConfig
-from .reader import read_resnuclei_file
 from .excel import write_activity_workbook
+from .reader import read_resnuclei_file
 
 
-def resolve_rnc(directory: Path, unit: int, executable: str) -> Optional[Path]:
+def resolve_rnc(directory: Path, unit: int, executable: str) -> Path | None:
     """Return the .rnc file for `unit`, post-processing raw files if needed."""
     candidates = sorted(directory.glob("*.rnc"))
     pat = re.compile(rf"(?<!\d){unit}(?!\d)")
@@ -33,9 +33,7 @@ def resolve_rnc(directory: Path, unit: int, executable: str) -> Optional[Path]:
         capture_output=True,
         cwd=directory,
     )
-    (directory / f"{Path(executable).name}_{unit}.log").write_text(
-        result.stdout + result.stderr
-    )
+    (directory / f"{Path(executable).name}_{unit}.log").write_text(result.stdout + result.stderr)
     if result.returncode != 0:
         raise RuntimeError(
             f"{executable} failed for unit {unit} (exit {result.returncode}); "

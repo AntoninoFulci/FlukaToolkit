@@ -1,5 +1,4 @@
-from pathlib import Path
-from fluka.grid.workspace import create_run_workspace, patch_inp, generate_seed, reseed_inp
+from fluka.grid.workspace import create_run_workspace, generate_seed, patch_inp, reseed_inp
 from fluka.queue.core.fluka import parse_randomiz
 
 
@@ -15,8 +14,9 @@ def test_reseed_inp_replaces_only_randomiz(tmp_path):
     reseed_inp(inp, 424242)
     text = inp.read_text()
     assert parse_randomiz(inp) == 424242
-    assert "#define beame 0.5" in text   # other lines untouched
+    assert "#define beame 0.5" in text  # other lines untouched
     assert "START         10000." in text
+
 
 TEMPLATE_INP = """\
 #define beame 0.5

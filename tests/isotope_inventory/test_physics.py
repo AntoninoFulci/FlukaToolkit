@@ -1,6 +1,8 @@
-import pytest
 from fluka.isotope_inventory.physics import (
-    isotope_symbol, molar_mass, half_life, format_decay_time,
+    format_decay_time,
+    half_life,
+    isotope_symbol,
+    molar_mass,
 )
 
 

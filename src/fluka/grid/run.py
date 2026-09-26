@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -8,29 +9,35 @@ from fluka.grid.backends import queue_adapter
 from fluka.grid.backends.queue_adapter import manifest_extra
 from fluka.grid.config import load_config, validate_config
 from fluka.grid.grid import combo_name, generate_combinations
+from fluka.grid.seeds import find_duplicate_seeds, next_seed, scan_used_seeds
 from fluka.grid.workspace import create_run_workspace, patch_inp, reseed_inp
-from fluka.grid.seeds import scan_used_seeds, next_seed, find_duplicate_seeds
-from fluka.run.manifest import Job, record_job, manifest_path_for, parse_job_id
+from fluka.run.manifest import Job, manifest_path_for, parse_job_id, record_job
 from fluka.run.simconfig import resolve
 
 
 def _parse_args():
     import argparse
+
     p = argparse.ArgumentParser(
         description="FLUKA grid search launcher: generate input files and submit them "
-                    "to the farm via FlukaQueueSub."
+        "to the farm via FlukaQueueSub."
     )
     p.add_argument("config", type=Path)
     p.add_argument("--reset", action="store_true", help="Delete output dir and start fresh")
     p.add_argument("--dry-run", action="store_true", help="Print commands without submitting")
-    p.add_argument("--check-seeds", action="store_true",
-                   help="Audit the output dir for duplicate RANDOMIZ seeds and exit")
+    p.add_argument(
+        "--check-seeds",
+        action="store_true",
+        help="Audit the output dir for duplicate RANDOMIZ seeds and exit",
+    )
     return p.parse_args()
 
 
 def _print_summary(config, args, rfluka_bin) -> None:
     from math import prod
-    from colorama import Fore, Style, init as colorama_init
+
+    from colorama import Fore, Style
+    from colorama import init as colorama_init
     from tabulate import tabulate
 
     colorama_init(autoreset=True)
@@ -41,15 +48,15 @@ def _print_summary(config, args, rfluka_bin) -> None:
     n_jobs = n_combos * config.grid.runs_per_combo
 
     rows = [["Field", "Value"]]
-    rows.append([f"{C}Config{RE}",      f"{M}{args.config}{RE}"])
-    rows.append([f"{C}Input{RE}",       f"{M}{config.fluka.input}{RE}"])
-    rows.append([f"{C}Output dir{RE}",  f"{M}{config.output_dir}{RE}"])
-    rows.append([f"{C}Backend{RE}",     f"{M}{config.execution.backend}{RE}"])
-    rows.append([f"{C}rfluka bin{RE}",  f"{M}{rfluka_bin}{RE}"])
+    rows.append([f"{C}Config{RE}", f"{M}{args.config}{RE}"])
+    rows.append([f"{C}Input{RE}", f"{M}{config.fluka.input}{RE}"])
+    rows.append([f"{C}Output dir{RE}", f"{M}{config.output_dir}{RE}"])
+    rows.append([f"{C}Backend{RE}", f"{M}{config.execution.backend}{RE}"])
+    rows.append([f"{C}rfluka bin{RE}", f"{M}{rfluka_bin}{RE}"])
     if config.fluka.custom_executable:
         rows.append([f"{C}Custom exe{RE}", f"{M}{config.fluka.custom_executable}{RE}"])
     if config.fluka.primaries:
-        rows.append([f"{C}Primaries{RE}",  f"{M}{config.fluka.primaries}{RE}"])
+        rows.append([f"{C}Primaries{RE}", f"{M}{config.fluka.primaries}{RE}"])
     rows.append(["", ""])
     for param, values in config.grid.parameters.items():
         rows.append([f"{B}  {param}{RE}", f"{Y}{', '.join(str(v) for v in values)}{RE}"])
@@ -57,8 +64,8 @@ def _print_summary(config, args, rfluka_bin) -> None:
     rows.append([f"{C}Runs / combo{RE}", f"{M}{config.grid.runs_per_combo}{RE}"])
     rows.append([f"{C}Max parallel{RE}", f"{M}{config.execution.max_parallel}{RE}"])
     rows.append([f"{G}Total combos{RE}", f"{G}{n_combos}{RE}"])
-    rows.append([f"{G}Total jobs{RE}",   f"{G}{n_jobs}{RE}"])
-    rows.append([f"{Y}Dry run{RE}",      f"{Y}{args.dry_run}{RE}"])
+    rows.append([f"{G}Total jobs{RE}", f"{G}{n_jobs}{RE}"])
+    rows.append([f"{Y}Dry run{RE}", f"{Y}{args.dry_run}{RE}"])
 
     print(tabulate(rows, headers="firstrow", tablefmt="simple_outline"))
 
@@ -71,17 +78,17 @@ def _print_summary(config, args, rfluka_bin) -> None:
 
 def _resolve_rfluka(config) -> Path:
     import subprocess
+
     if config.fluka.rfluka_path:
         return Path(config.fluka.rfluka_path)
-    result = subprocess.run(
-        ["fluka-config", "--bin"], capture_output=True, text=True, check=True
-    )
+    result = subprocess.run(["fluka-config", "--bin"], capture_output=True, text=True, check=True)
     return Path(result.stdout.strip())
 
 
 def _set_ts_slots(max_parallel: int) -> None:
     """Set the task-spooler slot count (local concurrency) before submitting."""
     import subprocess
+
     subprocess.run(["ts", "-S", str(max_parallel)], check=False)
 
 
@@ -106,9 +113,7 @@ def _submit_combo(params, config, rfluka_bin, args) -> None:
         used = scan_used_seeds(config.output_dir)
         current = {ip for (_, _, _, ip) in prepared}
         for seed, files in sorted(dups.items()):
-            shared = ", ".join(
-                f"{f.parent.parent.name}/{f.parent.name}" for f in files
-            )
+            shared = ", ".join(f"{f.parent.parent.name}/{f.parent.name}" for f in files)
             print(f"[seed] duplicate seed {seed} found in: {shared}")
             # keep one file (prefer one outside this combo, likely already submitted);
             # regenerate the rest with fresh unique seeds, then keep going
@@ -116,10 +121,7 @@ def _submit_combo(params, config, rfluka_bin, args) -> None:
             for f in ordered[1:]:
                 new = next_seed(used)
                 reseed_inp(f, new)
-                print(
-                    f"[seed]   {f.parent.parent.name}/{f.parent.name}: "
-                    f"reseeded {seed} -> {new}"
-                )
+                print(f"[seed]   {f.parent.parent.name}/{f.parent.name}: reseeded {seed} -> {new}")
 
     # Phase 3: submit every run via FlukaQueueSub (submit-only; no monitoring here)
     for i, run_name, run_dir, inp_path in prepared:
@@ -163,10 +165,12 @@ def run_config(config, *, dry_run: bool = False, reset: bool = False) -> None:
     that already have a `Config` object and don't want to go through argv.
     """
     from types import SimpleNamespace
+
     args = SimpleNamespace(dry_run=dry_run, reset=reset, config=config.fluka.input)
 
     if reset:
         import shutil
+
         if config.output_dir.exists():
             confirm = input(f"Delete {config.output_dir} and all contents? [yes/N] ")
             if confirm.strip().lower() not in ("yes", "y"):
@@ -197,9 +201,7 @@ def main() -> None:
         dups = find_duplicate_seeds(config.output_dir)
         if dups:
             for seed, files in sorted(dups.items()):
-                shared = ", ".join(
-                    f"{f.parent.parent.name}/{f.parent.name}" for f in files
-                )
+                shared = ", ".join(f"{f.parent.parent.name}/{f.parent.name}" for f in files)
                 print(f"duplicate seed {seed}: {shared}")
             sys.exit(f"{len(dups)} duplicate seed(s) found in {config.output_dir}")
         print(f"No duplicate seeds in {config.output_dir}")

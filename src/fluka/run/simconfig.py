@@ -1,9 +1,18 @@
 from __future__ import annotations
+
 from pathlib import Path
+
 import yaml
 
-GENERAL_KEYS = ("input", "backend", "output", "primaries",
-                "use_dpm", "custom_executable", "rfluka_path")
+GENERAL_KEYS = (
+    "input",
+    "backend",
+    "output",
+    "primaries",
+    "use_dpm",
+    "custom_executable",
+    "rfluka_path",
+)
 
 # keys whose values are filesystem paths, resolved relative to the config dir
 _PATH_KEYS = ("input", "output", "custom_executable", "rfluka_path")
@@ -53,8 +62,7 @@ def resolve(path, tool: str) -> dict:
     # routines: list of paths relative to config dir
     if merged.get("routines"):
         merged["routines"] = [
-            str(Path(r) if Path(r).is_absolute() else (config_dir / r))
-            for r in merged["routines"]
+            str(Path(r) if Path(r).is_absolute() else (config_dir / r)) for r in merged["routines"]
         ]
     if merged.get("exe_path"):
         ep = Path(merged["exe_path"])

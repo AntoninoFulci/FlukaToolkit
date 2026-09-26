@@ -1,8 +1,16 @@
-import os
-import pytest
 from pathlib import Path
 from unittest.mock import patch
-from fluka.queue.core.fluka import generate_input, detect_fluka_path, parse_randomiz, allocate_seed, scan_existing_seeds
+
+import pytest
+
+from fluka.queue.core.fluka import (
+    allocate_seed,
+    detect_fluka_path,
+    find_duplicate_seeds,
+    generate_input,
+    parse_randomiz,
+    scan_existing_seeds,
+)
 
 
 def test_generate_input_renames_file(tmp_path):
@@ -45,7 +53,10 @@ def test_detect_fluka_path_returns_paths():
 
 def test_detect_fluka_path_exits_if_not_found():
     import subprocess
-    with patch("subprocess.check_output", side_effect=subprocess.CalledProcessError(1, "fluka-config")):
+
+    with patch(
+        "subprocess.check_output", side_effect=subprocess.CalledProcessError(1, "fluka-config")
+    ):
         with pytest.raises(SystemExit):
             detect_fluka_path()
 
@@ -59,7 +70,9 @@ def test_generate_input_raises_if_no_randomiz(tmp_path):
 
 def test_generate_input_replaces_start_card(tmp_path):
     base = "sim"
-    (tmp_path / f"{base}.inp").write_text("RANDOMIZ          1.  12345678\nSTART         1000.0\nSTOP\n")
+    (tmp_path / f"{base}.inp").write_text(
+        "RANDOMIZ          1.  12345678\nSTART         1000.0\nSTOP\n"
+    )
     generate_input(base, 1, str(tmp_path), nprim=5000)
     content = (tmp_path / f"{base}_0001.inp").read_text()
     assert "START         5000.0\n" in content
@@ -69,7 +82,11 @@ def test_generate_input_start_columnar_format(tmp_path):
     base = "sim"
     (tmp_path / f"{base}.inp").write_text("RANDOMIZ          1.  12345678\nSTART         1000.0\n")
     generate_input(base, 1, str(tmp_path), nprim=1000)
-    line = next(l for l in (tmp_path / f"{base}_0001.inp").read_text().splitlines() if l.startswith("START"))
+    line = next(
+        source_line
+        for source_line in (tmp_path / f"{base}_0001.inp").read_text().splitlines()
+        if source_line.startswith("START")
+    )
     assert line[0:8] == "START   "
     assert len(line) == 20
 
@@ -160,9 +177,6 @@ def test_generate_input_uses_supplied_seed(tmp_path):
     content = (tmp_path / f"{base}_0001.inp").read_text()
     assert "4242" in content
     assert "12345678" not in content
-
-
-from fluka.queue.core.fluka import find_duplicate_seeds
 
 
 def test_find_duplicate_seeds_returns_only_shared(tmp_path):

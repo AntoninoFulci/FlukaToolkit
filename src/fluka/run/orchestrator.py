@@ -1,36 +1,47 @@
 from __future__ import annotations
+
 import argparse
 import sys
 from pathlib import Path
 
-from fluka.run.simconfig import load_sim, resolve
 from fluka.cli.compile import compile_exe
+from fluka.run.simconfig import load_sim, resolve
+
 
 def _run_collect(sim: Path) -> None:
-    from fluka.cli.submit import collect_sim; collect_sim(sim)
+    from fluka.cli.submit import collect_sim
+
+    collect_sim(sim)
+
+
 def _run_analysis(sim: Path) -> None:
-    from fluka.cli.analysis import run_sim; run_sim(sim)
+    from fluka.cli.analysis import run_sim
+
+    run_sim(sim)
+
 
 def _do_grid(sim_path, exe) -> None:
     from fluka.grid.config import load_config, validate_config
     from fluka.grid.run import run_config
+
     cfg = load_config(resolve(sim_path, "grid"))
     if exe is not None:
         cfg.fluka.custom_executable = str(exe)
     validate_config(cfg)
     run_config(cfg)
 
+
 def _do_submit(sim_path, exe) -> None:
     from fluka.queue.core.config import build_submit_args
     from fluka.queue.launch_jobs import BACKENDS, run_submission
+
     args = build_submit_args(resolve(sim_path, "submit"), BACKENDS)
     if exe is not None:
         args.custom_exe = str(exe)
         if getattr(args, "use_dpm", False):
-            raise ValueError(
-                "use_dpm and custom_exe are mutually exclusive: set only one."
-            )
+            raise ValueError("use_dpm and custom_exe are mutually exclusive: set only one.")
     run_submission(args)
+
 
 def launch(sim_path) -> None:
     sim = Path(sim_path)
@@ -45,10 +56,12 @@ def launch(sim_path) -> None:
     else:
         _do_submit(sim, exe)
 
+
 def analyze_phase(sim_path) -> None:
     sim = Path(sim_path)
     _run_collect(sim)
     _run_analysis(sim)
+
 
 def main() -> None:
     # An optional positional (`sim`, nargs="?") combined with an `analyze`

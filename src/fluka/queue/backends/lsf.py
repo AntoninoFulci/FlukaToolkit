@@ -39,26 +39,43 @@ exit "$$rc"
 
 
 class LSFBackend(QueueBackend):
-
     def add_args(self, parser: ArgumentParser) -> None:
-        parser.add_argument("-q", "--queue", type=str, default=_DEFAULT_QUEUE,
-                            help=f"Coda LSF su cui inviare i job (default: {_DEFAULT_QUEUE})")
-        parser.add_argument("-m", "--mem", type=str, default="1500",
-                            help="Limite di memoria richiesta in MB (usato in rusage e select, "
-                                 "default: 1500)")
-        parser.add_argument("-t", "--ntasks", type=int, default=1,
-                            help="Numero di slot LSF richiesti per job (-n), default: 1")
-        parser.add_argument("-T", "--time", type=str, default="1-00:00:00",
-                            help="Limite di tempo nel formato D-HH:MM:SS, max 4-00:00:00 "
-                                 "(default: 1-00:00:00)")
+        parser.add_argument(
+            "-q",
+            "--queue",
+            type=str,
+            default=_DEFAULT_QUEUE,
+            help=f"Coda LSF su cui inviare i job (default: {_DEFAULT_QUEUE})",
+        )
+        parser.add_argument(
+            "-m",
+            "--mem",
+            type=str,
+            default="1500",
+            help="Limite di memoria richiesta in MB (usato in rusage e select, default: 1500)",
+        )
+        parser.add_argument(
+            "-t",
+            "--ntasks",
+            type=int,
+            default=1,
+            help="Numero di slot LSF richiesti per job (-n), default: 1",
+        )
+        parser.add_argument(
+            "-T",
+            "--time",
+            type=str,
+            default="1-00:00:00",
+            help="Limite di tempo nel formato D-HH:MM:SS, max 4-00:00:00 (default: 1-00:00:00)",
+        )
 
     def validate(self, args: "SubmissionConfig") -> None:
+        if not isinstance(args.time, str):
+            raise ValueError("Il time limit LSF deve usare il formato D-HH:MM:SS")
         if parse_time_to_seconds(args.time) > _MAX_TIME_SECONDS:
             raise ValueError(f"Il time limit non puo' superare {_MAX_TIME}")
 
-    def generate_script(
-        self, job_info: JobInfo, job_dir: str, args: "SubmissionConfig"
-    ) -> str:
+    def generate_script(self, job_info: JobInfo, job_dir: str, args: "SubmissionConfig") -> str:
         fluka_cmd = f"{job_info.fluka_path}/rfluka -M 1"
         if job_info.use_dpm:
             fluka_cmd += " -d"
@@ -80,9 +97,7 @@ class LSFBackend(QueueBackend):
         os.chmod(script_path, 0o755)
         return script_path
 
-    def submit(
-        self, script_path: str | None, job_info: JobInfo, args: "SubmissionConfig"
-    ) -> str:
+    def submit(self, script_path: str | None, job_info: JobInfo, args: "SubmissionConfig") -> str:
         if script_path is None:
             raise RuntimeError("LSFBackend requires a script file (script_path cannot be None)")
         if args.dry_run:
@@ -98,12 +113,12 @@ class LSFBackend(QueueBackend):
     ) -> list[list[str]]:
         C = COLORS
         return [
-            ["-q", f"{C['M']}Queue{C['RE']}",        f"{C['M']}{args.queue}{C['RE']}"],
+            ["-q", f"{C['M']}Queue{C['RE']}", f"{C['M']}{args.queue}{C['RE']}"],
             ["-m", f"{C['C']}Memoria (MB){C['RE']}", f"{C['C']}{args.mem}{C['RE']}"],
-            ["-t", f"{C['C']}N. task{C['RE']}",      f"{C['C']}{args.ntasks}{C['RE']}"],
-            ["-T", f"{C['C']}Time limit{C['RE']}",   f"{C['C']}{args.time}{C['RE']}"],
-            [" ",  f"{C['B']}FLUKA bin{C['RE']}",    f"{C['B']}{fluka_path}{C['RE']}"],
-            [" ",  f"{C['B']}FLUKA folder{C['RE']}", f"{C['B']}{fluka_folder}{C['RE']}"],
+            ["-t", f"{C['C']}N. task{C['RE']}", f"{C['C']}{args.ntasks}{C['RE']}"],
+            ["-T", f"{C['C']}Time limit{C['RE']}", f"{C['C']}{args.time}{C['RE']}"],
+            [" ", f"{C['B']}FLUKA bin{C['RE']}", f"{C['B']}{fluka_path}{C['RE']}"],
+            [" ", f"{C['B']}FLUKA folder{C['RE']}", f"{C['B']}{fluka_folder}{C['RE']}"],
         ]
 
     def set_priority_queue(self, args: "SubmissionConfig", queue_name: str) -> None:
@@ -111,13 +126,16 @@ class LSFBackend(QueueBackend):
 
     def _sentinel_path(self, job):
         from pathlib import Path
+
         return Path(job.run_dir) / ".fluka_status"
 
     def _queue_state(self, job):
-        from fluka.run.status import RUNNING, PENDING
+        from fluka.run.status import PENDING, RUNNING
+
         try:
-            r = subprocess.run(["bjobs", "-noheader", "-o", "stat", job.job_id],
-                               capture_output=True, text=True)
+            r = subprocess.run(
+                ["bjobs", "-noheader", "-o", "stat", job.job_id], capture_output=True, text=True
+            )
         except (FileNotFoundError, OSError):
             # bjobs not installed on this host; fall back to sentinel-based state.
             return None

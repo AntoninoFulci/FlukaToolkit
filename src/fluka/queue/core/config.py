@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
+from collections.abc import Mapping
 from dataclasses import dataclass, fields
-from typing import Any, Mapping
+from typing import Any
 
 import yaml
 
@@ -11,11 +12,20 @@ from fluka.queue.backends.base import QueueBackend
 # backend arg defaults -- this keeps e.g. the merged view's "output" (the
 # results directory) from clobbering HTCondor's own "--output" arg (the job
 # stdout filename pattern), which happens to share the same dest name.
-_GENERAL_ONLY_KEYS = frozenset({
-    "input", "backend", "output", "primaries", "use_dpm",
-    "custom_executable", "rfluka_path", "njobs",
-    "_config_dir", "_general_output",
-})
+_GENERAL_ONLY_KEYS = frozenset(
+    {
+        "input",
+        "backend",
+        "output",
+        "primaries",
+        "use_dpm",
+        "custom_executable",
+        "rfluka_path",
+        "njobs",
+        "_config_dir",
+        "_general_output",
+    }
+)
 
 
 @dataclass(slots=True)
@@ -86,9 +96,7 @@ def _validate_submission_values(values: dict[str, Any], source: str) -> None:
         raise ValueError("use_dpm and custom_exe are mutually exclusive: set only one.")
 
 
-def load_submission_config(
-    path: str, backends: dict[str, QueueBackend]
-) -> SubmissionConfig:
+def load_submission_config(path: str, backends: dict[str, QueueBackend]) -> SubmissionConfig:
     with open(path) as f:
         data = yaml.safe_load(f)
 
@@ -99,9 +107,7 @@ def load_submission_config(
     if not backend_name:
         raise ValueError(f"Campo 'backend' mancante in {path!r}")
     if backend_name not in backends:
-        raise ValueError(
-            f"Backend sconosciuto {backend_name!r}. Disponibili: {sorted(backends)}"
-        )
+        raise ValueError(f"Backend sconosciuto {backend_name!r}. Disponibili: {sorted(backends)}")
 
     backend = backends[backend_name]
 
@@ -117,9 +123,7 @@ def load_submission_config(
     return SubmissionConfig.from_mapping(defaults)
 
 
-def submission_config_from_view(
-    view: dict, backends: dict[str, QueueBackend]
-) -> SubmissionConfig:
+def submission_config_from_view(view: dict, backends: dict[str, QueueBackend]) -> SubmissionConfig:
     """Build typed submission settings from a merged ``sim.yaml`` view.
 
     backend/input come from general (via resolve); njobs and the batch-resource
@@ -131,9 +135,7 @@ def submission_config_from_view(
     if not backend_name:
         raise ValueError("Campo 'backend' mancante nella configurazione")
     if backend_name not in backends:
-        raise ValueError(
-            f"Backend sconosciuto {backend_name!r}. Disponibili: {sorted(backends)}"
-        )
+        raise ValueError(f"Backend sconosciuto {backend_name!r}. Disponibili: {sorted(backends)}")
 
     backend = backends[backend_name]
 

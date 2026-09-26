@@ -1,12 +1,13 @@
 import sys
+from unittest.mock import patch
+
 import pytest
 import yaml as _yaml
-from unittest.mock import patch
 
 from fluka.queue.backends.slurm import SlurmBackend
 from fluka.queue.backends.ts import TSBackend
-from fluka.queue.launch_jobs import _apply_benchmark_overrides
 from fluka.queue.core.config import SubmissionConfig
+from fluka.queue.launch_jobs import _apply_benchmark_overrides
 
 
 def _config(backend="slurm", **overrides):
@@ -65,18 +66,32 @@ def test_benchmark_quick_single_yaml_creates_2_job_dirs(tmp_path, monkeypatch):
     inp = tmp_path / "sim.inp"
     inp.write_text("RANDOMIZ          1.  12345678\nSTOP\n")
     cfg = tmp_path / "config.yaml"
-    cfg.write_text(_yaml.dump({
-        "backend": "ts", "input": str(inp), "njobs": 10, "dry_run": True,
-        "benchmark_priority_queue": "priority",
-    }))
+    cfg.write_text(
+        _yaml.dump(
+            {
+                "backend": "ts",
+                "input": str(inp),
+                "njobs": 10,
+                "dry_run": True,
+                "benchmark_priority_queue": "priority",
+            }
+        )
+    )
 
     monkeypatch.chdir(tmp_path)
     sys.argv = ["launch_jobs.py", "benchmark", "quick", str(cfg)]
 
-    with patch("fluka.queue.core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local")), \
-         patch("fluka.queue.core.display.confirm", return_value=True):
+    with (
+        patch(
+            "fluka.queue.core.fluka.detect_fluka_path",
+            return_value=("/usr/local/bin", "/usr/local"),
+        ),
+        patch("fluka.queue.core.display.confirm", return_value=True),
+    ):
         import importlib
+
         from fluka.queue import launch_jobs
+
         importlib.reload(launch_jobs)
         launch_jobs.main()
 
@@ -89,17 +104,31 @@ def test_benchmark_extensive_single_yaml_creates_5_job_dirs(tmp_path, monkeypatc
     inp = tmp_path / "sim.inp"
     inp.write_text("RANDOMIZ          1.  12345678\nSTOP\n")
     cfg = tmp_path / "config.yaml"
-    cfg.write_text(_yaml.dump({
-        "backend": "ts", "input": str(inp), "njobs": 10, "dry_run": True,
-    }))
+    cfg.write_text(
+        _yaml.dump(
+            {
+                "backend": "ts",
+                "input": str(inp),
+                "njobs": 10,
+                "dry_run": True,
+            }
+        )
+    )
 
     monkeypatch.chdir(tmp_path)
     sys.argv = ["launch_jobs.py", "benchmark", "extensive", str(cfg)]
 
-    with patch("fluka.queue.core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local")), \
-         patch("fluka.queue.core.display.confirm", return_value=True):
+    with (
+        patch(
+            "fluka.queue.core.fluka.detect_fluka_path",
+            return_value=("/usr/local/bin", "/usr/local"),
+        ),
+        patch("fluka.queue.core.display.confirm", return_value=True),
+    ):
         import importlib
+
         from fluka.queue import launch_jobs
+
         importlib.reload(launch_jobs)
         launch_jobs.main()
 
@@ -112,16 +141,27 @@ def test_benchmark_quick_missing_priority_queue_exits(tmp_path, monkeypatch):
     inp = tmp_path / "sim.inp"
     inp.write_text("RANDOMIZ          1.  12345678\nSTOP\n")
     cfg = tmp_path / "config.yaml"
-    cfg.write_text(_yaml.dump({
-        "backend": "ts", "input": str(inp), "njobs": 10, "dry_run": True,
-    }))
+    cfg.write_text(
+        _yaml.dump(
+            {
+                "backend": "ts",
+                "input": str(inp),
+                "njobs": 10,
+                "dry_run": True,
+            }
+        )
+    )
 
     monkeypatch.chdir(tmp_path)
     sys.argv = ["launch_jobs.py", "benchmark", "quick", str(cfg)]
 
-    with patch("fluka.queue.core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local")):
+    with patch(
+        "fluka.queue.core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local")
+    ):
         import importlib
+
         from fluka.queue import launch_jobs
+
         importlib.reload(launch_jobs)
         with pytest.raises(SystemExit):
             launch_jobs.main()
@@ -131,7 +171,9 @@ def test_benchmark_wrong_arg_count_exits():
     sys.argv = ["launch_jobs.py", "benchmark", "quick"]  # missing target
 
     import importlib
+
     from fluka.queue import launch_jobs
+
     importlib.reload(launch_jobs)
     with pytest.raises(SystemExit):
         launch_jobs.main()
@@ -141,17 +183,31 @@ def test_benchmark_unknown_mode_exits(tmp_path, monkeypatch):
     inp = tmp_path / "sim.inp"
     inp.write_text("RANDOMIZ          1.  12345678\nSTOP\n")
     cfg = tmp_path / "config.yaml"
-    cfg.write_text(_yaml.dump({
-        "backend": "ts", "input": str(inp), "njobs": 1, "dry_run": True,
-    }))
+    cfg.write_text(
+        _yaml.dump(
+            {
+                "backend": "ts",
+                "input": str(inp),
+                "njobs": 1,
+                "dry_run": True,
+            }
+        )
+    )
 
     monkeypatch.chdir(tmp_path)
     sys.argv = ["launch_jobs.py", "benchmark", "ultra", str(cfg)]
 
-    with patch("fluka.queue.core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local")), \
-         patch("fluka.queue.core.display.confirm", return_value=True):
+    with (
+        patch(
+            "fluka.queue.core.fluka.detect_fluka_path",
+            return_value=("/usr/local/bin", "/usr/local"),
+        ),
+        patch("fluka.queue.core.display.confirm", return_value=True),
+    ):
         import importlib
+
         from fluka.queue import launch_jobs
+
         importlib.reload(launch_jobs)
         with pytest.raises(SystemExit):
             launch_jobs.main()
@@ -163,17 +219,31 @@ def test_benchmark_folder_mode_extensive(tmp_path, monkeypatch):
     for stem in ["sim_a", "sim_b"]:
         inp = tmp_path / f"{stem}.inp"
         inp.write_text("RANDOMIZ          1.  12345678\nSTOP\n")
-        (configs_dir / f"{stem}.yaml").write_text(_yaml.dump({
-            "backend": "ts", "input": str(inp), "njobs": 10, "dry_run": True,
-        }))
+        (configs_dir / f"{stem}.yaml").write_text(
+            _yaml.dump(
+                {
+                    "backend": "ts",
+                    "input": str(inp),
+                    "njobs": 10,
+                    "dry_run": True,
+                }
+            )
+        )
 
     monkeypatch.chdir(tmp_path)
     sys.argv = ["launch_jobs.py", "benchmark", "extensive", str(configs_dir)]
 
-    with patch("fluka.queue.core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local")), \
-         patch("fluka.queue.core.display.confirm", return_value=True):
+    with (
+        patch(
+            "fluka.queue.core.fluka.detect_fluka_path",
+            return_value=("/usr/local/bin", "/usr/local"),
+        ),
+        patch("fluka.queue.core.display.confirm", return_value=True),
+    ):
         import importlib
+
         from fluka.queue import launch_jobs
+
         importlib.reload(launch_jobs)
         launch_jobs.main()
 
@@ -188,19 +258,34 @@ def test_benchmark_folder_mode_cancelled(tmp_path, monkeypatch, caplog):
     inp.write_text("RANDOMIZ          1.  12345678\nSTOP\n")
     configs_dir = tmp_path / "configs"
     configs_dir.mkdir()
-    (configs_dir / "a.yaml").write_text(_yaml.dump({
-        "backend": "ts", "input": str(inp), "njobs": 10, "dry_run": True,
-    }))
+    (configs_dir / "a.yaml").write_text(
+        _yaml.dump(
+            {
+                "backend": "ts",
+                "input": str(inp),
+                "njobs": 10,
+                "dry_run": True,
+            }
+        )
+    )
 
     monkeypatch.chdir(tmp_path)
     sys.argv = ["launch_jobs.py", "benchmark", "extensive", str(configs_dir)]
 
     import logging
-    with patch("fluka.queue.core.fluka.detect_fluka_path", return_value=("/usr/local/bin", "/usr/local")), \
-         patch("fluka.queue.core.display.confirm", return_value=False), \
-         caplog.at_level(logging.INFO):
+
+    with (
+        patch(
+            "fluka.queue.core.fluka.detect_fluka_path",
+            return_value=("/usr/local/bin", "/usr/local"),
+        ),
+        patch("fluka.queue.core.display.confirm", return_value=False),
+        caplog.at_level(logging.INFO),
+    ):
         import importlib
+
         from fluka.queue import launch_jobs
+
         importlib.reload(launch_jobs)
         launch_jobs.main()
 

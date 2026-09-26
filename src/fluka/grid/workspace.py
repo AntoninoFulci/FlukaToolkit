@@ -1,8 +1,8 @@
 from __future__ import annotations
+
 import random
 import re
 from pathlib import Path
-from typing import Optional
 
 
 def create_run_workspace(output_dir: Path, combo: str, run_idx: int) -> Path:
@@ -16,7 +16,7 @@ def patch_inp(
     output: Path,
     params: dict,
     seed: int,
-    primaries: Optional[int] = None,
+    primaries: int | None = None,
 ) -> None:
     lines = template.read_text().splitlines(keepends=True)
     result = []

@@ -1,10 +1,10 @@
 from __future__ import annotations
+
 import math
 from pathlib import Path
-from typing import Optional
 
+from .physics import format_decay_time, half_life, isotope_symbol, molar_mass
 from .resnuclei import Resnuclei, unpack_array
-from .physics import isotope_symbol, molar_mass, half_life, format_decay_time
 
 _AVOGADRO = 6.02214076e23
 
@@ -13,7 +13,7 @@ def read_resnuclei_file(
     path: Path,
     requested_isotopes: dict[int, int],
     params: dict,
-) -> Optional[dict]:
+) -> dict | None:
     if not path.exists():
         return None
 

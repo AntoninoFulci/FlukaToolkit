@@ -1,17 +1,17 @@
 from __future__ import annotations
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Optional
+
 import re
 import subprocess
+from dataclasses import dataclass
+from pathlib import Path
 
 
 @dataclass
 class FlukaConfig:
     input: Path
-    custom_executable: Optional[str] = None
-    rfluka_path: Optional[str] = None
-    primaries: Optional[int] = None
+    custom_executable: str | None = None
+    rfluka_path: str | None = None
+    primaries: int | None = None
     use_dpm: bool = False
 
 
@@ -24,17 +24,17 @@ class GridConfig:
 @dataclass
 class ExecutionConfig:
     max_parallel: int
-    backend: str = "ts"          # ts | slurm | lsf | condor
-    queue: Optional[str] = None  # partition (slurm) / queue (lsf) / universe (condor)
+    backend: str = "ts"  # ts | slurm | lsf | condor
+    queue: str | None = None  # partition (slurm) / queue (lsf) / universe (condor)
     mem: str = "1500"
-    time: str = "1-00:00:00"     # slurm/lsf time limit D-HH:MM:SS
+    time: str = "1-00:00:00"  # slurm/lsf time limit D-HH:MM:SS
     ntasks: int = 1
     nodes: int = 1
-    gres: str = "disk:1G"        # slurm only
-    ncpu: int = 1                # condor only
-    disk: int = 100000           # condor request_disk (kB)
+    gres: str = "disk:1G"  # slurm only
+    ncpu: int = 1  # condor only
+    disk: int = 100000  # condor request_disk (kB)
     condor_max_runtime: int = 86400  # condor +MaxRuntime (seconds)
-    farm_out: str = "/farm_out"        # slurm: accessible out/err/sentinel dir
+    farm_out: str = "/farm_out"  # slurm: accessible out/err/sentinel dir
 
 
 @dataclass
@@ -46,7 +46,7 @@ class Config:
 
 
 def load_config(view: dict) -> Config:
-    inp = Path(view["input"])          # already resolved by simconfig.resolve
+    inp = Path(view["input"])  # already resolved by simconfig.resolve
     return Config(
         fluka=FlukaConfig(
             input=inp,
@@ -87,9 +87,7 @@ def validate_config(config: Config) -> None:
 
     if not re.search(r"^RANDOMIZ\s", inp_text, re.MULTILINE):
         raise ValueError(f"Missing RANDOMIZ card in {config.fluka.input}")
-    if config.fluka.primaries is not None and not re.search(
-        r"^START\s", inp_text, re.MULTILINE
-    ):
+    if config.fluka.primaries is not None and not re.search(r"^START\s", inp_text, re.MULTILINE):
         raise ValueError(
             f"Missing START card in {config.fluka.input}; required to override primaries"
         )
@@ -98,7 +96,9 @@ def validate_config(config: Config) -> None:
         try:
             subprocess.run(
                 ["fluka-config", "--bin"],
-                capture_output=True, text=True, check=True,
+                capture_output=True,
+                text=True,
+                check=True,
             )
         except (FileNotFoundError, subprocess.CalledProcessError) as exc:
             raise RuntimeError(
@@ -114,6 +114,5 @@ def validate_config(config: Config) -> None:
 
     if config.fluka.use_dpm and config.fluka.custom_executable:
         raise ValueError(
-            "fluka.use_dpm and fluka.custom_executable are mutually exclusive; "
-            "set only one."
+            "fluka.use_dpm and fluka.custom_executable are mutually exclusive; set only one."
         )

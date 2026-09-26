@@ -1,8 +1,10 @@
 import sys
-import yaml
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
 import pytest
+import yaml
+
 from fluka.grid import run as run_grid
 from fluka.grid.seeds import scan_used_seeds
 
@@ -36,23 +38,30 @@ def run_main(argv):
 
 # --- main() end-to-end (submission delegated to queue_adapter) -----------------
 
+
 def test_dry_run_passes_dry_flag_and_skips_confirm(tmp_path):
     cfg_path = make_project(tmp_path)
-    with patch("fluka.grid.backends.queue_adapter.submit_run", return_value="[dry run]") as m, \
-         patch("subprocess.run") as mock_sub:
+    with (
+        patch("fluka.grid.backends.queue_adapter.submit_run", return_value="[dry run]") as m,
+        patch("subprocess.run") as mock_sub,
+    ):
         run_main([str(cfg_path), "--dry-run"])
     # 2 combos × 2 runs = 4 submissions, all dry
     assert m.call_count == 4
     assert all(c.kwargs["dry_run"] is True for c in m.call_args_list)
     # ts slot-setting (`ts -S`) must NOT run in dry-run mode
-    assert not any(call.args and call.args[0][:2] == ["ts", "-S"] for call in mock_sub.call_args_list)
+    assert not any(
+        call.args and call.args[0][:2] == ["ts", "-S"] for call in mock_sub.call_args_list
+    )
 
 
 def test_submits_correct_number_of_jobs(tmp_path):
     cfg_path = make_project(tmp_path)
-    with patch("builtins.input", return_value="yes"), \
-         patch("subprocess.run", return_value=MagicMock(returncode=0, stdout="1\n")), \
-         patch("fluka.grid.backends.queue_adapter.submit_run", return_value="job") as m:
+    with (
+        patch("builtins.input", return_value="yes"),
+        patch("subprocess.run", return_value=MagicMock(returncode=0, stdout="1\n")),
+        patch("fluka.grid.backends.queue_adapter.submit_run", return_value="job") as m,
+    ):
         run_main([str(cfg_path)])
     # 2 combos × 2 runs = 4 submissions
     assert m.call_count == 4
@@ -60,13 +69,13 @@ def test_submits_correct_number_of_jobs(tmp_path):
 
 def test_ts_slots_set_before_submit(tmp_path):
     cfg_path = make_project(tmp_path, backend="ts")
-    with patch("builtins.input", return_value="yes"), \
-         patch("subprocess.run", return_value=MagicMock(returncode=0, stdout="")) as mock_sub, \
-         patch("fluka.grid.backends.queue_adapter.submit_run", return_value="job"):
+    with (
+        patch("builtins.input", return_value="yes"),
+        patch("subprocess.run", return_value=MagicMock(returncode=0, stdout="")) as mock_sub,
+        patch("fluka.grid.backends.queue_adapter.submit_run", return_value="job"),
+    ):
         run_main([str(cfg_path)])
-    assert any(
-        call.args and call.args[0][:2] == ["ts", "-S"] for call in mock_sub.call_args_list
-    )
+    assert any(call.args and call.args[0][:2] == ["ts", "-S"] for call in mock_sub.call_args_list)
 
 
 def test_reset_deletes_output_dir(tmp_path, monkeypatch):
@@ -77,12 +86,14 @@ def test_reset_deletes_output_dir(tmp_path, monkeypatch):
     marker.write_text("stale")
 
     monkeypatch.setattr("builtins.input", lambda _: "yes")
-    with patch("subprocess.run", return_value=MagicMock(returncode=0, stdout="")), \
-         patch("fluka.grid.backends.queue_adapter.submit_run", return_value="job"):
+    with (
+        patch("subprocess.run", return_value=MagicMock(returncode=0, stdout="")),
+        patch("fluka.grid.backends.queue_adapter.submit_run", return_value="job"),
+    ):
         run_main([str(cfg_path), "--reset"])
 
-    assert not marker.exists()      # output dir was wiped
-    assert results.exists()         # and recreated for fresh submission
+    assert not marker.exists()  # output dir was wiped
+    assert results.exists()  # and recreated for fresh submission
 
 
 def test_reset_aborts_on_no(tmp_path, monkeypatch, capsys):
@@ -110,9 +121,9 @@ def test_check_seeds_reports_duplicates(tmp_path, monkeypatch, capsys):
     cfg_file = tmp_path / "config.yaml"
     cfg_file.write_text(
         "general:\n  input: sim.inp\n  rfluka_path: /fake/bin\n"
-        "  output: %s\n"
+        f"  output: {out}\n"
         "submit:\n  max_parallel: 4\n"
-        "grid:\n  parameters:\n    beame: [0.1]\n  runs_per_combo: 1\n" % out
+        "grid:\n  parameters:\n    beame: [0.1]\n  runs_per_combo: 1\n"
     )
     (tmp_path / "sim.inp").write_text("#define beame 0.1\nRANDOMIZ 1. 1.\nSTART 1000.\nSTOP\n")
 
@@ -124,6 +135,7 @@ def test_check_seeds_reports_duplicates(tmp_path, monkeypatch, capsys):
 
 
 # --- _submit_combo unit tests --------------------------------------------------
+
 
 def _make_cfg(tmp_path, backend="slurm", runs_per_combo=2):
     template = tmp_path / "sim.inp"

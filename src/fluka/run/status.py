@@ -1,5 +1,8 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
+
+from fluka.run.manifest import Job
 
 PENDING = "PENDING"
 RUNNING = "RUNNING"
@@ -13,7 +16,7 @@ _ORDER = [RUNNING, PENDING, UNKNOWN, FAIL, DONE]
 
 @dataclass
 class JobStatus:
-    job: "object"
+    job: Job
     state: str
     detail: str
 

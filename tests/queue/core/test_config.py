@@ -1,5 +1,6 @@
 import pytest
 import yaml
+
 from fluka.run.simconfig import resolve
 
 
@@ -44,8 +45,9 @@ def _write_sim(tmp_path, **overrides):
 
 
 def test_load_ts_minimal(tmp_path):
-    from fluka.queue.core.config import load_yaml_config
     from fluka.queue.backends.ts import TSBackend
+    from fluka.queue.core.config import load_yaml_config
+
     backends = {"ts": TSBackend()}
     path = make_yaml(tmp_path, {"backend": "ts", "input": "sim.inp", "njobs": 5})
     args = load_yaml_config(path, backends)
@@ -58,8 +60,9 @@ def test_load_ts_minimal(tmp_path):
 
 
 def test_load_lsf_uses_backend_defaults(tmp_path):
-    from fluka.queue.core.config import load_yaml_config
     from fluka.queue.backends.lsf import LSFBackend
+    from fluka.queue.core.config import load_yaml_config
+
     backends = {"lsf": LSFBackend()}
     path = make_yaml(tmp_path, {"backend": "lsf", "input": "sim.inp", "njobs": 1})
     args = load_yaml_config(path, backends)
@@ -70,13 +73,22 @@ def test_load_lsf_uses_backend_defaults(tmp_path):
 
 
 def test_load_lsf_overrides_defaults(tmp_path):
-    from fluka.queue.core.config import load_yaml_config
     from fluka.queue.backends.lsf import LSFBackend
+    from fluka.queue.core.config import load_yaml_config
+
     backends = {"lsf": LSFBackend()}
-    path = make_yaml(tmp_path, {
-        "backend": "lsf", "input": "sim.inp", "njobs": 10,
-        "queue": "priority", "mem": "3000", "ntasks": 4, "time": "2-00:00:00",
-    })
+    path = make_yaml(
+        tmp_path,
+        {
+            "backend": "lsf",
+            "input": "sim.inp",
+            "njobs": 10,
+            "queue": "priority",
+            "mem": "3000",
+            "ntasks": 4,
+            "time": "2-00:00:00",
+        },
+    )
     args = load_yaml_config(path, backends)
     assert args.queue == "priority"
     assert args.mem == "3000"
@@ -85,8 +97,9 @@ def test_load_lsf_overrides_defaults(tmp_path):
 
 
 def test_load_slurm_defaults(tmp_path):
-    from fluka.queue.core.config import load_yaml_config
     from fluka.queue.backends.slurm import SlurmBackend
+    from fluka.queue.core.config import load_yaml_config
+
     backends = {"slurm": SlurmBackend()}
     path = make_yaml(tmp_path, {"backend": "slurm", "input": "sim.inp", "njobs": 1})
     args = load_yaml_config(path, backends)
@@ -96,8 +109,9 @@ def test_load_slurm_defaults(tmp_path):
 
 
 def test_dry_run_parsed(tmp_path):
-    from fluka.queue.core.config import load_yaml_config
     from fluka.queue.backends.ts import TSBackend
+    from fluka.queue.core.config import load_yaml_config
+
     backends = {"ts": TSBackend()}
     path = make_yaml(tmp_path, {"backend": "ts", "input": "sim.inp", "njobs": 1, "dry_run": True})
     args = load_yaml_config(path, backends)
@@ -105,19 +119,21 @@ def test_dry_run_parsed(tmp_path):
 
 
 def test_custom_exe_parsed(tmp_path):
-    from fluka.queue.core.config import load_yaml_config
     from fluka.queue.backends.ts import TSBackend
+    from fluka.queue.core.config import load_yaml_config
+
     backends = {"ts": TSBackend()}
-    path = make_yaml(tmp_path, {
-        "backend": "ts", "input": "sim.inp", "njobs": 1, "custom_exe": "/path/to/exe"
-    })
+    path = make_yaml(
+        tmp_path, {"backend": "ts", "input": "sim.inp", "njobs": 1, "custom_exe": "/path/to/exe"}
+    )
     args = load_yaml_config(path, backends)
     assert args.custom_exe == "/path/to/exe"
 
 
 def test_missing_backend_raises(tmp_path):
-    from fluka.queue.core.config import load_yaml_config
     from fluka.queue.backends.ts import TSBackend
+    from fluka.queue.core.config import load_yaml_config
+
     backends = {"ts": TSBackend()}
     path = make_yaml(tmp_path, {"input": "sim.inp", "njobs": 1})
     with pytest.raises(ValueError, match="backend"):
@@ -125,8 +141,9 @@ def test_missing_backend_raises(tmp_path):
 
 
 def test_unknown_backend_raises(tmp_path):
-    from fluka.queue.core.config import load_yaml_config
     from fluka.queue.backends.ts import TSBackend
+    from fluka.queue.core.config import load_yaml_config
+
     backends = {"ts": TSBackend()}
     path = make_yaml(tmp_path, {"backend": "unknown", "input": "sim.inp", "njobs": 1})
     with pytest.raises(ValueError, match="unknown"):
@@ -134,8 +151,9 @@ def test_unknown_backend_raises(tmp_path):
 
 
 def test_missing_input_raises(tmp_path):
-    from fluka.queue.core.config import load_yaml_config
     from fluka.queue.backends.ts import TSBackend
+    from fluka.queue.core.config import load_yaml_config
+
     backends = {"ts": TSBackend()}
     path = make_yaml(tmp_path, {"backend": "ts", "njobs": 1})
     with pytest.raises(ValueError, match="input"):
@@ -143,8 +161,9 @@ def test_missing_input_raises(tmp_path):
 
 
 def test_missing_njobs_raises(tmp_path):
-    from fluka.queue.core.config import load_yaml_config
     from fluka.queue.backends.ts import TSBackend
+    from fluka.queue.core.config import load_yaml_config
+
     backends = {"ts": TSBackend()}
     path = make_yaml(tmp_path, {"backend": "ts", "input": "sim.inp"})
     with pytest.raises(ValueError, match="njobs"):
@@ -152,8 +171,9 @@ def test_missing_njobs_raises(tmp_path):
 
 
 def test_load_htcondor_defaults(tmp_path):
-    from fluka.queue.core.config import load_yaml_config
     from fluka.queue.backends.htcondor import HTCondorBackend
+    from fluka.queue.core.config import load_yaml_config
+
     backends = {"condor": HTCondorBackend()}
     path = make_yaml(tmp_path, {"backend": "condor", "input": "sim.inp", "njobs": 1})
     args = load_yaml_config(path, backends)
@@ -168,8 +188,9 @@ def test_load_htcondor_defaults(tmp_path):
 
 
 def test_njobs_zero_raises(tmp_path):
-    from fluka.queue.core.config import load_yaml_config
     from fluka.queue.backends.ts import TSBackend
+    from fluka.queue.core.config import load_yaml_config
+
     backends = {"ts": TSBackend()}
     path = make_yaml(tmp_path, {"backend": "ts", "input": "sim.inp", "njobs": 0})
     with pytest.raises(ValueError, match="njobs"):
@@ -177,8 +198,9 @@ def test_njobs_zero_raises(tmp_path):
 
 
 def test_input_wrong_extension_raises(tmp_path):
-    from fluka.queue.core.config import load_yaml_config
     from fluka.queue.backends.ts import TSBackend
+    from fluka.queue.core.config import load_yaml_config
+
     backends = {"ts": TSBackend()}
     path = make_yaml(tmp_path, {"backend": "ts", "input": "sim.txt", "njobs": 1})
     with pytest.raises(ValueError, match=r"\.inp"):
@@ -189,9 +211,11 @@ def test_input_wrong_extension_raises(tmp_path):
 # build_submit_args: v2 merged view (general + submit) -> SubmissionConfig
 # ---------------------------------------------------------------------------
 
+
 def test_build_submit_args_from_v2_view(tmp_path):
-    from fluka.queue.core.config import SubmissionConfig, build_submit_args
     from fluka.queue.backends.ts import TSBackend
+    from fluka.queue.core.config import SubmissionConfig, build_submit_args
+
     backends = {"ts": TSBackend()}
     p = _write_sim(tmp_path)
     view = resolve(p, "submit")
@@ -210,8 +234,9 @@ def test_build_submit_args_from_v2_view(tmp_path):
 
 
 def test_build_submit_args_backend_resource_fields(tmp_path):
-    from fluka.queue.core.config import build_submit_args
     from fluka.queue.backends.slurm import SlurmBackend
+    from fluka.queue.core.config import build_submit_args
+
     backends = {"slurm": SlurmBackend()}
     p = _write_sim(tmp_path, general={"backend": "slurm"}, submit={"queue": "production"})
     view = resolve(p, "submit")
@@ -229,8 +254,9 @@ def test_build_submit_args_backend_resource_fields(tmp_path):
 
 
 def test_build_submit_args_njobs_from_submit_section(tmp_path):
-    from fluka.queue.core.config import build_submit_args
     from fluka.queue.backends.ts import TSBackend
+    from fluka.queue.core.config import build_submit_args
+
     backends = {"ts": TSBackend()}
     p = _write_sim(tmp_path, submit={"njobs": 7})
     view = resolve(p, "submit")
@@ -240,8 +266,9 @@ def test_build_submit_args_njobs_from_submit_section(tmp_path):
 
 
 def test_build_submit_args_missing_backend_raises(tmp_path):
-    from fluka.queue.core.config import build_submit_args
     from fluka.queue.backends.ts import TSBackend
+    from fluka.queue.core.config import build_submit_args
+
     backends = {"ts": TSBackend()}
     p = _write_sim(tmp_path)
     raw = yaml.safe_load(p.read_text())
@@ -253,8 +280,9 @@ def test_build_submit_args_missing_backend_raises(tmp_path):
 
 
 def test_build_submit_args_missing_njobs_raises(tmp_path):
-    from fluka.queue.core.config import build_submit_args
     from fluka.queue.backends.ts import TSBackend
+    from fluka.queue.core.config import build_submit_args
+
     backends = {"ts": TSBackend()}
     p = _write_sim(tmp_path)
     raw = yaml.safe_load(p.read_text())
@@ -266,8 +294,9 @@ def test_build_submit_args_missing_njobs_raises(tmp_path):
 
 
 def test_build_submit_args_input_wrong_extension_raises(tmp_path):
-    from fluka.queue.core.config import build_submit_args
     from fluka.queue.backends.ts import TSBackend
+    from fluka.queue.core.config import build_submit_args
+
     backends = {"ts": TSBackend()}
     p = _write_sim(tmp_path, general={"input": "example.txt"})
     view = resolve(p, "submit")
@@ -276,8 +305,9 @@ def test_build_submit_args_input_wrong_extension_raises(tmp_path):
 
 
 def test_build_submit_args_use_dpm_and_custom_exe_raises(tmp_path):
-    from fluka.queue.core.config import build_submit_args
     from fluka.queue.backends.ts import TSBackend
+    from fluka.queue.core.config import build_submit_args
+
     backends = {"ts": TSBackend()}
     p = _write_sim(tmp_path, general={"use_dpm": True, "custom_executable": "/custom/fluka"})
     view = resolve(p, "submit")
@@ -289,8 +319,9 @@ def test_build_submit_args_condor_output_not_clobbered(tmp_path):
     """general.output (the results dir) must not overwrite HTCondor's own
     --output arg (the job stdout filename pattern) -- both happen to be
     called 'output' but mean different things."""
-    from fluka.queue.core.config import build_submit_args
     from fluka.queue.backends.htcondor import HTCondorBackend
+    from fluka.queue.core.config import build_submit_args
+
     backends = {"condor": HTCondorBackend()}
     p = _write_sim(tmp_path, general={"backend": "condor"})
     view = resolve(p, "submit")
@@ -311,13 +342,16 @@ def test_legacy_and_merged_view_build_equivalent_typed_configs(tmp_path):
 
     backends = new_backends()
     input_path = str(tmp_path / "sim.inp")
-    legacy_path = make_yaml(tmp_path, {
-        "backend": "slurm",
-        "input": input_path,
-        "njobs": 3,
-        "mem": "2400",
-        "time": "2-00:00:00",
-    })
+    legacy_path = make_yaml(
+        tmp_path,
+        {
+            "backend": "slurm",
+            "input": input_path,
+            "njobs": 3,
+            "mem": "2400",
+            "time": "2-00:00:00",
+        },
+    )
     legacy = load_submission_config(legacy_path, backends)
 
     sim_path = _write_sim(

@@ -3,14 +3,17 @@ import sys
 from io import StringIO
 from pathlib import Path
 
-import pytest
-
-from fluka.queue.collect_results import scan_all, execute_plan, display_plan, MovePlan, FileMove, EmptyJob
+from fluka.queue.collect_results import (
+    display_plan,
+    execute_plan,
+    scan_all,
+)
 
 SCRIPT = Path(__file__).resolve().parent.parent / "collect_results.py"
 
 
 # ── helpers ────────────────────────────────────────────────────────────────────
+
 
 def make_tree(tmp_path, structure):
     """Build a directory tree from a dict.
@@ -31,32 +34,37 @@ def make_tree(tmp_path, structure):
 
 # ── scan_all ───────────────────────────────────────────────────────────────────
 
+
 def test_scan_finds_root_files_in_all_subdirs(tmp_path):
-    make_tree(tmp_path, {
-        "SimLead": {"job_0001": ["lead.root"]},
-        "SimMercury": {"job_0001": ["mercury.root"]},
-    })
+    make_tree(
+        tmp_path,
+        {
+            "SimLead": {"job_0001": ["lead.root"]},
+            "SimMercury": {"job_0001": ["mercury.root"]},
+        },
+    )
     plan = scan_all(tmp_path)
     sources = {m.source.name for m in plan.moves}
     assert sources == {"lead.root", "mercury.root"}
 
 
 def test_scan_ignores_non_job_dirs(tmp_path):
-    make_tree(tmp_path, {
-        "SimLead": {
-            "job_0001": ["a.root"],
-            "configs": ["config.yaml"],
-        }
-    })
+    make_tree(
+        tmp_path,
+        {
+            "SimLead": {
+                "job_0001": ["a.root"],
+                "configs": ["config.yaml"],
+            }
+        },
+    )
     plan = scan_all(tmp_path)
     assert len(plan.moves) == 1
     assert plan.moves[0].source.name == "a.root"
 
 
 def test_scan_ignores_non_root_files(tmp_path):
-    make_tree(tmp_path, {
-        "SimLead": {"job_0001": ["a.root", "b.inp", "c.sh"]}
-    })
+    make_tree(tmp_path, {"SimLead": {"job_0001": ["a.root", "b.inp", "c.sh"]}})
     plan = scan_all(tmp_path)
     assert len(plan.moves) == 1
     assert plan.moves[0].source.name == "a.root"
@@ -100,22 +108,28 @@ def test_scan_proceeds_if_root_files_dir_is_empty(tmp_path):
 
 
 def test_scan_records_empty_job_dirs(tmp_path):
-    make_tree(tmp_path, {
-        "SimLead": {
-            "job_0001": [],
-            "job_0002": ["a.root"],
-        }
-    })
+    make_tree(
+        tmp_path,
+        {
+            "SimLead": {
+                "job_0001": [],
+                "job_0002": ["a.root"],
+            }
+        },
+    )
     plan = scan_all(tmp_path)
     assert len(plan.empty_jobs) == 1
     assert plan.empty_jobs[0].job_dir.name == "job_0001"
 
 
 def test_scan_moves_sorted_by_parent_then_job(tmp_path):
-    make_tree(tmp_path, {
-        "SimB": {"job_0002": ["b.root"], "job_0001": ["a.root"]},
-        "SimA": {"job_0001": ["c.root"]},
-    })
+    make_tree(
+        tmp_path,
+        {
+            "SimB": {"job_0002": ["b.root"], "job_0001": ["a.root"]},
+            "SimA": {"job_0001": ["c.root"]},
+        },
+    )
     plan = scan_all(tmp_path)
     parents = [m.parent_dir.name for m in plan.moves]
     assert parents[0] == "SimA"
@@ -133,12 +147,15 @@ def test_scan_empty_cwd_returns_empty_plan(tmp_path):
 
 
 def test_duplicate_destination_aborts_parent_without_moving(tmp_path):
-    make_tree(tmp_path, {
-        "SimLead": {
-            "job_0001": ["dump.root"],
-            "job_0002": ["dump.root"],
-        }
-    })
+    make_tree(
+        tmp_path,
+        {
+            "SimLead": {
+                "job_0001": ["dump.root"],
+                "job_0002": ["dump.root"],
+            }
+        },
+    )
     plan = scan_all(tmp_path)
 
     assert [c.dest.name for c in plan.collisions] == ["dump.root"]
@@ -170,6 +187,7 @@ def test_scan_cwd_with_no_job_dirs_returns_empty_plan(tmp_path):
 
 
 # ── execute_plan ───────────────────────────────────────────────────────────────
+
 
 def test_execute_moves_root_files(tmp_path):
     make_tree(tmp_path, {"SimLead": {"job_0001": ["a.root", "b.root"]}})
@@ -217,10 +235,13 @@ def test_execute_skips_empty_jobs(tmp_path):
 
 
 def test_execute_multiple_parents(tmp_path):
-    make_tree(tmp_path, {
-        "SimA": {"job_0001": ["a.root"]},
-        "SimB": {"job_0001": ["b.root"]},
-    })
+    make_tree(
+        tmp_path,
+        {
+            "SimA": {"job_0001": ["a.root"]},
+            "SimB": {"job_0001": ["b.root"]},
+        },
+    )
     plan = scan_all(tmp_path)
     execute_plan(plan)
     assert (tmp_path / "SimA" / "root_files" / "a.root").exists()
@@ -229,8 +250,10 @@ def test_execute_multiple_parents(tmp_path):
 
 # ── display_plan ───────────────────────────────────────────────────────────────
 
+
 def test_display_plan_runs_without_error(tmp_path):
     from rich.console import Console
+
     make_tree(tmp_path, {"SimLead": {"job_0001": ["a.root"]}})
     plan = scan_all(tmp_path)
     console = Console(file=StringIO(), highlight=False)
@@ -239,6 +262,7 @@ def test_display_plan_runs_without_error(tmp_path):
 
 def test_display_plan_shows_empty_job_warning(tmp_path):
     from rich.console import Console
+
     make_tree(tmp_path, {"SimLead": {"job_0001": []}})
     plan = scan_all(tmp_path)
     buf = StringIO()
@@ -249,6 +273,7 @@ def test_display_plan_shows_empty_job_warning(tmp_path):
 
 def test_display_plan_shows_existing_destination_collision(tmp_path):
     from rich.console import Console
+
     make_tree(tmp_path, {"SimLead": {"job_0001": ["a.root"]}})
     root_files_dir = tmp_path / "SimLead" / "root_files"
     root_files_dir.mkdir()
@@ -264,6 +289,7 @@ def test_display_plan_shows_existing_destination_collision(tmp_path):
 
 
 # ── integration (subprocess) ───────────────────────────────────────────────────
+
 
 def test_main_executes_on_y(tmp_path):
     make_tree(tmp_path, {"SimLead": {"job_0001": ["a.root"]}})
@@ -318,10 +344,13 @@ def test_main_exits_1_when_no_job_dirs_found(tmp_path):
 
 
 def test_main_processes_multiple_parents(tmp_path):
-    make_tree(tmp_path, {
-        "SimLead": {"job_0001": ["lead.root"]},
-        "SimMercury": {"job_0001": ["mercury.root"]},
-    })
+    make_tree(
+        tmp_path,
+        {
+            "SimLead": {"job_0001": ["lead.root"]},
+            "SimMercury": {"job_0001": ["mercury.root"]},
+        },
+    )
     result = subprocess.run(
         [sys.executable, "-m", "fluka.queue.collect_results"],
         cwd=tmp_path,

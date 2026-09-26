@@ -31,41 +31,79 @@ exit "$$rc"
 
 
 class HTCondorBackend(QueueBackend):
-
     def add_args(self, parser: ArgumentParser) -> None:
-        parser.add_argument("-q", "--queue", type=str, default="vanilla",
-                            help="Universe HTCondor (default: vanilla)")
-        parser.add_argument("-m", "--mem", type=str, default="1500",
-                            help="Memoria richiesta in MB (request_memory, default: 1500)")
-        parser.add_argument("-t", "--ncpu", type=int, default=1,
-                            help="Numero di CPU richieste (request_cpus, default: 1)")
-        parser.add_argument("-o", "--disk", type=int, default=100000,
-                            help="Spazio disco richiesto in kB (request_disk, default: 100000)")
-        parser.add_argument("-T", "--time", type=int, default=86400,
-                            help="Tempo massimo di esecuzione in secondi (+MaxRuntime), "
-                                 "max 345600 (4 giorni), default: 86400 (1 giorno)")
-        parser.add_argument("--transfer-files", dest="transfer_files", type=str, default="yes",
-                            help="Trasferisce i file di input al nodo worker "
-                                 "(should_transfer_files: yes/no, default: yes)")
-        parser.add_argument("--output", dest="stdout", type=str,
-                            default="job_$(Cluster)_$(Process).out",
-                            help="Pattern per il file di stdout del job "
-                                 "(default: job_$(Cluster)_$(Process).out)")
-        parser.add_argument("--error", dest="stderr", type=str,
-                            default="job_$(Cluster)_$(Process).err",
-                            help="Pattern per il file di stderr del job "
-                                 "(default: job_$(Cluster)_$(Process).err)")
-        parser.add_argument("--log",    type=str, default="job_$(Cluster)_$(Process).log",
-                            help="Pattern per il file di log HTCondor "
-                                 "(default: job_$(Cluster)_$(Process).log)")
+        parser.add_argument(
+            "-q",
+            "--queue",
+            type=str,
+            default="vanilla",
+            help="Universe HTCondor (default: vanilla)",
+        )
+        parser.add_argument(
+            "-m",
+            "--mem",
+            type=str,
+            default="1500",
+            help="Memoria richiesta in MB (request_memory, default: 1500)",
+        )
+        parser.add_argument(
+            "-t",
+            "--ncpu",
+            type=int,
+            default=1,
+            help="Numero di CPU richieste (request_cpus, default: 1)",
+        )
+        parser.add_argument(
+            "-o",
+            "--disk",
+            type=int,
+            default=100000,
+            help="Spazio disco richiesto in kB (request_disk, default: 100000)",
+        )
+        parser.add_argument(
+            "-T",
+            "--time",
+            type=int,
+            default=86400,
+            help="Tempo massimo di esecuzione in secondi (+MaxRuntime), "
+            "max 345600 (4 giorni), default: 86400 (1 giorno)",
+        )
+        parser.add_argument(
+            "--transfer-files",
+            dest="transfer_files",
+            type=str,
+            default="yes",
+            help="Trasferisce i file di input al nodo worker "
+            "(should_transfer_files: yes/no, default: yes)",
+        )
+        parser.add_argument(
+            "--output",
+            dest="stdout",
+            type=str,
+            default="job_$(Cluster)_$(Process).out",
+            help="Pattern per il file di stdout del job (default: job_$(Cluster)_$(Process).out)",
+        )
+        parser.add_argument(
+            "--error",
+            dest="stderr",
+            type=str,
+            default="job_$(Cluster)_$(Process).err",
+            help="Pattern per il file di stderr del job (default: job_$(Cluster)_$(Process).err)",
+        )
+        parser.add_argument(
+            "--log",
+            type=str,
+            default="job_$(Cluster)_$(Process).log",
+            help="Pattern per il file di log HTCondor (default: job_$(Cluster)_$(Process).log)",
+        )
 
     def validate(self, args: "SubmissionConfig") -> None:
+        if not isinstance(args.time, int):
+            raise ValueError("Il time limit HTCondor deve essere espresso in secondi")
         if args.time > _MAX_TIME:
             raise ValueError(f"Il time limit non puo' superare {_MAX_TIME} secondi")
 
-    def generate_script(
-        self, job_info: JobInfo, job_dir: str, args: "SubmissionConfig"
-    ) -> str:
+    def generate_script(self, job_info: JobInfo, job_dir: str, args: "SubmissionConfig") -> str:
         fluka_cmd = f"{job_info.fluka_path}/rfluka -M 1"
         if job_info.use_dpm:
             fluka_cmd += " -d"
@@ -82,9 +120,7 @@ class HTCondorBackend(QueueBackend):
         os.chmod(script_path, 0o755)
         return script_path
 
-    def submit(
-        self, script_path: str | None, job_info: JobInfo, args: "SubmissionConfig"
-    ) -> str:
+    def submit(self, script_path: str | None, job_info: JobInfo, args: "SubmissionConfig") -> str:
         submit_desc = {
             "universe": args.queue,
             "executable": script_path,
@@ -115,32 +151,41 @@ class HTCondorBackend(QueueBackend):
     ) -> list[list[str]]:
         C = COLORS
         return [
-            ["-q",               f"{C['M']}Universe{C['RE']}",       f"{C['M']}{args.queue}{C['RE']}"],
-            ["-m",               f"{C['C']}Memoria (MB){C['RE']}",   f"{C['C']}{args.mem}{C['RE']}"],
-            ["-t",               f"{C['C']}CPU{C['RE']}",            f"{C['C']}{args.ncpu}{C['RE']}"],
-            ["-o",               f"{C['C']}Disco (kB){C['RE']}",     f"{C['C']}{args.disk}{C['RE']}"],
-            ["-T",               f"{C['C']}Time limit (s){C['RE']}", f"{C['C']}{args.time}{C['RE']}"],
-            [" ",                f"{C['B']}FLUKA bin{C['RE']}",      f"{C['B']}{fluka_path}{C['RE']}"],
-            [" ",                f"{C['B']}FLUKA folder{C['RE']}",   f"{C['B']}{fluka_folder}{C['RE']}"],
-            ["--transfer-files", f"{C['Y']}Transfer files{C['RE']}", f"{C['Y']}{args.transfer_files}{C['RE']}"],
-            ["--output",         f"{C['Y']}Output file{C['RE']}",    f"{C['Y']}{args.stdout}{C['RE']}"],
-            ["--error",          f"{C['Y']}Error file{C['RE']}",     f"{C['Y']}{args.stderr}{C['RE']}"],
-            ["--log",            f"{C['Y']}Log file{C['RE']}",       f"{C['Y']}{args.log}{C['RE']}"],
+            ["-q", f"{C['M']}Universe{C['RE']}", f"{C['M']}{args.queue}{C['RE']}"],
+            ["-m", f"{C['C']}Memoria (MB){C['RE']}", f"{C['C']}{args.mem}{C['RE']}"],
+            ["-t", f"{C['C']}CPU{C['RE']}", f"{C['C']}{args.ncpu}{C['RE']}"],
+            ["-o", f"{C['C']}Disco (kB){C['RE']}", f"{C['C']}{args.disk}{C['RE']}"],
+            ["-T", f"{C['C']}Time limit (s){C['RE']}", f"{C['C']}{args.time}{C['RE']}"],
+            [" ", f"{C['B']}FLUKA bin{C['RE']}", f"{C['B']}{fluka_path}{C['RE']}"],
+            [" ", f"{C['B']}FLUKA folder{C['RE']}", f"{C['B']}{fluka_folder}{C['RE']}"],
+            [
+                "--transfer-files",
+                f"{C['Y']}Transfer files{C['RE']}",
+                f"{C['Y']}{args.transfer_files}{C['RE']}",
+            ],
+            ["--output", f"{C['Y']}Output file{C['RE']}", f"{C['Y']}{args.stdout}{C['RE']}"],
+            ["--error", f"{C['Y']}Error file{C['RE']}", f"{C['Y']}{args.stderr}{C['RE']}"],
+            ["--log", f"{C['Y']}Log file{C['RE']}", f"{C['Y']}{args.log}{C['RE']}"],
         ]
 
     def set_priority_queue(self, args: "SubmissionConfig", queue_name: str) -> None:
         # HTCondor usa 'universe', non una partizione/coda nominata; l'override viene ignorato.
         import logging as _logging
-        _logging.warning("HTCondorBackend: benchmark_priority_queue ignorato (universe != coda nominata).")
+
+        _logging.warning(
+            "HTCondorBackend: benchmark_priority_queue ignorato (universe != coda nominata)."
+        )
 
     def _sentinel_path(self, job):
         return Path(job.run_dir) / ".fluka_status"
 
     def _queue_state(self, job):
-        from fluka.run.status import RUNNING, PENDING
+        from fluka.run.status import PENDING, RUNNING
+
         try:
-            r = subprocess.run(["condor_q", job.job_id, "-af", "JobStatus"],
-                               capture_output=True, text=True)
+            r = subprocess.run(
+                ["condor_q", job.job_id, "-af", "JobStatus"], capture_output=True, text=True
+            )
         except (FileNotFoundError, OSError):
             # condor_q not installed on this host; fall back to sentinel-based state.
             return None

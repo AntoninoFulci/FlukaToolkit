@@ -10,7 +10,6 @@ import zipfile
 from pathlib import Path
 from shutil import copytree, ignore_patterns
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 REQUIRED_COMPILER_ASSETS = (
     "Makefile",
@@ -104,6 +103,4 @@ def test_wheel_contains_compiler_assets_and_installed_package_finds_them(tmp_pat
         capture_output=True,
         text=True,
     )
-    assert json.loads(lookup.stdout) == {
-        asset: True for asset in REQUIRED_COMPILER_ASSETS
-    }
+    assert json.loads(lookup.stdout) == {asset: True for asset in REQUIRED_COMPILER_ASSETS}

@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from pathlib import Path
 
 from fluka.queue.core.fluka import allocate_seed, parse_randomiz

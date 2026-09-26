@@ -4,12 +4,12 @@ from tabulate import tabulate
 init(autoreset=True)
 
 COLORS = {
-    "G":  Fore.GREEN,
-    "R":  Fore.RED,
-    "Y":  Fore.YELLOW,
-    "B":  Fore.BLUE,
-    "M":  Fore.MAGENTA,
-    "C":  Fore.CYAN,
+    "G": Fore.GREEN,
+    "R": Fore.RED,
+    "Y": Fore.YELLOW,
+    "B": Fore.BLUE,
+    "M": Fore.MAGENTA,
+    "C": Fore.CYAN,
     "RE": Style.RESET_ALL,
 }
 

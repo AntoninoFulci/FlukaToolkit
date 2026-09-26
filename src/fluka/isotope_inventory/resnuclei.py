@@ -1,10 +1,10 @@
 from __future__ import annotations
+
 import struct
 from dataclasses import dataclass
-from typing import Optional
 
 
-def fortran_read(f) -> Optional[bytes]:
+def fortran_read(f) -> bytes | None:
     blen = f.read(4)
     if not blen:
         return None
@@ -12,7 +12,7 @@ def fortran_read(f) -> Optional[bytes]:
     data = f.read(size)
     blen2 = f.read(4)
     if blen != blen2:
-        raise IOError("Reading Fortran block")
+        raise OSError("Reading Fortran block")
     return data
 
 
@@ -24,12 +24,12 @@ def fortran_skip(f) -> int:
     f.seek(size, 1)
     blen2 = f.read(4)
     if blen != blen2:
-        raise IOError("Skipping Fortran block")
+        raise OSError("Skipping Fortran block")
     return size
 
 
 def unpack_array(data: bytes) -> tuple:
-    return struct.unpack("=%df" % (len(data) // 4), data)
+    return struct.unpack(f"={len(data) // 4}f", data)
 
 
 @dataclass
@@ -69,7 +69,7 @@ class Resnuclei:
     def _read_base_header(self) -> None:
         data = fortran_read(self._f)
         if data is None:
-            raise IOError("Invalid file")
+            raise OSError("Invalid file")
         size = len(data)
         over1b = 0
         if size == 116:
@@ -82,9 +82,11 @@ class Resnuclei:
         elif size == 124:
             (title, time, self.weight, self.ncase, self.nbatch) = struct.unpack("=80s32sfii", data)
         elif size == 128:
-            (title, time, self.weight, self.ncase, over1b, self.nbatch) = struct.unpack("=80s32sfiii", data)
+            (title, time, self.weight, self.ncase, over1b, self.nbatch) = struct.unpack(
+                "=80s32sfiii", data
+            )
         else:
-            raise IOError(f"Invalid USRxxx header size={size}")
+            raise OSError(f"Invalid USRxxx header size={size}")
         if over1b > 0:
             self.ncase = self.ncase + over1b * 1_000_000_000
         self.title = title.strip().decode(errors="replace")
@@ -99,9 +101,9 @@ class Resnuclei:
                 self.ncase = -self.ncase
                 data = fortran_read(self._f)
                 if data is None:
-                    raise IOError("Unexpected EOF reading evolution header")
+                    raise OSError("Unexpected EOF reading evolution header")
                 nir = (len(data) - 4) // 8
-                struct.unpack("=i%df" % (2 * nir), data)
+                struct.unpack(f"=i{2 * nir}f", data)
             else:
                 self.evol = False
 
@@ -116,13 +118,13 @@ class Resnuclei:
                         fortran_read(self._f)
                         data = fortran_read(self._f)
                         if data is None:
-                            raise IOError("Unexpected EOF reading ISOMERS header")
+                            raise OSError("Unexpected EOF reading ISOMERS header")
                         size = len(data)
                     if data[:10] == b"STATISTICS":
                         self.statpos = self._f.tell()
                         break
                 elif size != 38:
-                    raise IOError(f"Invalid RESNUCLEi header size={size}")
+                    raise OSError(f"Invalid RESNUCLEi header size={size}")
 
                 header = struct.unpack("=i10siif3i", data)
                 det = Detector(
@@ -143,11 +145,11 @@ class Resnuclei:
 
                 size = det.zhigh * det.mhigh * 4
                 if size != fortran_skip(self._f):
-                    raise IOError("Invalid RESNUCLEi file")
+                    raise OSError("Invalid RESNUCLEi file")
         finally:
             self._close()
 
-    def read_data(self, n: int) -> Optional[bytes]:
+    def read_data(self, n: int) -> bytes | None:
         self._open()
         try:
             fortran_skip(self._f)
@@ -169,7 +171,7 @@ class Resnuclei:
         finally:
             self._close()
 
-    def read_stat(self, n: int) -> Optional[tuple]:
+    def read_stat(self, n: int) -> tuple | None:
         if self.statpos < 0:
             return None
         self._open()

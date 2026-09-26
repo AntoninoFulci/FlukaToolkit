@@ -1,6 +1,8 @@
 import sys
-import pytest
 from unittest.mock import patch
+
+import pytest
+
 from fluka.isotope_inventory import run as run_analysis
 
 
@@ -9,7 +11,7 @@ def test_main_loads_config_and_runs(tmp_path):
     run_dir = output_dir / "c1" / "run_0001"
     run_dir.mkdir(parents=True)
     cfg = tmp_path / "sim.yaml"
-    cfg.write_text(f"""
+    cfg.write_text("""
 general:
   input: example.inp
   backend: ts

@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import argparse
 import json
 import sys
@@ -7,12 +8,12 @@ from pathlib import Path
 
 from tabulate import tabulate
 
-from fluka.run.simconfig import load_sim
 from fluka.queue.backends.registry import new_backends
-from fluka.run.manifest import load_manifest, manifest_path_for
 from fluka.run import status as S
-from fluka.run.status import resolve_all, all_terminal, summary_counts
+from fluka.run.manifest import load_manifest, manifest_path_for
 from fluka.run.orchestrator import analyze_phase
+from fluka.run.simconfig import load_sim
+from fluka.run.status import all_terminal, resolve_all, summary_counts
 
 
 def _output_dir(cfg_path) -> Path:
@@ -25,15 +26,16 @@ def build_status(cfg_path) -> list[S.JobStatus]:
     out_dir = _output_dir(cfg_path)
     jobs = load_manifest(manifest_path_for(out_dir))
     if not jobs:
-        print(f"no jobs recorded for {out_dir}; run fluka-grid / fluka-run submit first",
-              file=sys.stderr)
+        print(
+            f"no jobs recorded for {out_dir}; run fluka-grid / fluka-run submit first",
+            file=sys.stderr,
+        )
         raise SystemExit(1)
     return resolve_all(jobs, new_backends())
 
 
 def render_table(statuses) -> str:
-    rows = [[s.job.combo, s.job.run_name, s.job.backend, s.state, s.detail]
-            for s in statuses]
+    rows = [[s.job.combo, s.job.run_name, s.job.backend, s.state, s.detail] for s in statuses]
     table = tabulate(rows, headers=["combo", "run", "backend", "state", "detail"])
     counts = summary_counts(statuses)
     summary = "  ".join(f"{k}={v}" for k, v in counts.items() if v)
@@ -42,10 +44,20 @@ def render_table(statuses) -> str:
 
 def _emit(statuses, as_json: bool) -> None:
     if as_json:
-        print(json.dumps([
-            {"combo": s.job.combo, "run": s.job.run_name, "backend": s.job.backend,
-             "state": s.state, "detail": s.detail} for s in statuses
-        ]))
+        print(
+            json.dumps(
+                [
+                    {
+                        "combo": s.job.combo,
+                        "run": s.job.run_name,
+                        "backend": s.job.backend,
+                        "state": s.state,
+                        "detail": s.detail,
+                    }
+                    for s in statuses
+                ]
+            )
+        )
     else:
         print(render_table(statuses))
 
@@ -53,10 +65,18 @@ def _emit(statuses, as_json: bool) -> None:
 def main(argv=None) -> None:
     ap = argparse.ArgumentParser(description="Report FLUKA job status")
     ap.add_argument("config", type=Path, help="sim.yaml or grid config")
-    ap.add_argument("--watch", nargs="?", const=15, type=int, default=None,
-                    metavar="SEC", help="poll every SEC seconds until all jobs finish")
-    ap.add_argument("--collect", action="store_true",
-                    help="when all jobs are DONE, run collect+analyze")
+    ap.add_argument(
+        "--watch",
+        nargs="?",
+        const=15,
+        type=int,
+        default=None,
+        metavar="SEC",
+        help="poll every SEC seconds until all jobs finish",
+    )
+    ap.add_argument(
+        "--collect", action="store_true", help="when all jobs are DONE, run collect+analyze"
+    )
     ap.add_argument("--json", action="store_true", help="emit JSON instead of a table")
     args = ap.parse_args(argv)
 

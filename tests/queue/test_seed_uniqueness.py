@@ -1,6 +1,6 @@
+from fluka.queue import service
 from fluka.queue.core import fluka
 from fluka.queue.core.config import SubmissionConfig
-from fluka.queue import service
 
 
 def test_submit_jobs_allocates_unique_seeds(tmp_path, monkeypatch):
@@ -20,6 +20,7 @@ def test_submit_jobs_allocates_unique_seeds(tmp_path, monkeypatch):
     class StubBackend:
         def generate_script(self, job_info, job_dir, args):
             return None
+
         def submit(self, script_path, job_info, args):
             return "ok"
 
@@ -28,8 +29,12 @@ def test_submit_jobs_allocates_unique_seeds(tmp_path, monkeypatch):
     src = tmp_path / "sim.inp"
     src.write_text("RANDOMIZ          1.  1\n")
     args = SubmissionConfig(
-        backend="stub", input=str(src), njobs=2, custom_exe=None,
-        output_dir=str(tmp_path / "out"), nprim=None,
+        backend="stub",
+        input=str(src),
+        njobs=2,
+        custom_exe=None,
+        output_dir=str(tmp_path / "out"),
+        nprim=None,
     )
     service.submit_jobs(args, fluka_path="/fake/fluka", backends=backends)
 
