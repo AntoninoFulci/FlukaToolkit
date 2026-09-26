@@ -5,6 +5,7 @@ import pytest
 
 import fluka.run.orchestrator as O
 import fluka.run.orchestrator as orch
+from fluka.queue.service import SubmissionBatchError, SubmissionFailure, SubmissionSummary
 
 SIM_YAML = """
 general:
@@ -210,3 +211,26 @@ def test_main_does_not_hide_unexpected_launch_error(monkeypatch):
     monkeypatch.setattr("sys.argv", ["fluka-run", "cfg.yaml"])
     with pytest.raises(AssertionError, match="programming defect"):
         O.main()
+
+
+def test_main_configures_logging_and_reports_submission_batch(monkeypatch, caplog):
+    configured = []
+    summary = SubmissionSummary(
+        results=((1, "job 101"),),
+        failures=(SubmissionFailure(2, RuntimeError("queue down")),),
+    )
+    monkeypatch.setattr(O, "configure_logging", lambda: configured.append(True), raising=False)
+    monkeypatch.setattr(
+        O,
+        "launch",
+        lambda sim: (_ for _ in ()).throw(SubmissionBatchError(summary)),
+    )
+    monkeypatch.setattr("sys.argv", ["fluka-run", "sim.yaml"])
+
+    with caplog.at_level("INFO"), pytest.raises(SystemExit) as exc:
+        O.main()
+
+    assert exc.value.code == 1
+    assert configured == [True]
+    assert "Job 1: job 101" in caplog.text
+    assert "Job 2 fallito: queue down" in caplog.text

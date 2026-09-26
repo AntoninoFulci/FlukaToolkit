@@ -151,13 +151,20 @@ def _build_parser() -> ArgumentParser:
     return parser
 
 
-def _log_summary(summary: SubmissionSummary) -> None:
+def configure_logging() -> None:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+    )
+
+
+def log_summary(summary: SubmissionSummary) -> None:
     for iteration, result in summary.results:
         logging.info("Job %d: %s", iteration, result)
 
 
-def _log_submission_batch(error: SubmissionBatchError) -> None:
-    _log_summary(error.summary)
+def log_submission_batch(error: SubmissionBatchError) -> None:
+    log_summary(error.summary)
     for failure in error.failures:
         logging.error("Job %d fallito: %s", failure.iteration, failure.error)
 
@@ -195,7 +202,7 @@ def run_submission(args: SubmissionConfig) -> SubmissionSummary | None:
         return None
 
     summary = submit_jobs(args, fluka_path, BACKENDS)
-    _log_summary(summary)
+    log_summary(summary)
     return summary
 
 
@@ -242,9 +249,9 @@ def run_folder(folder: str) -> int:
         try:
             logging.info("Avvio: %s", os.path.basename(path))
             summary = submit_jobs(cfg, fluka_path, BACKENDS)
-            _log_summary(summary)
+            log_summary(summary)
         except SubmissionBatchError as e:
-            _log_submission_batch(e)
+            log_submission_batch(e)
             failures += 1
         except (OSError, ValueError, RuntimeError) as e:
             logging.error("Errore in %r: %s", path, e)
@@ -318,9 +325,9 @@ def run_benchmark(mode: str, target: str) -> int:
                     )
                     cfg.nprim = None
                 summary = submit_jobs(cfg, fluka_path, BACKENDS)
-                _log_summary(summary)
+                log_summary(summary)
             except SubmissionBatchError as e:
-                _log_submission_batch(e)
+                log_submission_batch(e)
                 failures += 1
             except (OSError, ValueError, RuntimeError) as e:
                 logging.error("Errore in %r: %s", path, e)
@@ -352,15 +359,12 @@ def run_benchmark(mode: str, target: str) -> int:
             return 0
         fluka_path, _ = fluka.detect_fluka_path()
         summary = submit_jobs(cfg, fluka_path, BACKENDS)
-        _log_summary(summary)
+        log_summary(summary)
         return 0
 
 
 def main() -> None:
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(levelname)s - %(message)s",
-    )
+    configure_logging()
     if len(sys.argv) > 1 and sys.argv[1] == "benchmark":
         if len(sys.argv) != 4:
             print("Utilizzo: launch_jobs.py benchmark <quick|extensive> <config.yaml|cartella/>")
@@ -373,7 +377,7 @@ def main() -> None:
         try:
             failures = run_benchmark(sys.argv[2], sys.argv[3])
         except SubmissionBatchError as e:
-            _log_submission_batch(e)
+            log_submission_batch(e)
             sys.exit(1)
         except (OSError, ValueError, RuntimeError) as e:
             logging.error(str(e))
@@ -392,7 +396,7 @@ def main() -> None:
             try:
                 run_submission(args)
             except SubmissionBatchError as e:
-                _log_submission_batch(e)
+                log_submission_batch(e)
                 sys.exit(1)
             except (OSError, ValueError, RuntimeError) as e:
                 logging.error(str(e))
@@ -412,7 +416,7 @@ def main() -> None:
     try:
         run_submission(SubmissionConfig.from_mapping(vars(namespace)))
     except SubmissionBatchError as e:
-        _log_submission_batch(e)
+        log_submission_batch(e)
         sys.exit(1)
     except (OSError, ValueError, RuntimeError) as e:
         logging.error(str(e))

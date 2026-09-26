@@ -5,6 +5,8 @@ import sys
 from pathlib import Path
 
 from fluka.cli.compile import compile_exe
+from fluka.queue.launch_jobs import configure_logging, log_submission_batch
+from fluka.queue.service import SubmissionBatchError
 from fluka.run.simconfig import load_sim, resolve
 
 
@@ -64,6 +66,7 @@ def analyze_phase(sim_path) -> None:
 
 
 def main() -> None:
+    configure_logging()
     # An optional positional (`sim`, nargs="?") combined with an `analyze`
     # subparser confuses argparse: the top-level `sim` positional and the
     # subparser's own `sim` positional fight over the same argv token and
@@ -79,6 +82,9 @@ def main() -> None:
         args = ap.parse_args(argv[1:])
         try:
             analyze_phase(args.sim)
+        except SubmissionBatchError as error:
+            log_submission_batch(error)
+            raise SystemExit(1) from error
         except (OSError, ValueError, RuntimeError) as error:
             print(error, file=sys.stderr)
             raise SystemExit(1) from error
@@ -89,6 +95,9 @@ def main() -> None:
     args = ap.parse_args(argv)
     try:
         launch(args.sim)
+    except SubmissionBatchError as error:
+        log_submission_batch(error)
+        raise SystemExit(1) from error
     except (OSError, ValueError, RuntimeError) as error:
         print(error, file=sys.stderr)
         raise SystemExit(1) from error

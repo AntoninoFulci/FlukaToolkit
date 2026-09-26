@@ -140,12 +140,15 @@ def submission_config_from_view(view: dict, backends: dict[str, QueueBackend]) -
     backend = backends[backend_name]
 
     defaults = _parser_defaults(backend)
+    normalized_view = dict(view)
+    if "error" in normalized_view and "stderr" not in normalized_view:
+        normalized_view["stderr"] = normalized_view["error"]
     # overlay backend arg defaults with any matching keys present in the view
     # (mem/time/ntasks/nodes/gres/ncpu/disk/queue/farm_out, ...), skipping the
     # general-mapped keys that are set explicitly below.
     for key in defaults:
-        if key in view and key not in _GENERAL_ONLY_KEYS:
-            defaults[key] = view[key]
+        if key in normalized_view and key not in _GENERAL_ONLY_KEYS:
+            defaults[key] = normalized_view[key]
 
     defaults["backend"] = backend_name
     defaults["input"] = view.get("input")

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Collect ROOT files from job subdirectories into root_files/."""
 
+import os
 import shutil
 import sys
 from dataclasses import dataclass, field
@@ -172,29 +173,46 @@ def execute_plan(plan: MovePlan) -> int:
             exit_code = 1
             continue
 
-        # track per-job success: only delete job dir if ALL its files moved
-        job_failed: set[Path] = set()
-        n_moved = 0
+        created_destinations: list[tuple[Path, tuple[int, int]]] = []
+        parent_failed = False
         for m in moves:
             try:
-                shutil.move(m.source, m.dest)
-                n_moved += 1
+                os.link(m.source, m.dest)
+                stat = m.dest.stat()
+                created_destinations.append((m.dest, (stat.st_dev, stat.st_ino)))
             except OSError as e:
                 print(f"ERROR: {parent_dir.name}/{m.source.name}: {e}", file=sys.stderr)
-                job_failed.add(m.job_dir)
+                parent_failed = True
                 exit_code = 1
+                break
+
+        if parent_failed:
+            for dest, identity in reversed(created_destinations):
+                try:
+                    stat = dest.stat()
+                    if (stat.st_dev, stat.st_ino) == identity:
+                        dest.unlink()
+                except OSError as e:
+                    print(
+                        f"ERROR: {parent_dir.name}/{dest.name}: cannot roll back: {e}",
+                        file=sys.stderr,
+                    )
+            print(f"{parent_dir.name}: moved 0 files, deleted 0 job dirs")
+            continue
 
         job_dirs_all = {m.job_dir for m in moves}
-        job_dirs_to_delete = job_dirs_all - job_failed
-        for job_dir in job_dirs_to_delete:
+        deleted_job_dirs = 0
+        for job_dir in job_dirs_all:
             try:
                 shutil.rmtree(job_dir)
+                deleted_job_dirs += 1
             except OSError as e:
                 print(f"ERROR: {parent_dir.name}/{job_dir.name}: {e}", file=sys.stderr)
                 exit_code = 1
 
         print(
-            f"{parent_dir.name}: moved {n_moved} files, deleted {len(job_dirs_to_delete)} job dirs"
+            f"{parent_dir.name}: moved {len(created_destinations)} files, "
+            f"deleted {deleted_job_dirs} job dirs"
         )
     return exit_code
 

@@ -369,3 +369,35 @@ def test_legacy_and_merged_view_build_equivalent_typed_configs(tmp_path):
     assert legacy.mem == merged.mem == "2400"
     assert legacy.time == merged.time == "2-00:00:00"
     assert legacy.dry_run is False and merged.dry_run is False
+
+
+def test_condor_error_alias_matches_direct_legacy_and_merged_config(tmp_path):
+    from fluka.queue.backends.registry import new_backends
+    from fluka.queue.core.config import (
+        SubmissionConfig,
+        load_submission_config,
+        submission_config_from_view,
+    )
+    from fluka.queue.launch_jobs import _build_parser
+
+    backends = new_backends()
+    direct = SubmissionConfig.from_mapping(
+        vars(
+            _build_parser().parse_args(
+                ["condor", "-f", "sim.inp", "-n", "1", "--error", "custom.err"]
+            )
+        )
+    )
+    legacy_path = make_yaml(
+        tmp_path,
+        {"backend": "condor", "input": "sim.inp", "njobs": 1, "error": "custom.err"},
+    )
+    legacy = load_submission_config(legacy_path, backends)
+    sim_path = _write_sim(
+        tmp_path,
+        general={"backend": "condor"},
+        submit={"njobs": 1, "error": "custom.err"},
+    )
+    merged = submission_config_from_view(resolve(sim_path, "submit"), backends)
+
+    assert direct.stderr == legacy.stderr == merged.stderr == "custom.err"

@@ -5,7 +5,13 @@ import sys
 from pathlib import Path
 
 from fluka.queue.core.config import build_submit_args
-from fluka.queue.launch_jobs import BACKENDS, run_submission
+from fluka.queue.launch_jobs import (
+    BACKENDS,
+    configure_logging,
+    log_submission_batch,
+    run_submission,
+)
+from fluka.queue.service import SubmissionBatchError
 from fluka.run.simconfig import resolve
 
 
@@ -30,6 +36,7 @@ def collect_sim(path) -> None:
 
 
 def main() -> None:
+    configure_logging()
     ap = argparse.ArgumentParser(description="FLUKA job submission")
     ap.add_argument("config", type=Path, help="submit config.yaml or sim.yaml")
     ap.add_argument("--grid", action="store_true", help="run grid generation before submitting")
@@ -41,6 +48,9 @@ def main() -> None:
             run_grid(args.config)
             return
         run_sim(args.config)
+    except SubmissionBatchError as error:
+        log_submission_batch(error)
+        raise SystemExit(1) from error
     except (OSError, ValueError, RuntimeError) as error:
         print(error, file=sys.stderr)
         raise SystemExit(1) from error

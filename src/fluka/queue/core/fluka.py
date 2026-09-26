@@ -1,9 +1,12 @@
-import logging
 import os
 import random
 import re
 import subprocess
 from pathlib import Path
+
+
+class FlukaNotFoundError(RuntimeError):
+    """Raised when the FLUKA installation cannot be resolved."""
 
 
 def parse_randomiz(inp_path: Path) -> int | None:
@@ -67,9 +70,10 @@ def detect_fluka_path() -> tuple[str, str]:
         bin_path = subprocess.check_output(["fluka-config", "--bin"]).decode().strip()
         folder_path = subprocess.check_output(["fluka-config", "--path"]).decode().strip()
         return bin_path, folder_path
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        logging.error("FLUKA non trovato. Assicurati che fluka-config sia nel PATH.")
-        raise SystemExit(1)
+    except (subprocess.CalledProcessError, OSError) as error:
+        raise FlukaNotFoundError(
+            "FLUKA non trovato. Assicurati che fluka-config sia nel PATH."
+        ) from error
 
 
 def generate_input(

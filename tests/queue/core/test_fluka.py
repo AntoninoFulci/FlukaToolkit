@@ -51,13 +51,13 @@ def test_detect_fluka_path_returns_paths():
     assert folder_path == "/usr/local/fluka"
 
 
-def test_detect_fluka_path_exits_if_not_found():
+def test_detect_fluka_path_raises_domain_error_if_not_found():
     import subprocess
 
     with patch(
         "subprocess.check_output", side_effect=subprocess.CalledProcessError(1, "fluka-config")
     ):
-        with pytest.raises(SystemExit):
+        with pytest.raises(RuntimeError, match="FLUKA non trovato"):
             detect_fluka_path()
 
 
@@ -107,9 +107,9 @@ def test_generate_input_nprim_none_leaves_start_unchanged(tmp_path):
     assert original_start in content
 
 
-def test_detect_fluka_path_exits_if_command_missing():
+def test_detect_fluka_path_raises_domain_error_if_command_missing():
     with patch("subprocess.check_output", side_effect=FileNotFoundError):
-        with pytest.raises(SystemExit):
+        with pytest.raises(RuntimeError, match="FLUKA non trovato"):
             detect_fluka_path()
 
 

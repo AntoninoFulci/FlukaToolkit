@@ -18,7 +18,7 @@ class PreparedJob:
 @dataclass(frozen=True, slots=True)
 class SubmissionFailure:
     iteration: int
-    error: RuntimeError
+    error: RuntimeError | OSError
 
 
 @dataclass(frozen=True, slots=True)
@@ -86,7 +86,7 @@ def submit_prepared(
         try:
             script_path = backend.generate_script(job.job_info, str(job.job_dir), config)
             result = backend.submit(script_path, job.job_info, config)
-        except RuntimeError as error:
+        except (OSError, RuntimeError) as error:
             failures.append(SubmissionFailure(job.iteration, error))
         else:
             results.append((job.iteration, result))

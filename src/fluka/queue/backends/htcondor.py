@@ -121,9 +121,15 @@ class HTCondorBackend(QueueBackend):
         return script_path
 
     def submit(self, script_path: str | None, job_info: JobInfo, args: "SubmissionConfig") -> str:
+        if script_path is None:
+            raise RuntimeError(
+                "HTCondorBackend requires a script file (script_path cannot be None)"
+            )
+        job_dir = str(Path(script_path).resolve().parent)
         submit_desc = {
             "universe": args.queue,
             "executable": script_path,
+            "initialdir": job_dir,
             "transfer_input_files": job_info.input_file,
             "should_transfer_files": args.transfer_files,
             "when_to_transfer_output": "ON_EXIT",

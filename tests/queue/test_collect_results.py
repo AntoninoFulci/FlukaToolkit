@@ -179,6 +179,18 @@ def test_existing_destination_is_never_overwritten(tmp_path):
     assert (tmp_path / "SimLead" / "job_0001" / "dump.root").exists()
 
 
+def test_destination_created_after_scan_is_never_overwritten(tmp_path):
+    make_tree(tmp_path, {"SimLead": {"job_0001": ["dump.root"]}})
+    plan = scan_all(tmp_path)
+    dest = tmp_path / "SimLead" / "root_files" / "dump.root"
+    dest.parent.mkdir()
+    dest.write_bytes(b"created-after-scan")
+
+    assert execute_plan(plan) == 1
+    assert dest.read_bytes() == b"created-after-scan"
+    assert (tmp_path / "SimLead" / "job_0001" / "dump.root").exists()
+
+
 def test_scan_cwd_with_no_job_dirs_returns_empty_plan(tmp_path):
     (tmp_path / "SimLead").mkdir()
     plan = scan_all(tmp_path)
@@ -246,6 +258,20 @@ def test_execute_multiple_parents(tmp_path):
     execute_plan(plan)
     assert (tmp_path / "SimA" / "root_files" / "a.root").exists()
     assert (tmp_path / "SimB" / "root_files" / "b.root").exists()
+
+
+def test_execute_move_failure_preserves_all_sibling_job_dirs(tmp_path):
+    make_tree(
+        tmp_path,
+        {"SimLead": {"job_0001": ["a.root"], "job_0002": ["b.root"]}},
+    )
+    plan = scan_all(tmp_path)
+    (tmp_path / "SimLead" / "job_0002" / "b.root").unlink()
+
+    assert execute_plan(plan) == 1
+    assert (tmp_path / "SimLead" / "job_0001" / "a.root").exists()
+    assert (tmp_path / "SimLead" / "job_0002").is_dir()
+    assert not (tmp_path / "SimLead" / "root_files" / "a.root").exists()
 
 
 # ── display_plan ───────────────────────────────────────────────────────────────

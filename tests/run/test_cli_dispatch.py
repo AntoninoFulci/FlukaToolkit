@@ -4,6 +4,11 @@ import pytest
 
 from fluka.cli import submit
 from fluka.cli._common import load_sim, resolve
+from fluka.queue.service import (
+    SubmissionBatchError,
+    SubmissionFailure,
+    SubmissionSummary,
+)
 
 
 def test_common_reexports_resolve_merges_general_into_tool(tmp_path):
@@ -51,3 +56,26 @@ def test_collect_sim_raises_on_nonzero_result(monkeypatch):
 
     with pytest.raises(submit.CollectionError, match="collection failed"):
         submit.collect_sim(Path("sim.yaml"))
+
+
+def test_submit_main_configures_logging_and_reports_batch_details(monkeypatch, caplog):
+    configured = []
+    summary = SubmissionSummary(
+        results=((1, "job 101"),),
+        failures=(SubmissionFailure(2, RuntimeError("queue down")),),
+    )
+    monkeypatch.setattr(submit, "configure_logging", lambda: configured.append(True), raising=False)
+    monkeypatch.setattr(
+        submit,
+        "run_sim",
+        lambda path: (_ for _ in ()).throw(SubmissionBatchError(summary)),
+    )
+    monkeypatch.setattr("sys.argv", ["fluka-submit", "sim.yaml"])
+
+    with caplog.at_level("INFO"), pytest.raises(SystemExit) as exc:
+        submit.main()
+
+    assert exc.value.code == 1
+    assert configured == [True]
+    assert "Job 1: job 101" in caplog.text
+    assert "Job 2 fallito: queue down" in caplog.text

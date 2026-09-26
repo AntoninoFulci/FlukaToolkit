@@ -89,11 +89,34 @@ def test_submit_calls_schedd(tmp_path):
     mock_schedd.submit.assert_called_once()
 
 
+def test_submit_uses_job_dir_for_inputs_and_transferred_outputs(tmp_path):
+    job_info = JobInfo("sim_0001.inp", 1, "/usr/local/fluka/bin", None)
+    script = tmp_path / "job_0001.sh"
+    script.write_text("#!/bin/sh\n")
+    mock_result = MagicMock()
+    mock_result.cluster.return_value = 42
+
+    with patch("fluka.queue.backends.htcondor.htcondor") as mock_htcondor:
+        mock_htcondor.Submit.side_effect = lambda description: description
+        mock_htcondor.Schedd.return_value.submit.return_value = mock_result
+        BACKEND.submit(str(script), job_info, make_args())
+
+    description = mock_htcondor.Submit.call_args.args[0]
+    assert description["initialdir"] == str(tmp_path)
+    assert description["transfer_input_files"] == "sim_0001.inp"
+
+
 def test_submit_raises_if_htcondor_not_installed():
     job_info = JobInfo("sim_0001.inp", 1, "/usr/local/fluka/bin", None)
     with patch("fluka.queue.backends.htcondor.htcondor", None):
         with pytest.raises(RuntimeError, match="htcondor"):
             BACKEND.submit("/tmp/job.sh", job_info, make_args(dry_run=False))
+
+
+def test_submit_raises_if_script_path_is_none():
+    job_info = JobInfo("sim_0001.inp", 1, "/usr/local/fluka/bin", None)
+    with pytest.raises(RuntimeError, match="script_path"):
+        BACKEND.submit(None, job_info, make_args(dry_run=True))
 
 
 def test_table_rows_returns_list():
