@@ -23,6 +23,14 @@ REQUIRED_COMPILER_ASSETS = (
 )
 
 
+def test_project_metadata_is_complete():
+    text = (PROJECT_ROOT / "pyproject.toml").read_text()
+    assert 'readme = "README.md"' in text
+    assert 'Repository = "https://github.com/AntoninoFulci/FlukaToolkit"' in text
+    assert 'Issues = "https://github.com/AntoninoFulci/FlukaToolkit/issues"' in text
+    assert "license =" not in text
+
+
 def _venv_python(venv_dir: Path) -> Path:
     return venv_dir / ("Scripts/python.exe" if sys.platform == "win32" else "bin/python")
 

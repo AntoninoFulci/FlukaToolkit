@@ -16,8 +16,8 @@ dist/
 docs/
 .superpowers/
 
-# Local-only tooling, never pushed to GitHub
-scripts/
+# Local-only scripts
+scripts/private/
 
 # Fluka simulation outputs and related files, never pushed to GitHub
 *~

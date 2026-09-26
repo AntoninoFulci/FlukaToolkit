@@ -6,6 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "flukatoolkit"
 version = "0.1.0"
 description = "Unified FLUKA toolkit: grid generation, batch submission, isotope inventory, ROOT output"
+readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "pyyaml>=6.0",
@@ -21,6 +22,10 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest", "build>=1.0"]
 htcondor = ["htcondor"]
+
+[project.urls]
+Repository = "https://github.com/AntoninoFulci/FlukaToolkit"
+Issues = "https://github.com/AntoninoFulci/FlukaToolkit/issues"
 
 [project.scripts]
 fluka-grid     = "fluka.cli.grid:main"

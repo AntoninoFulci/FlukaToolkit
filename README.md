@@ -117,9 +117,6 @@ src/
     root_output/         # compiler assets packaged with fluka-compile
 ```
 
-The original per-project READMEs are preserved under
-[`docs/legacy/`](docs/legacy/).
-
 ## Development
 
 ```bash

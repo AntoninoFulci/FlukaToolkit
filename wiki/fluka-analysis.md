@@ -5,11 +5,10 @@ simulation directory: it reads raw `RESNUCLEi` binaries (`fort.21`, …)
 and/or already-processed `.rnc` files (e.g. from FLAIR), computes
 per-isotope activity (Bq), error, and mass (µg), and writes the result to an
 Excel workbook. It is backed by the `fluka.isotope_inventory` package
-(`src/fluka/isotope_inventory/`), the successor to the standalone
-FlukaIsotopeAnalysis project.
+(`src/fluka/isotope_inventory/`).
 
 `<cfg>` is a `sim.yaml` with a top-level `general:` section plus an
-`analysis:` section — a standalone `analysis.yaml` works too, as long as it
+`analysis:` section — a dedicated `analysis.yaml` works too, as long as it
 still carries its own `general:` section (the top-level `general` section
 is always required — see [sim.yaml reference](sim-yaml)). Unlike the other
 tools, `analysis` does **not** inherit `general.output` directly as its own
@@ -55,7 +54,7 @@ otherwise the raw `*.<unit>`/`fort.<unit>` files are processed with
 ## Running it
 
 ```bash
-# standalone analysis config (still needs its own general: section)
+# dedicated analysis config (still needs its own general: section)
 fluka-analysis analysis.yaml
 
 # or driving a full sim.yaml (reads general + only the analysis: section)
@@ -70,6 +69,3 @@ The underlying modules are importable directly:
 from fluka.isotope_inventory.reader import read_resnuclei_file
 from fluka.isotope_inventory.physics import isotope_symbol, half_life
 ```
-
-See `docs/legacy/isotope-README.md` for the original FlukaIsotopeAnalysis
-documentation.

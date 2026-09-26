@@ -5,9 +5,7 @@
 discussions on the [FLUKA Forum](https://fluka-forum.web.cern.ch/t/saving-the-output-as-root-file/2361)
 and the [official FLUKA examples](http://www.fluka.org/fluka.php?id=examples&sub=example3),
 that lets FLUKA write its output directly in ROOT format instead of the
-usual binary dumps. This page ports the original `FlukaROOTOutput`
-documentation (`docs/legacy/root-README.md`) with every path updated to its
-new home under `src/fluka/root_output/`.
+usual binary dumps.
 
 ## Purpose
 
@@ -213,7 +211,7 @@ Available commands:
 drives `src/fluka/root_output/Makefile` on your behalf, so you don't have to `cd`
 into `src/fluka/root_output` or remember the `USE_RNTUPLE`/`NAME`/`OBJS`
 variables. `<cfg>` is a `sim.yaml` with a top-level `general:` section plus
-a `custom_exe:` section — a standalone config works too, as long as it
+a `custom_exe:` section — a dedicated config works too, as long as it
 still carries its own `general:` section (the top-level `general` section
 is always required — see [sim.yaml reference](sim-yaml)).
 

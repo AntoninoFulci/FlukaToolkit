@@ -2,9 +2,8 @@
 
 `fluka-submit <cfg>` submits prepared FLUKA `.inp` files to a batch backend —
 **SLURM**, **LSF**, **HTCondor**, or **Task-Spooler (`ts`)** — from a single
-unified CLI. It is backed by the `fluka.queue` package
-(`src/fluka/queue/launch_jobs.py`), the successor to the standalone
-FlukaQueueSub project.
+unified CLI. It is backed by the `fluka.queue` package and its typed
+submission service (`src/fluka/queue/service.py`).
 
 Each job gets a distinct `RANDOMIZ` seed, so the runs it launches are
 statistically independent and safe to combine downstream.
@@ -18,7 +17,7 @@ fluka-submit --grid sim.yaml
 The `--grid` flag runs the grid phase first (equivalent to `fluka-grid`)
 and submits every generated run — the same sequence bare `fluka-run`
 performs (see [fluka-run](fluka-run)). Without `--grid`, `fluka-submit`
-just submits whatever `submit:`/standalone config it is given.
+submits the input described by the `general:` and `submit:` sections.
 
 ```bash
 # submit only (inputs already prepared)
@@ -134,7 +133,3 @@ Seed uniqueness is enforced at two points:
   runs on demand, scanning every `*/job_*/*.inp`, reporting duplicate seeds
   in a table, and exiting non-zero when duplicates are found (usable as a
   gate in scripts or CI).
-
-See also `docs/legacy/queue-README.md` for the original FlukaQueueSub CLI
-documentation (`launch_jobs.py`, folder-of-configs mode, and benchmark
-profiles), which this command's `submit:` section mirrors.

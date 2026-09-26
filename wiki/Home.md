@@ -2,10 +2,8 @@
 
 FlukaToolkit is a toolkit for FLUKA Monte Carlo workflows — grid generation,
 batch submission, isotope/activation inventory, and ROOT-format output — in
-one installable package. It merges what used to be four separate projects
-(`fluka-grid-search`, `FlukaQueueSub`, `FlukaIsotopeAnalysis`, and
-`FlukaROOTOutput`) into a single `fluka` Python package plus packaged compiler
-build tree, all driven from one configuration file per simulation.
+one installable `fluka` Python package plus packaged compiler assets, all
+driven from one configuration file per simulation.
 
 ## Install
 
@@ -104,10 +102,6 @@ src/fluka/
   run/                 # sim.yaml loader + fluka-run orchestrator
 src/fluka/root_output/  # packaged C++/ROOT FLUKA compiler assets
 ```
-
-The original per-project READMEs are preserved under `docs/legacy/` in the
-repository for historical reference; this wiki is the maintained
-documentation going forward.
 
 ## See also
 
