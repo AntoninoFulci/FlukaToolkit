@@ -1,6 +1,5 @@
 from __future__ import annotations
 import getpass
-import os
 from pathlib import Path
 
 # FlukaQueueSub (installed via submodule, editable)
@@ -68,8 +67,7 @@ def submit_run(
     backend.validate(submission)
 
     if backend_name == "ts":
-        # TSBackend runs `ts rfluka -M 1 <input>` in the process CWD, so run it
-        # from inside run_dir with an absolute input path (rfluka writes there).
+        # TSBackend emits a command-local `cd` for absolute input paths.
         job_info = JobInfo(
             input_file=str((Path(run_dir) / inp_filename).resolve()),
             iteration=iteration,
@@ -77,12 +75,7 @@ def submit_run(
             custom_exe=config.fluka.custom_executable,
             use_dpm=config.fluka.use_dpm,
         )
-        cwd = os.getcwd()
-        os.chdir(run_dir)
-        try:
-            return backend.submit(None, job_info, submission)
-        finally:
-            os.chdir(cwd)
+        return backend.submit(None, job_info, submission)
 
     job_info = JobInfo(
         input_file=inp_filename,

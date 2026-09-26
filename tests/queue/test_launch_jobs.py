@@ -234,10 +234,9 @@ def test_folder_mode_cancelled_by_user(tmp_path, monkeypatch, caplog):
     assert len(output_dirs) == 0  # no jobs executed
 
 
-def test_execute_jobs_aborts_on_duplicate_seeds(tmp_path, monkeypatch):
-    from fluka.queue import launch_jobs
-    from fluka.queue.core import fluka
+def test_submit_jobs_aborts_on_duplicate_seeds(tmp_path, monkeypatch):
     from fluka.queue.core.config import SubmissionConfig
+    from fluka.queue import service
 
     submitted = []
 
@@ -248,10 +247,10 @@ def test_execute_jobs_aborts_on_duplicate_seeds(tmp_path, monkeypatch):
             submitted.append(job_info)
             return "ok"
 
-    monkeypatch.setitem(launch_jobs.BACKENDS, "stub", StubBackend())
+    backends = {"stub": StubBackend()}
     # Force the on-disk verification to report a duplicate.
     monkeypatch.setattr(
-        launch_jobs.fluka, "find_duplicate_seeds",
+        service.fluka, "find_duplicate_seeds",
         lambda output_dir: {123: [tmp_path / "job_0001" / "a.inp",
                                   tmp_path / "job_0002" / "b.inp"]},
     )
@@ -262,34 +261,22 @@ def test_execute_jobs_aborts_on_duplicate_seeds(tmp_path, monkeypatch):
         backend="stub", input=str(src), njobs=2, custom_exe=None,
         output_dir=str(tmp_path / "out"), nprim=None,
     )
-    with pytest.raises(SystemExit):
-        launch_jobs._execute_jobs(args, fluka_path="/fake/fluka")
+    with pytest.raises(RuntimeError, match="Seed RANDOMIZ duplicati"):
+        service.submit_jobs(args, fluka_path="/fake/fluka", backends=backends)
     assert submitted == []  # aborted before any submission
 
 
-def test_execute_jobs_gives_ts_an_absolute_input_path(tmp_path, monkeypatch):
+def test_prepare_jobs_gives_ts_an_absolute_input_path(tmp_path, monkeypatch):
     """TS backend must know job directory; relative input is absent from caller cwd."""
-    from fluka.queue import launch_jobs
     from fluka.queue.core.config import SubmissionConfig
-
-    submitted = []
-
-    class StubBackend:
-        def generate_script(self, job_info, job_dir, args):
-            return None
-
-        def submit(self, script_path, job_info, args):
-            submitted.append(job_info)
-            return "ok"
-
-    monkeypatch.setitem(launch_jobs.BACKENDS, "ts", StubBackend())
+    from fluka.queue.service import prepare_jobs
     src = tmp_path / "sim.inp"
     src.write_text("RANDOMIZ          1.  1\n")
     args = SubmissionConfig(
         backend="ts", input=str(src), njobs=1, custom_exe=None,
         output_dir=str(tmp_path / "out"), nprim=None, dry_run=True, use_dpm=False,
     )
-    launch_jobs._execute_jobs(args, fluka_path="/fake/fluka")
-    submitted_input = Path(submitted[0].input_file)
+    prepared = prepare_jobs(args, fluka_path="/fake/fluka")
+    submitted_input = Path(prepared[0].job_info.input_file)
     assert submitted_input.is_absolute()
     assert submitted_input.parent.name == "job_0001"

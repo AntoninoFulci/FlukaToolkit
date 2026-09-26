@@ -4,15 +4,17 @@ import logging
 import os
 import sys
 from argparse import ArgumentParser, RawTextHelpFormatter
-from pathlib import Path
 from typing import TypedDict
 
-from fluka.queue.backends.base import JobInfo, QueueBackend
+from fluka.queue.backends.base import QueueBackend
 from fluka.queue.backends.registry import new_backends
-from fluka.queue.core import config, display, filesystem, fluka
+from fluka.queue.core import config, display, fluka
 from fluka.queue.core.config import SubmissionConfig
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+from fluka.queue.service import (
+    SubmissionBatchError,
+    SubmissionSummary,
+    submit_jobs,
+)
 
 BACKENDS = new_backends()
 
@@ -123,45 +125,15 @@ def _build_parser() -> ArgumentParser:
     return parser
 
 
-def _execute_jobs(args: SubmissionConfig, fluka_path: str) -> None:
-    if args.custom_exe is not None and not os.path.isfile(args.custom_exe):
-        logging.error("Custom exe non trovato: %s", args.custom_exe)
-        sys.exit(1)
+def _log_summary(summary: SubmissionSummary) -> None:
+    for iteration, result in summary.results:
+        logging.info("Job %d: %s", iteration, result)
 
-    backend = BACKENDS[args.backend]
-    base_name = os.path.splitext(os.path.basename(args.input))[0]
-    output_dir = filesystem.setup_output_dir(base_name, args.output_dir)
 
-    used_seeds = fluka.scan_existing_seeds(Path(output_dir))
-
-    # Fase 1: genera tutti gli input (un seed unico per job)
-    prepared: list[tuple[int, str, JobInfo]] = []
-    for i in range(1, args.njobs + 1):
-        job_dir = filesystem.setup_job_dir(output_dir, i, args.input)
-        seed = fluka.allocate_seed(used_seeds)
-        new_input = fluka.generate_input(base_name, i, job_dir, nprim=args.nprim, seed=seed)
-        input_file = str(Path(job_dir) / new_input) if args.backend == "ts" else new_input
-        job_info = JobInfo(input_file, i, fluka_path, args.custom_exe,
-                           use_dpm=getattr(args, "use_dpm", False))
-        prepared.append((i, job_dir, job_info))
-
-    # Fase 2: verifica seed unici su disco prima di inviare alcun job
-    duplicates = fluka.find_duplicate_seeds(Path(output_dir))
-    if duplicates:
-        for seed, files in sorted(duplicates.items()):
-            shared = ", ".join(f.parent.name for f in files)
-            logging.error("Seed duplicato %d condiviso da: %s", seed, shared)
-        logging.error("Invio annullato: seed RANDOMIZ duplicati rilevati.")
-        sys.exit(1)
-
-    # Fase 3: invia i job
-    for i, job_dir, job_info in prepared:
-        script_path = backend.generate_script(job_info, job_dir, args)
-        try:
-            result = backend.submit(script_path, job_info, args)
-            logging.info("Job %d: %s", i, result)
-        except RuntimeError as e:
-            logging.error("Job %d fallito: %s", i, e)
+def _log_submission_batch(error: SubmissionBatchError) -> None:
+    _log_summary(error.summary)
+    for failure in error.failures:
+        logging.error("Job %d fallito: %s", failure.iteration, failure.error)
 
 
 def run_from_args(args: SubmissionConfig) -> None:
@@ -194,10 +166,11 @@ def run_from_args(args: SubmissionConfig) -> None:
         logging.info("Lancio annullato.")
         sys.exit(0)
 
-    _execute_jobs(args, fluka_path)
+    summary = submit_jobs(args, fluka_path, BACKENDS)
+    _log_summary(summary)
 
 
-def run_folder(folder: str) -> None:
+def run_folder(folder: str) -> int:
     yaml_files = sorted(
         f for f in os.listdir(folder) if f.endswith((".yaml", ".yml"))
     )
@@ -205,7 +178,7 @@ def run_folder(folder: str) -> None:
 
     if not yaml_paths:
         logging.warning("Nessun file YAML trovato in %r", folder)
-        return
+        return 0
 
     configs = []
     for path in yaml_paths:
@@ -218,7 +191,7 @@ def run_folder(folder: str) -> None:
 
     if not configs:
         logging.error("Nessuna configurazione valida trovata.")
-        return
+        return 0
 
     C = display.COLORS
     rows = [["File", "Backend", "N. job"]]
@@ -232,19 +205,22 @@ def run_folder(folder: str) -> None:
 
     if not display.confirm(f"Procedere con {len(configs)} lanci? (yes/no): "):
         logging.info("Lancio annullato.")
-        return
+        return 0
 
     fluka_path, _ = fluka.detect_fluka_path()
     failures = 0
     for path, cfg in configs:
         try:
             logging.info("Avvio: %s", os.path.basename(path))
-            _execute_jobs(cfg, fluka_path)
+            summary = submit_jobs(cfg, fluka_path, BACKENDS)
+            _log_summary(summary)
+        except SubmissionBatchError as e:
+            _log_submission_batch(e)
+            failures += 1
         except Exception as e:
             logging.error("Errore in %r: %s", path, e)
             failures += 1
-    if failures:
-        sys.exit(1)
+    return failures
 
 
 def _has_start_card(inp_path: str) -> bool:
@@ -253,7 +229,7 @@ def _has_start_card(inp_path: str) -> bool:
         return any(line.startswith("START") for line in f)
 
 
-def run_benchmark(mode: str, target: str) -> None:
+def run_benchmark(mode: str, target: str) -> int:
     C = display.COLORS
 
     if os.path.isdir(target):
@@ -262,7 +238,7 @@ def run_benchmark(mode: str, target: str) -> None:
 
         if not yaml_paths:
             logging.warning("Nessun file YAML trovato in %r", target)
-            return
+            return 0
 
         configs = []
         for path in yaml_paths:
@@ -275,7 +251,7 @@ def run_benchmark(mode: str, target: str) -> None:
 
         if not configs:
             logging.error("Nessuna configurazione valida trovata.")
-            return
+            return 0
 
         for path, cfg in configs:
             try:
@@ -302,7 +278,7 @@ def run_benchmark(mode: str, target: str) -> None:
 
         if not display.confirm(f"Procedere con {len(configs)} lanci benchmark? (yes/no): "):
             logging.info("Lancio annullato.")
-            return
+            return 0
 
         fluka_path, _ = fluka.detect_fluka_path()
         failures = 0
@@ -314,12 +290,15 @@ def run_benchmark(mode: str, target: str) -> None:
                         "Nessuna card START in %r — nprim ignorato per questo lancio.", cfg.input
                     )
                     cfg.nprim = None
-                _execute_jobs(cfg, fluka_path)
+                summary = submit_jobs(cfg, fluka_path, BACKENDS)
+                _log_summary(summary)
+            except SubmissionBatchError as e:
+                _log_submission_batch(e)
+                failures += 1
             except Exception as e:
                 logging.error("Errore in %r: %s", path, e)
                 failures += 1
-        if failures:
-            sys.exit(1)
+        return failures
 
     else:
         try:
@@ -351,12 +330,18 @@ def run_benchmark(mode: str, target: str) -> None:
         )
         if not display.confirm("Procedere con lancio benchmark? (yes/no): "):
             logging.info("Lancio annullato.")
-            return
+            return 0
         fluka_path, _ = fluka.detect_fluka_path()
-        _execute_jobs(cfg, fluka_path)
+        summary = submit_jobs(cfg, fluka_path, BACKENDS)
+        _log_summary(summary)
+        return 0
 
 
 def main() -> None:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+    )
     if len(sys.argv) > 1 and sys.argv[1] == "benchmark":
         if len(sys.argv) != 4:
             print("Utilizzo: launch_jobs.py benchmark <quick|extensive> <config.yaml|cartella/>")
@@ -364,7 +349,13 @@ def main() -> None:
         if sys.argv[2] not in _BENCHMARK_MODES:
             print(f"Modalita' sconosciuta: {sys.argv[2]!r}. Disponibili: {sorted(_BENCHMARK_MODES)}")
             sys.exit(1)
-        run_benchmark(sys.argv[2], sys.argv[3])
+        try:
+            failures = run_benchmark(sys.argv[2], sys.argv[3])
+        except SubmissionBatchError as e:
+            _log_submission_batch(e)
+            sys.exit(1)
+        if failures:
+            sys.exit(1)
         return
     if len(sys.argv) > 1:
         first_arg = sys.argv[1]
@@ -374,14 +365,23 @@ def main() -> None:
             except (FileNotFoundError, ValueError) as e:
                 logging.error(str(e))
                 sys.exit(1)
-            run_from_args(args)
+            try:
+                run_from_args(args)
+            except SubmissionBatchError as e:
+                _log_submission_batch(e)
+                sys.exit(1)
             return
         if os.path.isdir(first_arg):
-            run_folder(first_arg)
+            if run_folder(first_arg):
+                sys.exit(1)
             return
     parser = _build_parser()
     namespace = parser.parse_args()
-    run_from_args(SubmissionConfig.from_mapping(vars(namespace)))
+    try:
+        run_from_args(SubmissionConfig.from_mapping(vars(namespace)))
+    except SubmissionBatchError as e:
+        _log_submission_batch(e)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

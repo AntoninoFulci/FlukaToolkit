@@ -108,6 +108,26 @@ def test_submit_run_ts_dry_run(tmp_path):
     assert "FLUKA_STATUS" in result
 
 
+def test_ts_adapter_does_not_change_process_cwd(tmp_path, monkeypatch):
+    run_dir = tmp_path / "run_0001"
+    run_dir.mkdir()
+    (run_dir / "simulation.inp").write_text("RANDOMIZ 1. 1.\n")
+    observed = []
+
+    def observe_cwd(self, script_path, job_info, config):
+        observed.append(Path.cwd())
+        return "1"
+
+    monkeypatch.setattr(queue_adapter.BACKEND_TYPES["ts"], "submit", observe_cwd)
+    before = Path.cwd()
+    queue_adapter.submit_run(
+        "ts", _config("ts"), run_dir, "simulation.inp", 1, "/fluka", False
+    )
+
+    assert observed == [before]
+    assert Path.cwd() == before
+
+
 def test_build_submission_config_lsf_has_expected_values():
     config = queue_adapter._build_submission_config(
         "lsf", _config("lsf"), dry_run=True
