@@ -8,12 +8,15 @@ from .resnuclei import Resnuclei, unpack_array
 
 _AVOGADRO = 6.02214076e23
 
+AnalysisValue = str | float
+AnalysisRow = dict[str, AnalysisValue]
+
 
 def read_resnuclei_file(
     path: Path,
-    requested_isotopes: dict[int, int],
-    params: dict,
-) -> dict | None:
+    requested_isotopes: list[tuple[int, int]],
+    params: dict[str, object],
+) -> AnalysisRow | None:
     if not path.exists():
         return None
 
@@ -22,9 +25,12 @@ def read_resnuclei_file(
         return None
     det = resn.detector[0]
     data = resn.read_data(0)
+    if data is None:
+        raise OSError(f"{path}: missing detector data block")
     stat = resn.read_stat(0)
     fdata = unpack_array(data)
-    edata = unpack_array(stat[5]) if stat is not None else None
+    stat_data = stat[5] if stat is not None else None
+    edata = unpack_array(stat_data) if stat_data is not None else None
 
     zhigh = det.zhigh
     mhigh = det.mhigh
@@ -47,7 +53,7 @@ def read_resnuclei_file(
 
     tdecay_s = float(resn.tdecay)
 
-    row: dict = {
+    row: AnalysisRow = {
         "_tdecay_s": tdecay_s,
         "CoolingTime": format_decay_time(tdecay_s),
         "Parameters": " ".join(f"{k}={v}" for k, v in params.items()),

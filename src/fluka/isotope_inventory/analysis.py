@@ -6,7 +6,7 @@ from pathlib import Path
 
 from .config import AnalysisConfig
 from .excel import write_activity_workbook
-from .reader import read_resnuclei_file
+from .reader import AnalysisRow, read_resnuclei_file
 
 
 def resolve_rnc(directory: Path, unit: int, executable: str) -> Path | None:
@@ -51,7 +51,7 @@ def resolve_rnc(directory: Path, unit: int, executable: str) -> Path | None:
 
 def run_analysis(config: AnalysisConfig) -> None:
     directory = config.directory
-    rows: list[dict] = []
+    rows: list[AnalysisRow] = []
     for unit in config.units:
         path = resolve_rnc(directory, unit, config.executable)
         if path is None:
