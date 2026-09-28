@@ -113,13 +113,29 @@ sim/
 └── ...
 ```
 
+## Submission failures
+
+Submission attempts every independently prepared job even when one scheduler call
+fails. Each failed job is reported with its iteration and scheduler error; successful
+submissions remain successful. After all jobs have been attempted, any failure makes
+the command exit non-zero.
+
 ## Collecting results
 
 Once jobs finish, `fluka-run analyze` (or `fluka.queue.collect_results`
 directly) gathers each job's `.root` files into a `root_files/` directory
 per parent run, printing a table of the planned moves and asking for
-confirmation before moving files and removing the emptied `job_*`
-directories. Jobs with no `.root` file are flagged.
+confirmation.
+
+Collection scans destinations before moving anything. Duplicate filenames from
+different jobs, or files already present under `root_files/`, are reported as
+collisions and reject collection for the affected parent run. Existing destinations
+are never overwritten.
+
+Source `job_*` directories are removed only after every file for that parent has been
+collected successfully. Planning or execution failure preserves all source job
+directories; destinations created during a failed execution are rolled back when
+they can be identified safely. Jobs with no `.root` file are flagged.
 
 ## Checking seeds
 
