@@ -3,7 +3,12 @@ import struct
 
 import pytest
 
-from fluka.isotope_inventory.resnuclei import fortran_read, fortran_skip, unpack_array
+from fluka.isotope_inventory.resnuclei import (
+    Resnuclei,
+    fortran_read,
+    fortran_skip,
+    unpack_array,
+)
 
 
 def make_block(payload: bytes) -> bytes:
@@ -39,3 +44,14 @@ def test_unpack_array():
     assert result[0] == pytest.approx(1.0)
     assert result[1] == pytest.approx(2.0)
     assert result[2] == pytest.approx(3.0)
+
+
+def test_missing_evolution_decay_time_raises(tmp_path):
+    base = struct.pack("=80s32sfi", b"title", b"time", 1.0, -1)
+    evolution = struct.pack("=i", 0)
+    detector = struct.pack("=i10siif3i", 1, b"detector", 0, 0, 1.0, 1, 1, 0)
+    path = tmp_path / "truncated.rnc"
+    path.write_bytes(make_block(base) + make_block(evolution) + make_block(detector))
+
+    with pytest.raises(OSError, match="decay time"):
+        Resnuclei(str(path))
